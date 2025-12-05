@@ -1,51 +1,79 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pie Adventure - Full</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pie Adventure - Full</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
+
+  <!-- Manifest PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- MENU -->
   <div id="menu" class="center">
     <h1>Pie Adventure</h1>
     <div class="buttons">
-      <button id="newBtn">Nuova Partita</button>
-      <button id="contBtn">Continua</button>
-      <button id="saveBtn">Salva</button>
+      <button id="newBtn" aria-label="Nuova Partita">Nuova Partita</button>
+      <button id="contBtn" aria-label="Continua Partita">Continua</button>
+      <button id="saveBtn" aria-label="Salva Partita">Salva</button>
     </div>
-    <p class="hint">Touch: Tocca ai lati per muovere, tap per saltare. Tastiera: ← → ↑ / Space</p>
+    <p class="hint">
+      Touch: Tocca ai lati per muovere, tap per saltare.<br>
+      Tastiera: ← → ↑ / Space
+    </p>
   </div>
 
+  <!-- GAME CANVAS -->
   <canvas id="game" width="960" height="540" style="display:none"></canvas>
 
+  <!-- ENDING SCREEN -->
   <div id="ending" class="center" style="display:none">
     <h1 id="finalTitle">Pie diventa King</h1>
     <p>Carica la foto finale da mostrare:</p>
-    <input id="finalInput" type="file" accept="image/*">
+    <input id="finalInput" type="file" accept="image/*" aria-label="Carica immagine finale">
     <div id="finalImage"></div>
     <h2>THE END...?</h2>
-    <button id="restartBtn">Restart</button>
+    <button id="restartBtn" aria-label="Restart Game">Restart</button>
   </div>
 
-  <!-- optional audio files; add mp3 into assets/music to hear them -->
+  <!-- AUDIO FILES -->
   <audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
   <audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
 
-  <script src="engine.js"></script>
-  <script src="entities.js"></script>
-  <script src="boss_final.js"></script>
-  <script src="game.js"></script>
-  <script src="ending.js"></script>
+  <!-- JS SCRIPTS -->
+  <script src="engine.js" defer></script>
+  <script src="entities.js" defer></script>
+  <script src="boss_final.js" defer></script>
+  <script src="game.js" defer></script>
+  <script src="ending.js" defer></script>
 
-  <script>
+  <!-- INIT SCRIPT -->
+  <script defer>
+    // Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(e=>console.log('SW failed',e));
+      navigator.serviceWorker.register('service-worker.js')
+        .catch(e => console.log('SW failed', e));
     }
-    // Attach menu buttons
-    document.getElementById('newBtn').addEventListener('click', ()=> Game.startNew());
-    document.getElementById('contBtn').addEventListener('click', ()=> Game.continue());
-    document.getElementById('saveBtn').addEventListener('click', ()=> Game.save());
+
+    // Menu buttons
+    document.addEventListener('DOMContentLoaded', () => {
+      const GameButtons = {
+        newBtn: document.getElementById('newBtn'),
+        contBtn: document.getElementById('contBtn'),
+        saveBtn: document.getElementById('saveBtn')
+      };
+
+      GameButtons.newBtn?.addEventListener('click', () => Game.startNew());
+      GameButtons.contBtn?.addEventListener('click', () => Game.continue());
+      GameButtons.saveBtn?.addEventListener('click', () => Game.save());
+    });
   </script>
 </body>
 </html>
