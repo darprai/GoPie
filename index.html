@@ -1,36 +1,52 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Pie Adventure 3 Livelli</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pie Adventure - Full</title>
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
 </head>
 <body>
-<div id="menu" class="center">
-<h1>Pie Adventure</h1>
-<button id="newBtn">Nuova Partita</button>
-<button id="contBtn">Continua</button>
-</div>
-<canvas id="game" width="960" height="540" style="display:none"></canvas>
-<div id="ending" class="center" style="display:none">
-<h1>Pie diventa King</h1>
-<input type="file" accept="image/*" id="finalInput">
-<div id="finalImage"></div>
-<h2>THE END...?</h2>
-<button id="restartBtn">Restart</button>
-</div>
-<audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
-<audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
-<script src="engine.js"></script>
-<script src="entities.js"></script>
-<script src="game.js"></script>
-<script src="boss_final.js"></script>
-<script src="ending.js"></script>
-<script>
-document.getElementById('newBtn').addEventListener('click',startGame);
-if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
-</script>
+  <div id="menu" class="center">
+    <h1>Pie Adventure</h1>
+    <div class="buttons">
+      <button id="newBtn">Nuova Partita</button>
+      <button id="contBtn">Continua</button>
+      <button id="saveBtn">Salva</button>
+    </div>
+    <p class="hint">Touch: Tocca ai lati per muovere, tap per saltare. Tastiera: ← → ↑ / Space</p>
+  </div>
+
+  <canvas id="game" width="960" height="540" style="display:none"></canvas>
+
+  <div id="ending" class="center" style="display:none">
+    <h1 id="finalTitle">Pie diventa King</h1>
+    <p>Carica la foto finale da mostrare:</p>
+    <input id="finalInput" type="file" accept="image/*">
+    <div id="finalImage"></div>
+    <h2>THE END...?</h2>
+    <button id="restartBtn">Restart</button>
+  </div>
+
+  <!-- optional audio files; add mp3 into assets/music to hear them -->
+  <audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
+  <audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
+
+  <script src="engine.js"></script>
+  <script src="entities.js"></script>
+  <script src="boss_final.js"></script>
+  <script src="game.js"></script>
+  <script src="ending.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(e=>console.log('SW failed',e));
+    }
+    // Attach menu buttons
+    document.getElementById('newBtn').addEventListener('click', ()=> Game.startNew());
+    document.getElementById('contBtn').addEventListener('click', ()=> Game.continue());
+    document.getElementById('saveBtn').addEventListener('click', ()=> Game.save());
+  </script>
 </body>
 </html>
