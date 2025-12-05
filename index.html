@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pie Adventure - Full</title>
 
-  <!-- Favicon -->
+  <!-- Favicon (assicurati esista realmente) -->
   <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
 
   <!-- Manifest PWA -->
@@ -16,64 +16,74 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <!-- MENU -->
   <div id="menu" class="center">
     <h1>Pie Adventure</h1>
+
     <div class="buttons">
       <button id="newBtn" aria-label="Nuova Partita">Nuova Partita</button>
       <button id="contBtn" aria-label="Continua Partita">Continua</button>
       <button id="saveBtn" aria-label="Salva Partita">Salva</button>
     </div>
+
     <p class="hint">
-      Touch: Tocca ai lati per muovere, tap per saltare.<br>
+      Touch: Tocca ai lati per muovere — tap per saltare.<br>
       Tastiera: ← → ↑ / Space
     </p>
   </div>
 
-  <!-- GAME CANVAS -->
+  <!-- CANVAS DI GIOCO -->
   <canvas id="game" width="960" height="540" style="display:none"></canvas>
 
-  <!-- ENDING SCREEN -->
+  <!-- SCHERMATA FINALE -->
   <div id="ending" class="center" style="display:none">
     <h1 id="finalTitle">Pie diventa King</h1>
+
     <p>Carica la foto finale da mostrare:</p>
-    <input id="finalInput" type="file" accept="image/*" aria-label="Carica immagine finale">
+    <input 
+      id="finalInput" 
+      type="file" 
+      accept="image/*" 
+      aria-label="Carica immagine finale">
+
     <div id="finalImage"></div>
+
     <h2>THE END...?</h2>
     <button id="restartBtn" aria-label="Restart Game">Restart</button>
   </div>
 
-  <!-- AUDIO FILES -->
+  <!-- AUDIO -->
   <audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
   <audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
 
-  <!-- JS SCRIPTS -->
+  <!-- JS (ordine corretto!) -->
   <script src="engine.js" defer></script>
   <script src="entities.js" defer></script>
   <script src="boss_final.js" defer></script>
   <script src="game.js" defer></script>
   <script src="ending.js" defer></script>
 
-  <!-- INIT SCRIPT -->
+  <!-- INIT -->
   <script defer>
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .catch(e => console.log('SW failed', e));
-    }
-
-    // Menu buttons
     document.addEventListener('DOMContentLoaded', () => {
-      const GameButtons = {
-        newBtn: document.getElementById('newBtn'),
-        contBtn: document.getElementById('contBtn'),
-        saveBtn: document.getElementById('saveBtn')
-      };
 
-      GameButtons.newBtn?.addEventListener('click', () => Game.startNew());
-      GameButtons.contBtn?.addEventListener('click', () => Game.continue());
-      GameButtons.saveBtn?.addEventListener('click', () => Game.save());
+      // Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+          .catch(err => console.warn('Service Worker error:', err));
+      }
+
+      // Pulsanti menu
+      const newBtn = document.getElementById('newBtn');
+      const contBtn = document.getElementById('contBtn');
+      const saveBtn = document.getElementById('saveBtn');
+
+      newBtn?.addEventListener('click', () => Game.startNew());
+      contBtn?.addEventListener('click', () => Game.continue());
+      saveBtn?.addEventListener('click', () => Game.save());
     });
   </script>
+
 </body>
 </html>
