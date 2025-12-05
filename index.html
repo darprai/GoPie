@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Pie Adventure 3 Livelli</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+</head>
+<body>
+<div id="menu" class="center">
+<h1>Pie Adventure</h1>
+<button id="newBtn">Nuova Partita</button>
+<button id="contBtn">Continua</button>
+</div>
+<canvas id="game" width="960" height="540" style="display:none"></canvas>
+<div id="ending" class="center" style="display:none">
+<h1>Pie diventa King</h1>
+<input type="file" accept="image/*" id="finalInput">
+<div id="finalImage"></div>
+<h2>THE END...?</h2>
+<button id="restartBtn">Restart</button>
+</div>
+<audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
+<audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
+<script src="engine.js"></script>
+<script src="entities.js"></script>
+<script src="game.js"></script>
+<script src="boss_final.js"></script>
+<script src="ending.js"></script>
+<script>
+document.getElementById('newBtn').addEventListener('click',startGame);
+if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
+</script>
+</body>
+</html>
