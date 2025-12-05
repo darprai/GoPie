@@ -1,0 +1,23 @@
+body {
+    background:#0b0b12;
+    color:white;
+    font-family:sans-serif;
+    text-align:center;
+}
+canvas {
+    border:2px solid #fff;
+    display:block;
+    margin:auto;
+}
+button {
+    padding:10px 20px;
+    margin:5px;
+    background:#1ee0b8;
+    color:#012;
+    border:none;
+    border-radius:6px;
+}
+#finalImage img {
+    max-width:300px;
+    margin-top:10px;
+}
