@@ -94,7 +94,6 @@ class Player {
         this.h
       );
     } else {
-      // fallback rectangle
       ctx.fillStyle = this.color;
       ctx.fillRect(
         Math.round(this.x - camX),
@@ -107,7 +106,7 @@ class Player {
 }
 
 // -----------------------------------------------------
-//  EXPORT GLOBALE (IMPORTANTE!)
+//  EXPORT GLOBAL
 // -----------------------------------------------------
 window.Player = Player;
 window.rectsOverlap = rectsOverlap;
