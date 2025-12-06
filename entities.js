@@ -59,12 +59,18 @@ class Player {
     if (this.x < 0) this.x = 0;
   }
 
-  draw(ctx, camX){
+  draw(ctx, camX) {
+  if (playerSprite.complete) {
+    ctx.drawImage(
+      playerSprite,
+      Math.round(this.x - camX),
+      Math.round(this.y),
+      this.w,
+      this.h
+    );
+  } else {
+    // fallback
     ctx.fillStyle = this.color;
     ctx.fillRect(Math.round(this.x - camX), Math.round(this.y), this.w, this.h);
-
-    ctx.fillStyle = '#2b2b2b';
-    ctx.fillRect(Math.round(this.x - camX)+10, Math.round(this.y)+18, 4,4);
-    ctx.fillRect(Math.round(this.x - camX)+26, Math.round(this.y)+18, 4,4);
   }
 }
