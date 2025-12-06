@@ -1,4 +1,4 @@
-// --- Boss Finale (definizione completa)
+// --- Boss Finale con sprite Golruk ---
 const BossFinal = {
   active: false,
   x: 0,
@@ -6,6 +6,13 @@ const BossFinal = {
   projectiles: [],
   thrown: 0,
   fireCooldown: 0,
+
+  sprite: null,
+
+  load() {
+    this.sprite = new Image();
+    this.sprite.src = "assets/sprites/golruk.png";
+  },
 
   reset() {
     this.active = false;
@@ -20,37 +27,39 @@ const BossFinal = {
     this.y = y;
     this.projectiles = [];
     this.thrown = 0;
-    this.fireCooldown = 1.5; // delay first throw
+    this.fireCooldown = 1.5;
   },
 
   update(dt, player, camX) {
     if (!this.active) return;
 
     this.fireCooldown -= dt;
-    
-    // Shoot bottles toward player
+
     if (this.fireCooldown <= 0) {
-      this.fireCooldown = 1.2; // every 1.2 seconds
+      this.fireCooldown = 1.2;
       this.thrown++;
 
       const speed = 380;
-      const angle = Math.atan2(player.y - this.y, (player.x - camX) - this.x);
+      const angle = Math.atan2(
+        player.y - this.y,
+        (player.x - camX) - this.x
+      );
 
       this.projectiles.push({
-        x: this.x,
-        y: this.y,
+        x: this.x + 40,
+        y: this.y + 40,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed
+        vy: Math.sin(angle) * speed,
       });
     }
 
-    // Update projectiles
+    // Update proiettili
     for (let p of this.projectiles) {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
     }
 
-    // Remove off-screen projectiles
+    // Rimuovi proiettili fuori schermo
     this.projectiles = this.projectiles.filter(
       p => p.x > -200 && p.x < 2000 && p.y > -200 && p.y < 1200
     );
@@ -59,19 +68,17 @@ const BossFinal = {
   render(ctx, camX) {
     if (!this.active) return;
 
-    // draw boss
-    ctx.fillStyle = "#ff4444";
-    ctx.fillRect(this.x - camX, this.y, 60, 80);
+    // Boss con sprite vero
+    if (this.sprite.complete) {
+      ctx.drawImage(this.sprite, this.x - camX, this.y, 80, 100);
+    }
 
-    // eyes
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(this.x - camX + 12, this.y + 20, 12, 12);
-    ctx.fillRect(this.x - camX + 36, this.y + 20, 12, 12);
-
-    // draw projectiles
+    // Proiettili (semplici)
+    ctx.fillStyle = "#00ccff";
     for (let p of this.projectiles) {
-      ctx.fillStyle = "#00ccff";
       ctx.fillRect(p.x - camX, p.y, 14, 14);
     }
   }
 };
+
+BossFinal.load();
