@@ -1,11 +1,22 @@
 // -----------------------------------------------------
-//  SPRITE PLAYER
+//  SPRITE DEFINITIONS
 // -----------------------------------------------------
 const playerSprite = new Image();
 playerSprite.src = "assets/sprites/run.png";
 
 const bossSprite = new Image();
 bossSprite.src = "assets/sprites/golruk.png";
+
+// Nuovi Sprite per il livello Discoteca/Party
+const djDiscSprite = new Image();
+djDiscSprite.src = "assets/sprites/djdisc.png";
+
+const discoBallSprite = new Image();
+discoBallSprite.src = "assets/sprites/disco.png";
+
+const drinkEnemySprite = new Image();
+drinkEnemySprite.src = "assets/sprites/drink.png";
+
 
 // -----------------------------------------------------
 //  HELPERS
@@ -64,7 +75,11 @@ class Player {
     // platform collisions
     this.onGround = false;
     for (let p of platforms) {
-      const plat = { x: p[0], y: p[1], w: p[2], h: p[3] };
+      // Adattiamo la collisione per supportare sia l'array che l'oggetto (livelli vecchi e nuovi)
+      const plat = Array.isArray(p) 
+        ? { x: p[0], y: p[1], w: p[2], h: p[3] }
+        : { x: p.x, y: p.y, w: p.w, h: p.h };
+
       if (
         this.x + this.w > plat.x &&
         this.x < plat.x + plat.w &&
@@ -100,7 +115,7 @@ class Player {
       );
     }
   }
-} // <--- Questa chiude la Classe Player (circa riga 77)
+} 
 
 // -----------------------------------------------------
 //  PROJECTILE CLASS (per il Boss)
@@ -136,3 +151,7 @@ window.Player = Player;
 window.rectsOverlap = rectsOverlap;
 window.Projectile = Projectile;
 window.bossSprite = bossSprite;
+// Esportiamo i nuovi sprite
+window.djDiscSprite = djDiscSprite;
+window.discoBallSprite = discoBallSprite;
+window.drinkEnemySprite = drinkEnemySprite;
