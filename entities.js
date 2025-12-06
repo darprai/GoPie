@@ -1,9 +1,11 @@
-const playerSprite = new Image();
+const playerSprite = new Image(); 
 playerSprite.src = "assets/sprites/run.png";
+
 // --- helpers
 function rectsOverlap(a,b){
   return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
 }
+
 // --- Player
 class Player {
   constructor(x,y){
@@ -14,7 +16,7 @@ class Player {
     this.vx = 0; 
     this.vy = 0;
     this.onGround = false;
-    this.color = '#ffd86b'; // player placeholder color
+    this.color = '#ffd86b';
     this.score = 0;
   }
 
@@ -60,17 +62,25 @@ class Player {
   }
 
   draw(ctx, camX) {
-  if (playerSprite.complete) {
-    ctx.drawImage(
-      playerSprite,
-      Math.round(this.x - camX),
-      Math.round(this.y),
-      this.w,
-      this.h
-    );
-  } else {
-    // fallback
-    ctx.fillStyle = this.color;
-    ctx.fillRect(Math.round(this.x - camX), Math.round(this.y), this.w, this.h);
+    if (playerSprite.complete) {
+      ctx.drawImage(
+        playerSprite,
+        Math.round(this.x - camX),
+        Math.round(this.y),
+        this.w,
+        this.h
+      );
+    } else {
+      ctx.fillStyle = this.color;
+      ctx.fillRect(
+        Math.round(this.x - camX),
+        Math.round(this.y),
+        this.w,
+        this.h
+      );
+    }
   }
 }
+
+// EXPORT PLAYER
+window.Player = Player;
