@@ -4,8 +4,8 @@ function rgba(r, g, b, a) {
 }
 
 const Game = (() => {
-  // AGGIUNTO il nuovo livello 4
-  const LEVELS = ['levels/level1.json','levels/level2.json','levels/level3.json', 'levels/level_catpie.json'];
+  // Torniamo alla lista originale dei livelli
+  const LEVELS = ['levels/level1.json','levels/level2.json','levels/level3.json']; 
   let engine, player, levels = [], cur = 0, camX = 0;
   let bossStarted = false;
 
@@ -47,9 +47,7 @@ const Game = (() => {
     document.getElementById('menu').style.display = 'none';
     document.getElementById('game').style.display = 'block';
     cur = isNew ? 0 : parseInt(localStorage.getItem('pie_level') || '0');
-    if (cur < 0) cur = 0;
-    // Se il livello salvato è maggiore del massimo, riparti dal nuovo livello (index 3)
-    if (cur >= levels.length) cur = levels.length - 1; 
+    if (cur < 0 || cur >= levels.length) cur = 0; 
 
 
     const start = levels[cur].playerStart || {x: 80, y: 300};
@@ -60,7 +58,9 @@ const Game = (() => {
 
     // play music
     try {
-      if (cur === 2 || cur === 3) { // Controlla anche il nuovo livello (index 3)
+      // Dato che level1 ora è il livello "party", usiamo la musica finale se è cur=0 (se level3 non è l'ultimo)
+      // Se level3 ha la musica finale, manteniamo la logica originale
+      if (cur === 2) { 
         document.getElementById('bgm').pause();
         const bgmFinal = document.getElementById('bgm_final');
         bgmFinal.currentTime = 0;
@@ -122,14 +122,17 @@ const Game = (() => {
     
     // 1. Collisioni Nemici standard (Drink, Hazard)
     (lvl.enemies || []).forEach(en => {
-      if (rectsOverlap({x:en.x, y:en.y, w:20, h:20}, {x:player.x, y:player.y, w:player.w, h:player.h})) {
+      // Controlliamo w e h nel caso siano definiti nel JSON, altrimenti usiamo 20x20
+      const en_w = en.w || 20;
+      const en_h = en.h || 20;
+      if (rectsOverlap({x:en.x, y:en.y, w:en_w, h:en_h}, {x:player.x, y:player.y, w:player.w, h:player.h})) {
         onPlayerHit();
       }
     });
 
     // 2. Collisioni Trappole Invisibili (Cat Mario Style)
     (lvl.invisible_traps || []).forEach(t => {
-        // Ignoriamo le trappole se non sono un "hazard" (es. se t.effect non è definito)
+        // Le trappole sono considerate hazard se hanno effect='hazard' o se sono di tipo 'drink'
         if (t.effect === 'hazard' || t.type === 'drink') {
             if (rectsOverlap({x:t.x, y:t.y, w:t.w, h:t.h}, {x:player.x, y:player.y, w:player.w, h:player.h})) {
                 onPlayerHit();
