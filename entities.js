@@ -74,7 +74,6 @@ class Player {
         this.y = plat.y - this.h;
         this.vy = 0;
         this.onGround = true;
-      }
     }
 
     if (this.x < 0) this.x = 0;
