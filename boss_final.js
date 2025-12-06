@@ -1,8 +1,5 @@
-// **************************************************
-// ATTENZIONE: Il codice JSON nel tuo input era
-// probabilmente destinato a level3.json. Ho rimosso
-// il JSON e inserito il codice JS della classe BossFinal.
-// **************************************************
+// La dipendenza rectsOverlap è definita in rects.js
+// La dipendenza Projectile è definita in projectile.js
 
 const BossFinal = (() => {
   let active = false;
@@ -25,6 +22,8 @@ const BossFinal = (() => {
     active = true;
     x = startX;
     y = startY;
+    w = config.w || 60; // Usa i parametri dal JSON se esistono
+    h = config.h || 80;
     maxProjectiles = config.projectiles || 50;
     projectileSpeed = config.projectileSpeed || 7;
     cooldown = config.cooldown || 700;
@@ -33,14 +32,21 @@ const BossFinal = (() => {
   function shoot(player) {
     if (thrown >= maxProjectiles) return;
 
+    // Bersaglia il giocatore
     const targetX = player.x + player.w / 2;
     const targetY = player.y + player.h / 2;
     const bossCenterX = x + w / 2;
     const bossCenterY = y + h / 2;
 
     const angle = Math.atan2(targetY - bossCenterY, targetX - bossCenterX);
-    const vx = Math.cos(angle) * projectileSpeed * 100; // *100 per scaling
-    const vy = Math.sin(angle) * projectileSpeed * 100;
+    
+    // Aggiungi un po' di dispersione (facoltativo, rende il livello più difficile)
+    const randomAngleOffset = (Math.random() - 0.5) * 0.4; 
+    const finalAngle = angle + randomAngleOffset;
+
+    // Calcola la velocità in x e y
+    const vx = Math.cos(finalAngle) * projectileSpeed * 100; // *100 per scaling in Projectile
+    const vy = Math.sin(finalAngle) * projectileSpeed * 100;
 
     projectiles.push(new Projectile(bossCenterX - 8, bossCenterY - 8, vx, vy));
     thrown++;
@@ -57,32 +63,25 @@ const BossFinal = (() => {
 
     // Update projectiles
     projectiles.forEach(p => p.update(dt));
-    // Remove projectiles out of bounds
-    projectiles = projectiles.filter(p => p.x > camX - 100 && p.x < camX + 1060);
+    // Remove projectiles out of bounds (fuori schermo)
+    projectiles = projectiles.filter(p => p.x > camX - 100 && p.x < camX + 1060 && p.y < 600);
 
-    // Collision check
-    const game = window.Game; // Access Game module
-    projectiles.forEach((p, index) => {
-      if (rectsOverlap(p, player)) {
-        game.onPlayerHit(); // Chiama la funzione di gestione del colpo in game.js
-        projectiles.splice(index, 1); // Rimuovi il proiettile
-      }
-    });
-
+    // *ATTENZIONE*: La collisione con i proiettili del boss è stata spostata in game.js
+    // per permettere una logica di riavvio del livello specifica per Level 3.
   }
 
   function render(ctx, camX) {
     if (!active) return;
 
-    // Draw Boss
-    if (bossSprite.complete && bossSprite.width > 0) {
-      ctx.drawImage(bossSprite, Math.round(x - camX), Math.round(y), w, h);
+    // Draw Boss (Golruk)
+    if (window.bossSprite.complete && window.bossSprite.width > 0) {
+      ctx.drawImage(window.bossSprite, Math.round(x - camX), Math.round(y), w, h);
     } else {
-      ctx.fillStyle = '#ff0000';
+      ctx.fillStyle = '#ff0000'; // Fallback Rettangolo
       ctx.fillRect(Math.round(x - camX), Math.round(y), w, h);
     }
 
-    // Draw projectiles
+    // Draw projectiles (Drink)
     projectiles.forEach(p => p.draw(ctx, camX));
   }
 
