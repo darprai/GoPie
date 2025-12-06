@@ -91,11 +91,62 @@ const Game = (() => {
 
   function update(dt){
     // update player (engine provides keys and touch)
-    player.update({ keys: engine.keys, touch: engine.touch }, levels[cur].platforms);
-    // camera target
-    const margin = 300;
-    const target = Math.min(Math.max(player.x - margin, 0), (levels[cur].length || 2000) - engine.width);
-    camX += (target - camX) * Math.min(1, dt * 8);
+   function update(dt){
+  // update player
+  player.update(
+    dt,
+    { keys: engine.keys, touch: engine.touch },
+    levels[cur].platforms
+  );
+
+  // camera target
+  const margin = 300;
+  const target = Math.min(
+    Math.max(player.x - margin, 0),
+    (levels[cur].length || 2000) - engine.width
+  );
+  camX += (target - camX) * Math.min(1, dt * 8);
+
+  // enemies collisions
+  const lvl = levels[cur];
+  if (lvl.enemies && lvl.enemies.length){
+    for (let en of lvl.enemies){
+      if (rectsOverlap(
+        {x:en.x, y:en.y, w:20, h:20},
+        {x:player.x, y:player.y, w:player.w, h:player.h}
+      )){
+        onPlayerHit();
+        return;
+      }
+    }
+  }
+
+  // boss trigger
+  if (cur === 2 && !bossStarted){
+    const bossCfg = lvl.boss;
+    if (player.x > (bossCfg?.triggerX ?? (levels[cur].length - 800))){
+      BossFinal.start(bossCfg.x, bossCfg.y);
+      bossStarted = true;
+    }
+  }
+
+  BossFinal.update(dt, player, camX);
+
+  // level end
+  if (player.x > (lvl.endX || (levels[cur].length - 200))){
+    engine.stop();
+    if (cur === levels.length -1){
+      setTimeout(()=>{
+        document.getElementById('game').style.display='none';
+        document.getElementById('ending').style.display='block';
+      },300);
+    } else {
+      cur++;
+      localStorage.setItem('pie_level', String(cur));
+      startLevel(cur);
+    }
+  }
+}
 
     // enemies: simple moving hazards (if present)
     const lvl = levels[cur];
