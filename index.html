@@ -34,10 +34,8 @@
   <div id="ending" class="center" style="display:none">
     <h1 id="finalTitle">Pie diventa King</h1>
     <p>Carica la foto finale:</p>
-
     <input id="finalInput" type="file" accept="image/*">
     <div id="finalImage"></div>
-
     <h2>THE END...?</h2>
     <button id="restartBtn">Restart</button>
   </div>
@@ -46,7 +44,7 @@
   <audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
   <audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
 
-  <!-- JS IMPORTANTI (ordine fisso, senza defer!) -->
+  <!-- JS IMPORTANTI (ordine fisso) -->
   <script src="engine.js"></script>
   <script src="entities.js"></script>
   <script src="boss_final.js"></script>
@@ -60,6 +58,10 @@
         navigator.serviceWorker.register('service-worker.js')
           .catch(err => console.warn("SW error:", err));
       }
+
+      const newBtn = document.getElementById("newBtn");
+      const contBtn = document.getElementById("contBtn");
+      const saveBtn = document.getElementById("saveBtn");
 
       newBtn.addEventListener("click", () => Game.startNew());
       contBtn.addEventListener("click", () => Game.continue());
