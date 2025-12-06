@@ -75,7 +75,6 @@ class Player {
         this.vy = 0;
         this.onGround = true;
     }
-
     if (this.x < 0) this.x = 0;
   }
 
