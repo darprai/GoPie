@@ -23,14 +23,14 @@ function rectsOverlap(a, b) {
 // -----------------------------------------------------
 class Player {
   constructor(x, y) {
-    this.x = x;
-    this.y = y;
+    this.x = x || 80;
+    this.y = y || 300;
     this.w = 40;
     this.h = 56;
     this.vx = 0;
     this.vy = 0;
     this.onGround = false;
-    this.color = "#ffd86b"; // fallback color
+    this.color = "#ffd86b"; // fallback color se sprite non caricata
     this.score = 0;
   }
 
@@ -38,29 +38,30 @@ class Player {
     const maxSpeed = 260;
     const jumpPower = 520;
 
-    const left = input.keys["ArrowLeft"] || input.keys["a"] || input.touch.left;
-    const right = input.keys["ArrowRight"] || input.keys["d"] || input.touch.right;
-    const up = input.keys["ArrowUp"] || input.keys["w"] || input.keys[" "] || input.touch.jump;
+    // input
+    const left = input.keys?.["ArrowLeft"] || input.keys?.["a"] || input.touch?.left;
+    const right = input.keys?.["ArrowRight"] || input.keys?.["d"] || input.touch?.right;
+    const up = input.keys?.["ArrowUp"] || input.keys?.["w"] || input.keys?.[" "] || input.touch?.jump;
 
-    // horizontal movement
+    // movimento orizzontale
     if (left && !right) this.vx = -maxSpeed;
     else if (right && !left) this.vx = maxSpeed;
     else this.vx = 0;
 
-    // gravity
+    // gravità
     this.vy += 1400 * dt;
 
-    // jump
+    // salto
     if (up && this.onGround) {
       this.vy = -jumpPower;
       this.onGround = false;
     }
 
-    // move
+    // movimento
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
-    // platform collisions
+    // collisioni con piattaforme
     this.onGround = false;
     for (let p of platforms) {
       const plat = { x: p[0], y: p[1], w: p[2], h: p[3] };
@@ -74,9 +75,12 @@ class Player {
         this.y = plat.y - this.h;
         this.vy = 0;
         this.onGround = true;
-}
+      }
+    }
+
+    // limite a sinistra
     if (this.x < 0) this.x = 0;
-}
+  }
 
   draw(ctx, camX) {
     if (playerSpriteLoaded) {
@@ -88,7 +92,7 @@ class Player {
         this.h
       );
     } else {
-      // fallback: rettangolo colorato se l'immagine non è pronta
+      // fallback rettangolo
       ctx.fillStyle = this.color;
       ctx.fillRect(
         Math.round(this.x - camX),
