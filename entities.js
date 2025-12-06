@@ -3,6 +3,8 @@
 // -----------------------------------------------------
 const playerSprite = new Image();
 playerSprite.src = "assets/sprites/run.png";
+let playerSpriteLoaded = false;
+playerSprite.onload = () => { playerSpriteLoaded = true; };
 
 // -----------------------------------------------------
 //  HELPERS
@@ -79,7 +81,7 @@ class Player {
   }
 
   draw(ctx, camX) {
-    if (playerSprite.complete && playerSprite.width > 0) {
+    if (playerSpriteLoaded) {
       ctx.drawImage(
         playerSprite,
         Math.round(this.x - camX),
@@ -88,6 +90,7 @@ class Player {
         this.h
       );
     } else {
+      // fallback: rettangolo colorato se l'immagine non è pronta
       ctx.fillStyle = this.color;
       ctx.fillRect(
         Math.round(this.x - camX),
