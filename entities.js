@@ -100,7 +100,7 @@ class Player {
       );
     }
   }
-}
+} // <--- Questa chiude la Classe Player (circa riga 77)
 
 // -----------------------------------------------------
 //  PROJECTILE CLASS (per il Boss)
