@@ -37,15 +37,10 @@ class Player {
     const jumpPower = 520;
 
     const left = input.keys["ArrowLeft"] || input.keys["a"] || input.touch.left;
-    const right =
-      input.keys["ArrowRight"] || input.keys["d"] || input.touch.right;
-    const up =
-      input.keys["ArrowUp"] ||
-      input.keys["w"] ||
-      input.keys[" "] ||
-      input.touch.jump;
+    const right = input.keys["ArrowRight"] || input.keys["d"] || input.touch.right;
+    const up = input.keys["ArrowUp"] || input.keys["w"] || input.keys[" "] || input.touch.jump;
 
-    // movement
+    // horizontal movement
     if (left && !right) this.vx = -maxSpeed;
     else if (right && !left) this.vx = maxSpeed;
     else this.vx = 0;
@@ -67,7 +62,6 @@ class Player {
     this.onGround = false;
     for (let p of platforms) {
       const plat = { x: p[0], y: p[1], w: p[2], h: p[3] };
-
       if (
         this.x + this.w > plat.x &&
         this.x < plat.x + plat.w &&
