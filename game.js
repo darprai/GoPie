@@ -2,9 +2,9 @@ const Game = (() => {
   const LEVELS = ['levels/level1.json','levels/level2.json','levels/level3.json'];
   let engine, player, levels = [], cur = 0, camX = 0, bossStarted = false;
 
-  // -----------------------------------------------------
-  // Carica tutti i livelli
-  // -----------------------------------------------------
+  // -------------------------------
+  // Caricamento livelli
+  // -------------------------------
   async function loadAllLevels() {
     levels = [];
     for (let p of LEVELS) {
@@ -14,28 +14,15 @@ const Game = (() => {
     }
   }
 
-  // -----------------------------------------------------
-  // Ottieni posizione iniziale del player in modo sicuro
-  // -----------------------------------------------------
-  function getPlayerStart(level) {
-    if (!level || !level.playerStart) return { x: 80, y: 300 };
-    const { x = 80, y = 300 } = level.playerStart;
-    return { x, y };
-  }
-
-  // -----------------------------------------------------
-  // Sfondo dinamico
-  // -----------------------------------------------------
+  // -------------------------------
+  // Sfondo
+  // -------------------------------
   function drawBG(ctx, camX) {
     if (!engine) return;
     const g = ctx.createLinearGradient(0,0,0,engine.height);
-    g.addColorStop(0,'#080816');
-    g.addColorStop(1,'#0f1220');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,engine.width,engine.height);
-
-    // stelle
-    for (let i=0; i<6; i++) {
+    g.addColorStop(0,'#080816'); g.addColorStop(1,'#0f1220');
+    ctx.fillStyle = g; ctx.fillRect(0,0,engine.width,engine.height);
+    for (let i=0;i<6;i++) {
       ctx.fillStyle = `rgba(255,255,255,${0.02*(6-i)})`;
       ctx.beginPath();
       ctx.arc(engine.width/2 - (camX*0.02)%500 + i*120, 120 + (i%2)*20, 200 - i*24, 0, Math.PI*2);
@@ -43,15 +30,23 @@ const Game = (() => {
     }
   }
 
-  // -----------------------------------------------------
-  // Avvio gioco / nuovo livello
-  // -----------------------------------------------------
+  // -------------------------------
+  // Helper per start del player
+  // -------------------------------
+  function getPlayerStart(level) {
+    if (!level) return { x: 80, y: 300 };
+    if (level.playerStart) return level.playerStart;
+    return { x: 80, y: 300 };
+  }
+
+  // -------------------------------
+  // Avvio gioco
+  // -------------------------------
   async function _start(isNew=false) {
     try {
       await loadAllLevels();
-    } catch(e) {
+    } catch(e){
       alert('Errore caricamento livelli: ' + e.message);
-      console.error(e);
       return;
     }
 
@@ -63,91 +58,115 @@ const Game = (() => {
     if (cur < 0 || cur >= levels.length) cur = 0;
 
     const start = getPlayerStart(levels[cur]);
+
+    // Controllo Player
     if (typeof Player !== "function") {
-      alert("Errore: Player non definito!");
+      alert("Errore: Player non definito! Controlla entities.js");
       return;
     }
     player = new Player(start.x, start.y);
 
+    if (!playerSprite.complete) {
+      console.warn("Player sprite non caricato: verrà usato il rettangolo colorato.");
+    }
+
     camX = 0;
     bossStarted = false;
-    if (typeof BossFinal?.reset === "function") BossFinal.reset();
+    if (typeof BossFinal !== "undefined" && BossFinal.reset) {
+      BossFinal.reset();
+    }
 
-    // musica
+    // Riproduzione musica
     try {
       if (cur === 2) {
-        document.getElementById('bgm')?.pause();
+        document.getElementById('bgm').pause();
         const bgmFinal = document.getElementById('bgm_final');
-        if (bgmFinal) { bgmFinal.currentTime = 0; bgmFinal.play().catch(()=>{}); }
+        bgmFinal.currentTime = 0;
+        bgmFinal.play().catch(()=>{});
       } else {
-        document.getElementById('bgm_final')?.pause();
+        document.getElementById('bgm_final').pause();
         const bgm = document.getElementById('bgm');
-        if (bgm) { bgm.currentTime = 0; bgm.play().catch(()=>{}); }
+        bgm.currentTime = 0;
+        bgm.play().catch(()=>{});
       }
-    } catch(e){}
+    } catch(e) {
+      console.warn("Errore riproduzione musica:", e);
+    }
 
     engine.start(update, render);
   }
 
+  // -------------------------------
+  // Continua partita
+  // -------------------------------
   function continueGame(){ _start(false); }
 
+  // -------------------------------
+  // Salvataggio
+  // -------------------------------
   function save() {
     localStorage.setItem('pie_level', String(cur));
     alert('Gioco salvato (livello ' + (cur+1) + ')');
   }
 
+  // -------------------------------
+  // Player colpito
+  // -------------------------------
   function onPlayerHit() {
     engine.stop();
     setTimeout(()=> startLevel(cur), 600);
   }
 
+  // -------------------------------
+  // Start di un livello
+  // -------------------------------
   function startLevel(n) {
     cur = n;
     const start = getPlayerStart(levels[cur]);
     player = new Player(start.x, start.y);
     camX = 0;
     bossStarted = false;
-    if (typeof BossFinal?.reset === "function") BossFinal.reset();
+    if (typeof BossFinal !== "undefined" && BossFinal.reset) BossFinal.reset();
     engine.start(update, render);
   }
 
-  // -----------------------------------------------------
-  // Aggiornamento logica
-  // -----------------------------------------------------
+  // -------------------------------
+  // Update
+  // -------------------------------
   function update(dt) {
-    if (!player || !engine) return;
-
     player.update(dt, { keys: engine.keys, touch: engine.touch }, levels[cur].platforms || []);
 
     // camera
     const margin = 300;
     const target = Math.min(Math.max(player.x - margin, 0), (levels[cur].length || 2000) - engine.width);
-    camX += (target - camX) * Math.min(1, dt * 8);
+    camX += (target - camX) * Math.min(1, dt*8);
 
     const lvl = levels[cur];
 
-    // collisione nemici
+    // collisioni nemici
     (lvl.enemies || []).forEach(en => {
-      if (rectsOverlap({x: en.x, y: en.y, w:20, h:20}, {x: player.x, y: player.y, w: player.w, h: player.h})) {
+      if (rectsOverlap({x:en.x, y:en.y, w:20, h:20}, {x:player.x, y:player.y, w:player.w, h:player.h})) {
         onPlayerHit();
       }
     });
 
-    // trigger boss livello 3
+    // boss trigger
     if (cur === 2 && !bossStarted && lvl.boss && player.x > (lvl.boss.triggerX ?? (levels[cur].length - 800))) {
-      if (typeof BossFinal?.start === "function") BossFinal.start(lvl.boss.x, lvl.boss.y);
+      BossFinal.start(lvl.boss.x, lvl.boss.y);
       bossStarted = true;
     }
 
-    if (typeof BossFinal?.update === "function") BossFinal.update(dt, player, camX);
+    if (typeof BossFinal !== "undefined") {
+      BossFinal.update(dt, player, camX);
+    }
 
     // fine livello
     if (player.x > (lvl.endX ?? (levels[cur].length - 200))) {
       engine.stop();
       if (cur === levels.length - 1) {
-        setTimeout(() => {
-          document.getElementById('game').style.display = 'none';
-          document.getElementById('ending').style.display = 'block';
+        setTimeout(()=> {
+          document.getElementById('game').style.display='none';
+          document.getElementById('ending').style.display='block';
         }, 300);
       } else {
         cur++;
@@ -157,12 +176,10 @@ const Game = (() => {
     }
   }
 
-  // -----------------------------------------------------
-  // Rendering
-  // -----------------------------------------------------
+  // -------------------------------
+  // Render
+  // -------------------------------
   function render(ctx) {
-    if (!engine || !player) return;
-
     drawBG(ctx, camX);
 
     // piattaforme
@@ -182,7 +199,7 @@ const Game = (() => {
     });
 
     // boss
-    if (typeof BossFinal?.render === "function") BossFinal.render(ctx, camX);
+    if (typeof BossFinal !== "undefined") BossFinal.render(ctx, camX);
 
     // player
     player.draw(ctx, camX);
@@ -190,12 +207,18 @@ const Game = (() => {
     // HUD
     ctx.fillStyle = '#fff';
     ctx.font = '18px Arial';
-    ctx.fillText('Level '+(cur+1)+' / '+LEVELS.length, 12, 22);
-    ctx.fillText('X: '+Math.round(player.x), 12, 44);
-    if (cur === 2 && BossFinal?.active) {
-      ctx.fillText('Drinks thrown: '+BossFinal.thrown+' (active: '+BossFinal.projectiles.length+')', 12, 70);
+    ctx.fillText('Level ' + (cur+1) + ' / ' + LEVELS.length, 12, 22);
+    ctx.fillText('X: ' + Math.round(player.x), 12, 44);
+    if (cur === 2 && typeof BossFinal !== "undefined" && BossFinal.active) {
+      ctx.fillText('Drinks thrown: ' + BossFinal.thrown + ' (active: ' + BossFinal.projectiles.length + ')', 12, 70);
     }
   }
 
-  return { startNew: ()=>_start(true), continue: ()=>continueGame(), save, onPlayerHit, _start };
+  return {
+    startNew: ()=>_start(true),
+    continue: ()=>continueGame(),
+    save,
+    onPlayerHit,
+    _start
+  };
 })();
