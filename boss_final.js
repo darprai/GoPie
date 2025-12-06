@@ -27,7 +27,7 @@ const BossFinal = {
     this.y = y;
     this.projectiles = [];
     this.thrown = 0;
-    this.fireCooldown = 1.5;
+    this.fireCooldown = 1.2;
   },
 
   update(dt, player, camX) {
@@ -35,14 +35,21 @@ const BossFinal = {
 
     this.fireCooldown -= dt;
 
+    // --- Spara proiettile ---
     if (this.fireCooldown <= 0) {
       this.fireCooldown = 1.2;
       this.thrown++;
 
       const speed = 380;
+
+      // Coordinate reali del player rispetto alla mappa
+      const realPlayerX = player.x;
+      const realPlayerY = player.y;
+
+      // Calcolo angolo corretto verso il player
       const angle = Math.atan2(
-        player.y - this.y,
-        (player.x - camX) - this.x
+        realPlayerY - this.y,
+        realPlayerX - this.x
       );
 
       this.projectiles.push({
@@ -53,27 +60,27 @@ const BossFinal = {
       });
     }
 
-    // Update proiettili
+    // --- Aggiorna proiettili ---
     for (let p of this.projectiles) {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
     }
 
-    // Rimuovi proiettili fuori schermo
+    // --- Rimuovi proiettili fuori schermo ---
     this.projectiles = this.projectiles.filter(
-      p => p.x > -200 && p.x < 2000 && p.y > -200 && p.y < 1200
+      p => p.x > -300 && p.x < 6000 && p.y > -300 && p.y < 2000
     );
   },
 
   render(ctx, camX) {
     if (!this.active) return;
 
-    // Boss con sprite vero
-    if (this.sprite.complete) {
+    // Disegno boss
+    if (this.sprite.complete && this.sprite.width > 0) {
       ctx.drawImage(this.sprite, this.x - camX, this.y, 80, 100);
     }
 
-    // Proiettili (semplici)
+    // Disegno proiettili
     ctx.fillStyle = "#00ccff";
     for (let p of this.projectiles) {
       ctx.fillRect(p.x - camX, p.y, 14, 14);
