@@ -9,11 +9,18 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Inserimento del background icon-512.png per la schermata principale (menu) */
+    #menu, #ending {
+        background-image: url('assets/sprites/icon-512.png');
+        background-size: cover;
+        background-position: center;
+    }
+  </style>
 </head>
 
 <body>
 
-  <!-- MENU -->
   <div id="menu" class="center">
     <h1>Pie Adventure</h1>
     <div class="buttons">
@@ -27,10 +34,8 @@
     </p>
   </div>
 
-  <!-- CANVAS -->
   <canvas id="game" width="960" height="540" style="display:none"></canvas>
 
-  <!-- ENDING -->
   <div id="ending" class="center" style="display:none">
     <h1 id="finalTitle">Pie diventa King</h1>
     <p>Carica la foto finale:</p>
@@ -40,19 +45,40 @@
     <button id="restartBtn">Restart</button>
   </div>
 
-  <!-- AUDIO -->
   <audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
   <audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
 
-  <!-- JS IMPORTANTI (ordine fisso) -->
+  <script src="rects.js"></script>
   <script src="engine.js"></script>
-  <script src="entities.js"></script>
+  <script src="projectile.js"></script>
+  <script src="player.js"></script>
   <script src="boss_final.js"></script>
   <script src="game.js"></script>
   <script src="ending.js"></script>
 
-  <!-- INIT -->
   <script>
+    // Dichiarazione globale degli sprite per la gestione in game.js e player.js
+    window.playerSprite = new Image();
+    window.playerSprite.src = 'assets/sprites/pie.png';
+    window.runSprite = new Image();
+    window.runSprite.src = 'assets/sprites/run.png';
+    window.discoBallSprite = new Image();
+    window.discoBallSprite.src = 'assets/sprites/disco.png';
+    window.djDiscSprite = new Image();
+    window.djDiscSprite.src = 'assets/sprites/djdisc.png';
+    window.bossSprite = new Image();
+    window.bossSprite.src = 'assets/sprites/golruk.png';
+    window.drinkEnemySprite = new Image();
+    window.drinkEnemySprite.src = 'assets/sprites/drink.png';
+    window.heartSprite = new Image();
+    window.heartSprite.src = 'assets/sprites/heart.png';
+    window.paloSprite = new Image();
+    window.paloSprite.src = 'assets/sprites/palo.png';
+    window.ragazzaSprite = new Image();
+    window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
+    window.macchinaSprite = new Image();
+    window.macchinaSprite.src = 'assets/sprites/macchina.png';
+    
     document.addEventListener("DOMContentLoaded", () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js')
