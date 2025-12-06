@@ -1,54 +1,100 @@
+// **************************************************
+// ATTENZIONE: Il codice JSON nel tuo input era
+// probabilmente destinato a level3.json. Ho rimosso
+// il JSON e inserito il codice JS della classe BossFinal.
+// **************************************************
+
 const BossFinal = (() => {
   let active = false;
-  let x = 0, y = 0;
-  let cooldown = 0;
-  let thrown = 0;
+  let x = 0, y = 0, w = 60, h = 80;
   let projectiles = [];
+  let thrown = 0;
+  let maxProjectiles = 50;
+  let projectileSpeed = 7;
+  let cooldown = 700;
+  let lastShot = 0;
 
   function reset() {
     active = false;
-    x = y = cooldown = thrown = 0;
     projectiles = [];
+    thrown = 0;
+    lastShot = 0;
   }
 
-  function start(px, py) {
+  function start(startX, startY, config = {}) {
     active = true;
-    x = px;
-    y = py;
-    thrown = 0;
-    projectiles = [];
+    x = startX;
+    y = startY;
+    maxProjectiles = config.projectiles || 50;
+    projectileSpeed = config.projectileSpeed || 7;
+    cooldown = config.cooldown || 700;
+  }
+
+  function shoot(player) {
+    if (thrown >= maxProjectiles) return;
+
+    const targetX = player.x + player.w / 2;
+    const targetY = player.y + player.h / 2;
+    const bossCenterX = x + w / 2;
+    const bossCenterY = y + h / 2;
+
+    const angle = Math.atan2(targetY - bossCenterY, targetX - bossCenterX);
+    const vx = Math.cos(angle) * projectileSpeed * 100; // *100 per scaling
+    const vy = Math.sin(angle) * projectileSpeed * 100;
+
+    projectiles.push(new Projectile(bossCenterX - 8, bossCenterY - 8, vx, vy));
+    thrown++;
+    lastShot = performance.now();
   }
 
   function update(dt, player, camX) {
     if (!active) return;
 
-    cooldown -= dt * 1000;
-    if (cooldown <= 0 && thrown < 50) {
-      projectiles.push({x: x, y: y, vx: (player.x - x) / 50 * 7, vy: -5});
-      cooldown = 700;
-      thrown++;
+    // Shooting logic
+    if (thrown < maxProjectiles && performance.now() - lastShot > cooldown) {
+      shoot(player);
     }
 
-    projectiles.forEach(p => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 1400 * dt; // gravity
-      if (rectsOverlap({x:p.x, y:p.y, w:10, h:10},{x:player.x,y:player.y,w:player.w,h:player.h})) {
-        player.vy = -300; // knockback
+    // Update projectiles
+    projectiles.forEach(p => p.update(dt));
+    // Remove projectiles out of bounds
+    projectiles = projectiles.filter(p => p.x > camX - 100 && p.x < camX + 1060);
+
+    // Collision check
+    const game = window.Game; // Access Game module
+    projectiles.forEach((p, index) => {
+      if (rectsOverlap(p, player)) {
+        game.onPlayerHit(); // Chiama la funzione di gestione del colpo in game.js
+        projectiles.splice(index, 1); // Rimuovi il proiettile
       }
     });
 
-    projectiles = projectiles.filter(p => p.y < 540); // remove off-screen
   }
 
   function render(ctx, camX) {
     if (!active) return;
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(Math.round(x-camX), Math.round(y), 60, 60);
 
-    ctx.fillStyle = '#00ffcc';
-    projectiles.forEach(p => ctx.fillRect(Math.round(p.x-camX), Math.round(p.y), 10, 10));
+    // Draw Boss
+    if (bossSprite.complete && bossSprite.width > 0) {
+      ctx.drawImage(bossSprite, Math.round(x - camX), Math.round(y), w, h);
+    } else {
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(Math.round(x - camX), Math.round(y), w, h);
+    }
+
+    // Draw projectiles
+    projectiles.forEach(p => p.draw(ctx, camX));
   }
 
-  return { active, start, update, render, reset, thrown, projectiles };
+  return {
+    start,
+    reset,
+    update,
+    render,
+    get active() { return active; },
+    get thrown() { return thrown; },
+    get projectiles() { return projectiles; }
+  };
 })();
+
+window.BossFinal = BossFinal;
