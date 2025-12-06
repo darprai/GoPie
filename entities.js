@@ -1,8 +1,9 @@
+const playerSprite = new Image();
+playerSprite.src = "assets/sprites/run.png";
 // --- helpers
 function rectsOverlap(a,b){
   return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
 }
-
 // --- Player
 class Player {
   constructor(x,y){
