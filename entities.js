@@ -3,8 +3,9 @@
 // -----------------------------------------------------
 const playerSprite = new Image();
 playerSprite.src = "assets/sprites/run.png";
-let playerSpriteLoaded = false;
-playerSprite.onload = () => { playerSpriteLoaded = true; };
+
+const bossSprite = new Image();
+bossSprite.src = "assets/sprites/golruk.png";
 
 // -----------------------------------------------------
 //  HELPERS
@@ -23,14 +24,14 @@ function rectsOverlap(a, b) {
 // -----------------------------------------------------
 class Player {
   constructor(x, y) {
-    this.x = x || 80;
-    this.y = y || 300;
+    this.x = x;
+    this.y = y;
     this.w = 40;
     this.h = 56;
     this.vx = 0;
     this.vy = 0;
     this.onGround = false;
-    this.color = "#ffd86b"; // fallback color se sprite non caricata
+    this.color = "#ffd86b"; // fallback color
     this.score = 0;
   }
 
@@ -38,30 +39,29 @@ class Player {
     const maxSpeed = 260;
     const jumpPower = 520;
 
-    // input
-    const left = input.keys?.["ArrowLeft"] || input.keys?.["a"] || input.touch?.left;
-    const right = input.keys?.["ArrowRight"] || input.keys?.["d"] || input.touch?.right;
-    const up = input.keys?.["ArrowUp"] || input.keys?.["w"] || input.keys?.[" "] || input.touch?.jump;
+    const left = input.keys["ArrowLeft"] || input.keys["a"] || input.touch.left;
+    const right = input.keys["ArrowRight"] || input.keys["d"] || input.touch.right;
+    const up = input.keys["ArrowUp"] || input.keys["w"] || input.keys[" "] || input.touch.jump;
 
-    // movimento orizzontale
+    // horizontal movement
     if (left && !right) this.vx = -maxSpeed;
     else if (right && !left) this.vx = maxSpeed;
     else this.vx = 0;
 
-    // gravità
+    // gravity
     this.vy += 1400 * dt;
 
-    // salto
+    // jump
     if (up && this.onGround) {
       this.vy = -jumpPower;
       this.onGround = false;
     }
 
-    // movimento
+    // move
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
-    // collisioni con piattaforme
+    // platform collisions
     this.onGround = false;
     for (let p of platforms) {
       const plat = { x: p[0], y: p[1], w: p[2], h: p[3] };
@@ -78,12 +78,11 @@ class Player {
       }
     }
 
-    // limite a sinistra
     if (this.x < 0) this.x = 0;
   }
 
   draw(ctx, camX) {
-    if (playerSpriteLoaded) {
+    if (playerSprite.complete && playerSprite.width > 0) {
       ctx.drawImage(
         playerSprite,
         Math.round(this.x - camX),
@@ -92,7 +91,6 @@ class Player {
         this.h
       );
     } else {
-      // fallback rettangolo
       ctx.fillStyle = this.color;
       ctx.fillRect(
         Math.round(this.x - camX),
@@ -105,7 +103,36 @@ class Player {
 }
 
 // -----------------------------------------------------
+//  PROJECTILE CLASS (per il Boss)
+// -----------------------------------------------------
+class Projectile {
+  constructor(x, y, vx, vy) {
+    this.x = x;
+    this.y = y;
+    this.w = 16;
+    this.h = 16;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = '#ff0000';
+  }
+
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+  }
+
+  draw(ctx, camX) {
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(Math.round(this.x - camX + this.w/2), Math.round(this.y + this.h/2), this.w/2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// -----------------------------------------------------
 //  EXPORT GLOBAL
 // -----------------------------------------------------
 window.Player = Player;
 window.rectsOverlap = rectsOverlap;
+window.Projectile = Projectile;
+window.bossSprite = bossSprite;
