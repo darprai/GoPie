@@ -36,36 +36,48 @@
     /* Stili per i pulsanti virtuali */
     #mobile-controls {
         position: absolute;
-        bottom: 0;
+        top: 0;
         left: 0;
         right: 0;
-        display: none; /* Nascosti di default, Game.js li mostra su mobile */
-        justify-content: space-between;
-        padding: 10px;
+        bottom: 0;
+        display: none; /* Nascosti di default, Game.js li mostra su mobile/fullscreen */
         pointer-events: none; /* Rende il contenitore trasparente ai clic */
         z-index: 10;
     }
     
-    .control-group {
-        display: flex;
-        pointer-events: auto; /* Rende i pulsanti cliccabili */
+    /* --- STRUTTURA CONTROLLI INVISIBILI --- */
+    
+    .ctrl-area {
+        position: absolute;
+        pointer-events: auto; /* Rende le aree cliccabili */
+        background-color: transparent; /* Nasconde l'area */
+        /* Per DEBUG: usa 'background-color: rgba(255, 0, 0, 0.2);' */
+    }
+
+    /* AREA DI MOVIMENTO (SINISTRA) */
+    #left-ctrl {
+        left: 0;
+        bottom: 0;
+        width: 30%; /* Occupiamo il 30% a sinistra */
+        height: 100%; /* Copre l'intera altezza per un facile tocco */
     }
     
-    .ctrl-btn {
-        width: 60px;
-        height: 60px;
-        margin: 5px;
-        background-color: rgba(255, 255, 255, 0.4);
-        color: #000;
-        border: 2px solid #fff;
-        border-radius: 10px;
-        font-size: 24px;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        user-select: none; /* Impedisce la selezione del testo */
-        touch-action: manipulation; /* Importante per il multi-touch */
+    /* AREA DI MOVIMENTO (DESTRA) */
+    #right-ctrl {
+        right: 0;
+        bottom: 0;
+        width: 30%; /* Occupiamo il 30% a destra */
+        height: 100%; /* Copre l'intera altezza */
+    }
+
+    /* AREA SALTO (CENTRALE) */
+    /* L'area centrale (Jump) si sovrappone alle aree laterali per consentire il multi-touch, 
+       ma in questo caso, rendiamo l'area centrale responsabile del salto. */
+    #jump-ctrl {
+        left: 30%;
+        right: 30%;
+        bottom: 0;
+        height: 100%; /* Copre l'area centrale per il salto */
     }
     
     /* Pulsante Schermo Intero */
@@ -108,7 +120,7 @@
       <button id="saveBtn">Salva</button>
     </div>
     <p class="hint">
-      Touch: Tocca ai lati — tap per saltare.<br>
+      Touch: Tocca ai lati per muoverti, al centro per saltare.<br>
       Tastiera: ← → ↑ / Space
     </p>
   </div>
@@ -120,13 +132,11 @@
     <button id="fullscreenBtn">⛶</button>
     
     <div id="mobile-controls">
-        <div class="control-group">
-            <div class="ctrl-btn" data-key="ArrowLeft">◀</div>
-            <div class="ctrl-btn" data-key="ArrowRight">▶</div>
-        </div>
-        <div class="control-group">
-            <div class="ctrl-btn" data-key="Space">⬆</div>
-        </div>
+        <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
+        
+        <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
+        
+        <div id="jump-ctrl" class="ctrl-area" data-key="Space"></div>
     </div>
   </div>
 
@@ -151,7 +161,7 @@
   <script src="ending.js"></script>
 
   <script>
-    // Dichiarazione globale di tutti gli sprite usati nel gioco (omessa per brevità, assumiamo sia corretta)
+    // Dichiarazione degli sprite (assumiamo siano corretti e puntino ai file)
     window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
     window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
@@ -166,7 +176,7 @@
     
     
     document.addEventListener("DOMContentLoaded", () => {
-      // PWA service worker (per scaricare/installare l'app)
+      // PWA service worker
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js')
           .catch(err => console.warn("SW error:", err));
@@ -176,9 +186,9 @@
       const contBtn = document.getElementById("contBtn");
       const saveBtn = document.getElementById("saveBtn");
       const fullscreenBtn = document.getElementById("fullscreenBtn");
-      const mobileControls = document.querySelectorAll('.ctrl-btn');
+      const mobileControls = document.querySelectorAll('.ctrl-area'); 
       const gameContainer = document.getElementById('game-container');
-
+      const mobileControlsDiv = document.getElementById('mobile-controls'); 
 
       newBtn.addEventListener("click", () => Game.startNew());
       contBtn.addEventListener("click", () => Game.continue());
@@ -188,29 +198,34 @@
       fullscreenBtn.addEventListener('click', () => {
           if (!document.fullscreenElement) {
               gameContainer.requestFullscreen().catch(err => {
-                  alert(`Errore Schermo Intero: ${err.message}`);
+                  console.error(`Errore Schermo Intero: ${err.message}`);
               });
           } else {
               document.exitFullscreen();
           }
       });
       
-      // Gestione del CSS per lo schermo intero
       document.addEventListener('fullscreenchange', () => {
           if (document.fullscreenElement) {
               gameContainer.classList.add('fullscreen');
+              // Mostra i controlli quando si entra in full screen (tipico mobile)
+              mobileControlsDiv.style.display = 'block'; 
           } else {
               gameContainer.classList.remove('fullscreen');
+              // Nascondi i controlli all'uscita se l'utente è su desktop
+              if (!/Mobi|Android/i.test(navigator.userAgent)) {
+                 mobileControlsDiv.style.display = 'none'; 
+              }
           }
       });
 
-      // LOGICA PULSANTI VIRTUALI (supporto multi-touch)
-      mobileControls.forEach(button => {
-          const key = button.getAttribute('data-key');
+      // LOGICA AREE TOUCH (MULTI-TOUCH)
+      mobileControls.forEach(area => {
+          const key = area.getAttribute('data-key');
           
           const startKey = (e) => {
-              e.preventDefault();
-              // L'Engine gestisce l'input mappando i tasti
+              // Impedisce lo zoom e lo scroll della pagina
+              e.preventDefault(); 
               if (window.engine) {
                   window.engine.keys[key] = true;
               }
@@ -223,15 +238,23 @@
               }
           };
 
-          button.addEventListener('touchstart', startKey, { passive: false });
-          button.addEventListener('touchend', endKey, { passive: false });
-          button.addEventListener('touchcancel', endKey, { passive: false });
+          // Usa gli eventi touch
+          area.addEventListener('touchstart', startKey, { passive: false });
+          area.addEventListener('touchend', endKey, { passive: false });
+          area.addEventListener('touchcancel', endKey, { passive: false });
           
-          // Aggiungi anche listener mouse per testing su desktop se necessario
-          button.addEventListener('mousedown', startKey, { passive: false });
-          button.addEventListener('mouseup', endKey, { passive: false });
-          button.addEventListener('mouseout', endKey, { passive: false });
+          // Eventi mouse (per debug/desktop)
+          area.addEventListener('mousedown', startKey, { passive: false });
+          area.addEventListener('mouseup', endKey, { passive: false });
+          area.addEventListener('mouseout', endKey, { passive: false });
       });
+
+      // Se l'utente è su mobile, assicuriamo che i controlli siano pronti ad apparire.
+      // Il Game.js li renderà invisibili se l'utente è su desktop.
+      if (/Mobi|Android/i.test(navigator.userAgent)) {
+          // Nota: La visualizzazione effettiva avviene quando l'utente entra in Schermo Intero per una migliore immersività.
+          mobileControlsDiv.style.display = 'block'; 
+      }
     });
   </script>
 </body>
