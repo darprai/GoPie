@@ -1,9 +1,106 @@
-:root{--bg:#0b0b12;--accent:#1ee0b8}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#fff}
-.center{text-align:center;padding-top:36px}
+:root {
+    --accent: #FF8C00; /* Colore di esempio, non definito nell'input originale */
+}
+
+/* --- FIX 1: Verificato che il percorso dello sfondo sia corretto per Menu/Ending --- */
+#menu, #ending {
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* 🔑 Percorso dello sfondo */
+    background-image: url('assets/sprites/icon-512.png');
+    background-size: cover;
+    background-position: center;
+    z-index: 100;
+}
+
+.center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
 .buttons{margin:12px}
-button{margin:6px;padding:10px 18px;border-radius:8px;border:none;background:var(--accent);color:#012;font-weight:700}
-.hint{color:#cfcfcf;font-size:0.9rem;margin-top:8px}
-canvas{display:block;margin:14px auto;border:4px solid #fff;background:#000;max-width:100%}
-#finalImage img{max-width:320px;border-radius:8px;margin-top:12px}
+
+button{
+    margin:6px;
+    padding:10px 18px;
+    border-radius:8px;
+    border:none;
+    background:var(--accent);
+    color:#012;
+    font-weight:700
+}
+
+#game-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh; 
+    display: none;
+    margin: 0;
+}
+
+#game {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; 
+    margin: auto;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+#mobile-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none; 
+    pointer-events: none; 
+    z-index: 10;
+}
+
+.ctrl-area {
+    position: absolute;
+    pointer-events: auto; 
+    background-color: transparent; 
+}
+
+#left-ctrl { left: 0; bottom: 0; width: 30%; height: 50%; }
+#right-ctrl { right: 0; bottom: 0; width: 30%; height: 50%; }
+
+#jump-btn {
+    position: absolute;
+    right: 10%; 
+    bottom: 10%;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #FF0000;
+    color: transparent;
+    border: 4px solid #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    cursor: pointer;
+    user-select: none;
+    pointer-events: auto;
+    z-index: 20;
+    display: none; 
+}
+
+#fullscreenBtn { display: none; }
