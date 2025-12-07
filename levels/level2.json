@@ -7,7 +7,7 @@
     {"x": 800, "y": 350, "w": 200, "h": 30, "sprite": "djdisc"},
     {"x": 1300, "y": 250, "w": 150, "h": 30, "sprite": "disco"},
     {"x": 1800, "y": 500, "w": 400, "h": 50, "sprite": "djdisc"},
-    {"x": 3000, "y": 460, "w": 100, "h": 50, "sprite": "disco"}
+    {"x": 2200, "y": 460, "w": 100, "h": 50, "sprite": "disco"}
   ],
   "enemies": [
     {"x": 850, "y": 300, "type": "drink", "w": 20, "h": 20},
@@ -18,5 +18,5 @@
     {"x": 1100, "y": 550, "w": 200, "h": 50, "type": "fall_death", "invisible": true},
     {"x": 2300, "y": 550, "w": 300, "h": 50, "type": "fall_death", "invisible": true}
   ],
-  "endZone": {"x": 3050, "y": 400, "w": 20, "h": 60, "type": "palo"}
+  "endZone": {"x": 2300, "y": 400, "w": 20, "h": 60, "type": "palo"}
 }
