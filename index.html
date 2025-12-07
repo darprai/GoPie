@@ -38,11 +38,11 @@
     
     /* 2. Nuovo contenitore per il gioco - FORZA SCHERMO INTERO */
     #game-container {
-        position: fixed; /* Fisso per ignorare le barre del browser */
+        position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
-        height: 100vh; /* Utilizziamo 100vh come base */
+        height: 100vh; 
         display: none;
         margin: 0;
     }
@@ -65,7 +65,7 @@
         overflow: hidden;
     }
     
-    /* --- CONTROLLI MOBILE VISIBILI E INVISIBILI (FINALIZZATI) --- */
+    /* --- CONTROLLI MOBILE VISIBILI E INVISIBILI --- */
     
     #mobile-controls {
         position: absolute;
@@ -84,37 +84,33 @@
         background-color: transparent; /* Invisibile */
     }
 
-    /* AREA DI MOVIMENTO SINISTRA (ArrowLeft): Metà inferiore sinistra (sotto il pulsante Salta) */
+    /* AREA DI MOVIMENTO SINISTRA (ArrowLeft) */
     #left-ctrl {
         left: 0;
         bottom: 0;
-        width: 30%; /* Area di tocco limitata */
+        width: 30%; 
         height: 50%;
     }
     
-    /* AREA DI MOVIMENTO DESTRA (ArrowRight): Metà inferiore destra */
+    /* AREA DI MOVIMENTO DESTRA (ArrowRight) */
     #right-ctrl {
         right: 0;
         bottom: 0;
-        width: 30%; /* Area di tocco limitata */
+        width: 30%; 
         height: 50%; 
     }
     
-    /* PULSANTE SALTA VISIBILE E FUNZIONANTE (Nuova implementazione) */
+    /* PULSANTE SALTA VISIBILE (Rosso, senza testo) */
     #jump-btn {
         position: absolute;
-        left: 10%; /* Posizione in basso a sinistra (vicino al controllo sinistro) */
+        left: 10%; 
         bottom: 10%;
         width: 60px;
         height: 60px;
-        border-radius: 50%; /* Tondo */
-        background-color: #FF0000; /* Rosso */
-        color: white;
+        border-radius: 50%;
+        background-color: #FF0000;
+        color: transparent;
         border: 4px solid #fff;
-        font-size: 20px;
-        font-weight: bold;
-        text-align: center;
-        line-height: 52px;
         box-shadow: 0 0 10px rgba(0,0,0,0.5);
         cursor: pointer;
         user-select: none;
@@ -122,9 +118,9 @@
         z-index: 20;
     }
     
-    /* Disabilitiamo tutti gli altri tasti Salto (vecchie aree) */
+    /* Disabilitiamo gli elementi non utilizzati */
     #jump-ctrl { display: none; }
-    #fullscreenBtn { display: none; } /* Rimosso come richiesto */
+    #fullscreenBtn { display: none; }
 
 
   </style>
@@ -149,7 +145,7 @@
     
     <canvas id="game" width="960" height="540"></canvas>
     
-    <button id="jump-btn">JUMP</button>
+    <button id="jump-btn"></button>
     
     <div id="mobile-controls">
         <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
@@ -205,13 +201,13 @@
       const saveBtn = document.getElementById("saveBtn");
       const mobileControls = document.querySelectorAll('.ctrl-area'); 
       const mobileControlsDiv = document.getElementById('mobile-controls'); 
-      const jumpBtn = document.getElementById("jump-btn"); // Nuovo pulsante Salta
+      const jumpBtn = document.getElementById("jump-btn"); 
 
       newBtn.addEventListener("click", () => Game.startNew());
       contBtn.addEventListener("click", () => Game.continue());
       saveBtn.addEventListener("click", () => Game.save());
       
-      // LOGICA JUMP BUTTON (Agganciato direttamente al tasto virtuale 'Space')
+      // LOGICA JUMP BUTTON (Agganciato al tasto virtuale 'Space')
       const startJump = (e) => {
           e.preventDefault(); 
           if (window.engine) {
@@ -226,6 +222,7 @@
           }
       };
 
+      // CORREZIONE: Uso degli eventi touch per garantire la reattività su mobile
       jumpBtn.addEventListener('touchstart', startJump, { passive: false });
       jumpBtn.addEventListener('touchend', endJump, { passive: false });
       jumpBtn.addEventListener('touchcancel', endJump, { passive: false });
@@ -234,7 +231,7 @@
       jumpBtn.addEventListener('mouseout', endJump, { passive: false });
 
 
-      // LOGICA AREE TOUCH (MOVIMENTO - solo ArrowLeft e ArrowRight)
+      // LOGICA AREE TOUCH (MOVIMENTO - ArrowLeft e ArrowRight)
       mobileControls.forEach(area => {
           const key = area.getAttribute('data-key');
           
