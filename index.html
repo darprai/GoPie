@@ -2,13 +2,14 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui">
   <title>Pie Adventure - Full</title>
 
   <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
   <link rel="stylesheet" href="style.css">
+  
   <style>
     /* Inserimento del background icon-512.png per la schermata principale (menu) */
     #menu, #ending {
@@ -16,6 +17,84 @@
         background-size: cover;
         background-position: center;
     }
+    
+    /* Nuovo contenitore per il gioco e i controlli */
+    #game-container {
+        position: relative;
+        display: none;
+        width: 960px; /* Deve corrispondere alla larghezza del canvas */
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
+    #game {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    /* Stili per i pulsanti virtuali */
+    #mobile-controls {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: none; /* Nascosti di default, Game.js li mostra su mobile */
+        justify-content: space-between;
+        padding: 10px;
+        pointer-events: none; /* Rende il contenitore trasparente ai clic */
+        z-index: 10;
+    }
+    
+    .control-group {
+        display: flex;
+        pointer-events: auto; /* Rende i pulsanti cliccabili */
+    }
+    
+    .ctrl-btn {
+        width: 60px;
+        height: 60px;
+        margin: 5px;
+        background-color: rgba(255, 255, 255, 0.4);
+        color: #000;
+        border: 2px solid #fff;
+        border-radius: 10px;
+        font-size: 24px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none; /* Impedisce la selezione del testo */
+        touch-action: manipulation; /* Importante per il multi-touch */
+    }
+    
+    /* Pulsante Schermo Intero */
+    #fullscreenBtn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        z-index: 20;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 18px;
+    }
+
+    /* Stile per lo schermo intero */
+    @media (orientation: landscape) and (max-device-width: 991px) {
+        #game-container.fullscreen {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            margin: 0;
+        }
+    }
+
   </style>
 </head>
 
@@ -34,7 +113,23 @@
     </p>
   </div>
 
-  <canvas id="game" width="960" height="540" style="display:none"></canvas>
+  <div id="game-container">
+    
+    <canvas id="game" width="960" height="540"></canvas>
+    
+    <button id="fullscreenBtn">⛶</button>
+    
+    <div id="mobile-controls">
+        <div class="control-group">
+            <div class="ctrl-btn" data-key="ArrowLeft">◀</div>
+            <div class="ctrl-btn" data-key="ArrowRight">▶</div>
+        </div>
+        <div class="control-group">
+            <div class="ctrl-btn" data-key="Space">⬆</div>
+        </div>
+    </div>
+  </div>
+
 
   <div id="ending" class="center" style="display:none">
     <h1 id="finalTitle">Pie diventa King</h1>
@@ -56,34 +151,22 @@
   <script src="ending.js"></script>
 
   <script>
-    // Dichiarazione globale di tutti gli sprite usati nel gioco
-    window.playerSprite = new Image();
-    window.playerSprite.src = 'assets/sprites/pie.png';
-    window.runSprite = new Image();
-    window.runSprite.src = 'assets/sprites/run.png';
-    window.discoBallSprite = new Image();
-    window.discoBallSprite.src = 'assets/sprites/disco.png';
-    window.djDiscSprite = new Image();
-    window.djDiscSprite.src = 'assets/sprites/djdisc.png';
-    window.bossSprite = new Image();
-    window.bossSprite.src = 'assets/sprites/golruk.png';
-    window.drinkEnemySprite = new Image();
-    window.drinkEnemySprite.src = 'assets/sprites/drink.png';
-    window.heartSprite = new Image();
-    window.heartSprite.src = 'assets/sprites/heart.png';
+    // Dichiarazione globale di tutti gli sprite usati nel gioco (omessa per brevità, assumiamo sia corretta)
+    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
+    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
+    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
+    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
+    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
+    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
+    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
+    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
+    window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
+    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
+    window.icon512Sprite = new Image(); window.icon512Sprite.src = 'assets/sprites/icon-512.png';
     
-    // 🆕 Sprites per l'Animazione Finale (Palo, Ragazza, Macchina)
-    window.paloSprite = new Image();
-    window.paloSprite.src = 'assets/sprites/palo.png';
-    window.ragazzaSprite = new Image();
-    window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
-    window.macchinaSprite = new Image();
-    window.macchinaSprite.src = 'assets/sprites/macchina.png';
-    
-    window.icon512Sprite = new Image(); 
-    window.icon512Sprite.src = 'assets/sprites/icon-512.png';
     
     document.addEventListener("DOMContentLoaded", () => {
+      // PWA service worker (per scaricare/installare l'app)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js')
           .catch(err => console.warn("SW error:", err));
@@ -92,10 +175,63 @@
       const newBtn = document.getElementById("newBtn");
       const contBtn = document.getElementById("contBtn");
       const saveBtn = document.getElementById("saveBtn");
+      const fullscreenBtn = document.getElementById("fullscreenBtn");
+      const mobileControls = document.querySelectorAll('.ctrl-btn');
+      const gameContainer = document.getElementById('game-container');
+
 
       newBtn.addEventListener("click", () => Game.startNew());
       contBtn.addEventListener("click", () => Game.continue());
       saveBtn.addEventListener("click", () => Game.save());
+      
+      // LOGICA SCHERMO INTERO
+      fullscreenBtn.addEventListener('click', () => {
+          if (!document.fullscreenElement) {
+              gameContainer.requestFullscreen().catch(err => {
+                  alert(`Errore Schermo Intero: ${err.message}`);
+              });
+          } else {
+              document.exitFullscreen();
+          }
+      });
+      
+      // Gestione del CSS per lo schermo intero
+      document.addEventListener('fullscreenchange', () => {
+          if (document.fullscreenElement) {
+              gameContainer.classList.add('fullscreen');
+          } else {
+              gameContainer.classList.remove('fullscreen');
+          }
+      });
+
+      // LOGICA PULSANTI VIRTUALI (supporto multi-touch)
+      mobileControls.forEach(button => {
+          const key = button.getAttribute('data-key');
+          
+          const startKey = (e) => {
+              e.preventDefault();
+              // L'Engine gestisce l'input mappando i tasti
+              if (window.engine) {
+                  window.engine.keys[key] = true;
+              }
+          };
+          
+          const endKey = (e) => {
+              e.preventDefault();
+              if (window.engine) {
+                  window.engine.keys[key] = false;
+              }
+          };
+
+          button.addEventListener('touchstart', startKey, { passive: false });
+          button.addEventListener('touchend', endKey, { passive: false });
+          button.addEventListener('touchcancel', endKey, { passive: false });
+          
+          // Aggiungi anche listener mouse per testing su desktop se necessario
+          button.addEventListener('mousedown', startKey, { passive: false });
+          button.addEventListener('mouseup', endKey, { passive: false });
+          button.addEventListener('mouseout', endKey, { passive: false });
+      });
     });
   </script>
 </body>
