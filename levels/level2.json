@@ -5,7 +5,6 @@
   "platforms": [
     [0, 500, 200, 40],
     [350, 450, 150, 40],
-    // Piattaforme disco/djdisc (verranno disegnate usando gli sprite)
     [650, 350, 80, 20, "disco"], 
     [780, 250, 80, 20, "djdisc"], 
     [910, 350, 80, 20, "disco"], 
