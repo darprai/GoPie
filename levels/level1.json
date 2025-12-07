@@ -5,14 +5,12 @@
   "platforms": [
     [0, 500, 300, 40],
     
-    // Sezione 1: Piattaforme decorative (distanziate per salto)
     [400, 450, 80, 20, "disco"],
     [530, 400, 80, 20, "djdisc"],
     [660, 350, 80, 20, "disco"],
     
     [850, 500, 250, 40],
     
-    // Sezione 2: Piattaforme strette standard
     [1200, 350, 80, 20],
     [1350, 300, 80, 20],
     [1500, 250, 80, 20],
