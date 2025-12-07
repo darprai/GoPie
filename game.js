@@ -28,7 +28,7 @@ const Game = (() => {
     if (!engine) return;
     
     if (window.icon512Sprite && window.icon512Sprite.complete) {
-        if(!window.icon552Sprite.src) {
+        if(!window.icon512Sprite.src) {
             window.icon512Sprite.src = 'assets/sprites/icon-512.png';
         }
         ctx.drawImage(window.icon512Sprite, 0, 0, engine.width, engine.height);
@@ -57,15 +57,14 @@ const Game = (() => {
     }
     
     // Mostra i controlli touch solo se non è un desktop
-    if (!/Mobi|Android/i.test(navigator.userAgent)) {
-        document.getElementById('mobile-controls').style.display = 'none';
-    } else {
-        document.getElementById('mobile-controls').style.display = 'flex';
+    if (/Mobi|Android/i.test(navigator.userAgent)) {
+        // La visibilità iniziale del contenitore mobile è gestita dall'HTML/CSS.
+        // Qui ci assicuriamo che, se siamo su mobile, il contenitore sia pronto.
+        document.getElementById('mobile-controls').style.pointerEvents = 'auto';
     }
 
-
     document.getElementById('menu').style.display = 'none';
-    document.getElementById('game-container').style.display = 'block'; // Usiamo il nuovo contenitore
+    document.getElementById('game-container').style.display = 'block'; 
     document.getElementById('game').style.display = 'block';
     
     cur = isNew ? 0 : parseInt(localStorage.getItem('pie_level') || '0');
@@ -113,11 +112,12 @@ const Game = (() => {
         return; 
     }
     
+    // Se ha ancora vite, riavvia il livello.
     if (player.hit()) {
         engine.stop();
         setTimeout(()=> startLevel(cur), 600);
     } else {
-        // Game Over
+        // Game Over: Ritorno al menu.
         engine.stop();
         localStorage.setItem('pie_level', '0');
         document.getElementById('game-container').style.display = 'none';
@@ -126,7 +126,7 @@ const Game = (() => {
   }
 
   function onPlayerFell() {
-      // Se colpito/caduto riavvia il livello se ha vite
+      // Se cade, perde una vita e riavvia il livello.
       if (player.hit()) {
         engine.stop();
         setTimeout(()=> startLevel(cur), 600);
@@ -153,6 +153,7 @@ const Game = (() => {
 
     playMusic(cur);
     const start = levels[cur].playerStart || {x: 80, y: 300};
+    // Mantiene le vite del giocatore se sono > 0
     player = new Player(start.x, start.y);
     player.lives = player.lives > 0 ? player.lives : 3; 
     camX = 0;
@@ -267,6 +268,7 @@ const Game = (() => {
     const Ragazza = { x: Palo.x + 50, y: Palo.y, w: 50, h: 60 };
     const Macchina = { x: Palo.x + 100, y: Palo.y + 10, w: 100, h: 60 };
     
+    // Posiziona Pie vicino al palo
     player.x = Palo.x - 40;
     player.y = Palo.y - player.h;
     
@@ -323,11 +325,12 @@ const Game = (() => {
             // 3. Macchina
             if (this.state >= 1) {
                 if (window.macchinaSprite.complete) {
+                    // La Macchina si disegna leggermente più grande e con la ragazza/Pie dentro (per l'animazione)
                     ctx.drawImage(window.macchinaSprite, Math.round(this.macchinaX - camX), Math.round(Macchina.y - 60), Macchina.w + 50, Macchina.h + 20); 
                 }
             }
             
-            // 4. Player (visibile fino allo stato 2, poi scompare nella macchina)
+            // 4. Player (visibile fino allo stato 2)
             if (this.state < 2) {
                 player.draw(ctx, camX); 
             }
