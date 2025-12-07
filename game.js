@@ -28,7 +28,7 @@ const Game = (() => {
     if (!engine) return;
     
     if (window.icon512Sprite && window.icon512Sprite.complete) {
-        if(!window.icon512Sprite.src) {
+        if(!window.icon552Sprite.src) {
             window.icon512Sprite.src = 'assets/sprites/icon-512.png';
         }
         ctx.drawImage(window.icon512Sprite, 0, 0, engine.width, engine.height);
@@ -55,9 +55,19 @@ const Game = (() => {
         window.icon512Sprite = new Image();
         window.icon512Sprite.src = 'assets/sprites/icon-512.png';
     }
+    
+    // Mostra i controlli touch solo se non è un desktop
+    if (!/Mobi|Android/i.test(navigator.userAgent)) {
+        document.getElementById('mobile-controls').style.display = 'none';
+    } else {
+        document.getElementById('mobile-controls').style.display = 'flex';
+    }
+
 
     document.getElementById('menu').style.display = 'none';
+    document.getElementById('game-container').style.display = 'block'; // Usiamo il nuovo contenitore
     document.getElementById('game').style.display = 'block';
+    
     cur = isNew ? 0 : parseInt(localStorage.getItem('pie_level') || '0');
     if (cur < 0 || cur >= levels.length) cur = 0; 
     endTriggered = false;
@@ -107,33 +117,35 @@ const Game = (() => {
         engine.stop();
         setTimeout(()=> startLevel(cur), 600);
     } else {
+        // Game Over
         engine.stop();
         localStorage.setItem('pie_level', '0');
-        document.getElementById('game').style.display = 'none';
+        document.getElementById('game-container').style.display = 'none';
         document.getElementById('menu').style.display = 'block';
     }
   }
 
   function onPlayerFell() {
-      player.lives = 0; 
-      engine.stop();
-      setTimeout(()=> {
-          if (player.lives <= 0) {
-              localStorage.setItem('pie_level', '0');
-              document.getElementById('game').style.display = 'none';
-              document.getElementById('menu').style.display = 'block';
-          } else {
-              startLevel(cur);
-          }
-      }, 600);
+      // Se colpito/caduto riavvia il livello se ha vite
+      if (player.hit()) {
+        engine.stop();
+        setTimeout(()=> startLevel(cur), 600);
+      } else {
+        // Game Over
+        engine.stop();
+        localStorage.setItem('pie_level', '0');
+        document.getElementById('game-container').style.display = 'none';
+        document.getElementById('menu').style.display = 'block';
+      }
   }
 
   function startLevel(n) {
     cur = n;
     if (cur >= levels.length) {
+        // Schermata Finale solo dopo l'ultimo livello
         engine.stop();
         document.getElementById('finalTitle').textContent = 'Pie diventa King';
-        document.getElementById('game').style.display = 'none';
+        document.getElementById('game-container').style.display = 'none';
         document.getElementById('ending').style.display = 'block';
         window.showFinalScreen(); 
         return;
@@ -228,7 +240,7 @@ const Game = (() => {
             endTriggered = true;
             setTimeout(() => {
                 document.getElementById('finalTitle').textContent = 'Pie diventa King';
-                document.getElementById('game').style.display = 'none';
+                document.getElementById('game-container').style.display = 'none';
                 document.getElementById('ending').style.display = 'block';
                 window.showFinalScreen();
             }, 1000); 
@@ -252,12 +264,9 @@ const Game = (() => {
 
   function startEndSequence(lvl) {
     const Palo = lvl.endZone;
-    // Ragazza e Macchina devono apparire relative al Palo
-    // Ho definito la ragazza 50px a destra del palo, e la macchina 100px a destra
     const Ragazza = { x: Palo.x + 50, y: Palo.y, w: 50, h: 60 };
     const Macchina = { x: Palo.x + 100, y: Palo.y + 10, w: 100, h: 60 };
     
-    // Posiziona il giocatore vicino al Palo per l'animazione
     player.x = Palo.x - 40;
     player.y = Palo.y - player.h;
     
@@ -276,22 +285,22 @@ const Game = (() => {
                 this.state = 1;
                 this.timer = 0;
             } else if (this.state === 1) {
-                // La Ragazza cammina verso la Macchina
+                // Ragazza cammina verso la Macchina
                 this.ragazzaX += 50 * dt; 
-                if (this.ragazzaX >= Macchina.x) {
-                    this.ragazzaX = Macchina.x;
+                if (this.ragazzaX >= Macchina.x - 20) { 
+                    this.ragazzaX = Macchina.x - 20; // Si ferma all'ingresso
                     this.state = 2;
                     this.timer = 0;
                 }
             } else if (this.state === 2 && this.timer > 1.0) {
                 // Macchina si muove via
                 this.macchinaX += 300 * dt; 
-                if (this.macchinaX > engine.width + camX) { // Controllo aggiornato per camX
+                if (this.macchinaX > camX + engine.width + 100) { 
                     this.state = 3;
                     this.timer = 0;
                 }
             } else if (this.state === 3) {
-                // Transizione
+                // Transizione al livello successivo
                 endAnimation = null;
                 endTriggered = false;
                 startLevel(cur + 1);
@@ -318,7 +327,7 @@ const Game = (() => {
                 }
             }
             
-            // 4. Player (visibile fino allo stato 2)
+            // 4. Player (visibile fino allo stato 2, poi scompare nella macchina)
             if (this.state < 2) {
                 player.draw(ctx, camX); 
             }
