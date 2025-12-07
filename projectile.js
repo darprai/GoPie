@@ -1,27 +1,29 @@
-class Projectile {
-  constructor(x, y, vx, vy) {
+const Projectile = function(x, y, vx, vy) {
     this.x = x;
     this.y = y;
-    this.vx = vx / 100; // Scalato per una velocità più gestibile in update
-    this.vy = vy / 100;
-    this.w = 16;
-    this.h = 16;
-  }
+    this.w = 20;
+    this.h = 20;
+    this.vx = vx;
+    this.vy = vy;
 
-  update(dt) {
-    this.x += this.vx * dt * 60;
-    this.y += this.vy * dt * 60;
-  }
+    this.update = function(dt) {
+        // La velocità è scalata dal fattore delta tempo (dt)
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+    };
 
-  draw(ctx, camX) {
-    if (window.drinkEnemySprite.complete) {
-      ctx.drawImage(window.drinkEnemySprite, Math.round(this.x - camX), Math.round(this.y), this.w, this.h);
-    } else {
-      // Fallback
-      ctx.fillStyle = '#00FFFF';
-      ctx.fillRect(Math.round(this.x - camX), Math.round(this.y), this.w, this.h);
-    }
-  }
-}
-
-window.Projectile = Projectile;
+    this.draw = function(ctx, camX) {
+        const drawX = Math.round(this.x - camX);
+        const drawY = Math.round(this.y);
+        
+        if (window.drinkEnemySprite && window.drinkEnemySprite.complete) {
+            ctx.drawImage(window.drinkEnemySprite, drawX, drawY, this.w, this.h);
+        } else {
+            // Fallback: Disegna un cerchio rosso
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(drawX + this.w / 2, drawY + this.h / 2, this.w / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    };
+};
