@@ -1,47 +1,65 @@
-class Engine {
-  constructor(canvas) {
+const Engine = function(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.width = canvas.width;
     this.height = canvas.height;
-    this.keys = {};
-    this.touch = { left: false, right: false, jump: false };
-    this.delta = 0;
-    this._last = performance.now();
+    this.running = false;
+    this.lastTime = 0;
+    this.keys = {}; // Oggetto per tenere traccia dei tasti premuti (inclusi i virtuali)
 
-    // keyboard
-    window.addEventListener('keydown', e => { this.keys[e.key] = true; });
-    window.addEventListener('keyup',   e => { this.keys[e.key] = false; });
-
-    // simple touch controls: left half, right half, tap to jump
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const t = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const x = t.clientX - rect.left;
-      if (x < rect.width * 0.33) this.touch.left = true;
-      else if (x > rect.width * 0.66) this.touch.right = true;
-      else this.touch.jump = true;
-    }, { passive: false });
-    canvas.addEventListener('touchend', (e) => {
-      this.touch.left = false; this.touch.right = false; this.touch.jump = false;
-    });
-
-    window.engine = this; // global
-  }
-
-  start(updateFn, renderFn) {
-    const loop = (now) => {
-      this.delta = Math.min(0.05, (now - this._last) / 1000); // clamp dt
-      this._last = now;
-      updateFn(this.delta);
-      renderFn(this.ctx);
-      this._raf = requestAnimationFrame(loop);
+    const KEY_MAP = {
+        32: 'Space',  // Spacebar
+        37: 'ArrowLeft',
+        39: 'ArrowRight',
+        38: 'ArrowUp'
     };
-    this._raf = requestAnimationFrame(loop);
-  }
 
-  stop() {
-    if (this._raf) cancelAnimationFrame(this._raf);
-  }
-}
+    const keyDownHandler = (e) => {
+        const key = KEY_MAP[e.keyCode];
+        if (key && !this.keys[key]) {
+            this.keys[key] = true;
+            // Prevenire lo scroll del browser con Spacebar e Frecce
+            if (key === 'Space' || key.startsWith('Arrow')) {
+                e.preventDefault();
+            }
+        }
+    };
+
+    const keyUpHandler = (e) => {
+        const key = KEY_MAP[e.keyCode];
+        if (key) {
+            this.keys[key] = false;
+        }
+    };
+
+    this.start = function(update, render) {
+        this.update = update;
+        this.render = render;
+        this.running = true;
+        this.lastTime = performance.now();
+        window.engine = this; // Rende l'istanza accessibile a Player.js e Game.js
+        
+        document.addEventListener('keydown', keyDownHandler, false);
+        document.addEventListener('keyup', keyUpHandler, false);
+        
+        requestAnimationFrame(this.loop.bind(this));
+    };
+
+    this.stop = function() {
+        this.running = false;
+        document.removeEventListener('keydown', keyDownHandler, false);
+        document.removeEventListener('keyup', keyUpHandler, false);
+    };
+
+    this.loop = function(currentTime) {
+        if (!this.running) return;
+
+        const dt = Math.min(100, currentTime - this.lastTime) / 1000; // Tempo in secondi, max 100ms
+        this.lastTime = currentTime;
+
+        this.update(dt);
+        this.render(this.ctx);
+
+        requestAnimationFrame(this.loop.bind(this));
+    };
+};
