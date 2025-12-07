@@ -6,7 +6,7 @@ const Player = function(x, y) {
     this.vx = 0;
     this.vy = 0;
     this.speed = 250; 
-    this.jumpForce = -850; 
+    this.jumpForce = -850; // Salto Aumentato
     this.gravity = 2500; 
     this.onGround = false;
     this.lives = 3; 
@@ -73,14 +73,11 @@ const Player = function(x, y) {
         let newX = this.x + this.vx * dt;
         let newY = this.y + this.vy * dt;
 
-        // *** CORREZIONE: MORTE SE SI CADE SOTTO IL CANVAS (Y > 540) ***
-        // L'altezza del canvas è 540. Se Y supera questo, il giocatore è "out of bounds".
+        // MORTE SE SI CADE SOTTO IL CANVAS (Y > 540)
         if (newY > 540) { 
-            // Chiama la funzione di gestione della morte per caduta (in Game.js)
             window.Game.onPlayerFell();
-            return; // Interrompe l'aggiornamento per evitare glitch
+            return; 
         }
-        // ***************************************************************
 
         // 5. COLLISIONI (X-axis)
         this.x = newX;
