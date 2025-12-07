@@ -16,12 +16,10 @@ const Game = (() => {
       try {
         const r = await fetch(p);
         if (!r.ok) throw new Error('Cannot load level file: ' + p);
-        // La riga che causa l'errore è qui sotto. Se fallisce,
-        // significa che il file JSON contiene caratteri non validi (come //)
         levels.push(await r.json()); 
       } catch(e) {
           console.error(`Error loading JSON from ${p}:`, e);
-          throw new Error(`Failed to parse level JSON from ${p}. Check for comments!`);
+          throw new Error(`Failed to parse level JSON from ${p}. Check for comments or syntax errors!`);
       }
     }
   }
@@ -182,6 +180,7 @@ const Game = (() => {
         camX = lvl.cameraX || 0; 
     }
 
+
     // 1. Collisioni Nemici standard (Drink, Hazard, Cuori)
     (lvl.enemies || []).forEach((en, index) => {
       const en_w = en.w || 20;
@@ -253,9 +252,12 @@ const Game = (() => {
 
   function startEndSequence(lvl) {
     const Palo = lvl.endZone;
+    // Ragazza e Macchina devono apparire relative al Palo
+    // Ho definito la ragazza 50px a destra del palo, e la macchina 100px a destra
     const Ragazza = { x: Palo.x + 50, y: Palo.y, w: 50, h: 60 };
     const Macchina = { x: Palo.x + 100, y: Palo.y + 10, w: 100, h: 60 };
     
+    // Posiziona il giocatore vicino al Palo per l'animazione
     player.x = Palo.x - 40;
     player.y = Palo.y - player.h;
     
@@ -274,6 +276,7 @@ const Game = (() => {
                 this.state = 1;
                 this.timer = 0;
             } else if (this.state === 1) {
+                // La Ragazza cammina verso la Macchina
                 this.ragazzaX += 50 * dt; 
                 if (this.ragazzaX >= Macchina.x) {
                     this.ragazzaX = Macchina.x;
@@ -281,12 +284,14 @@ const Game = (() => {
                     this.timer = 0;
                 }
             } else if (this.state === 2 && this.timer > 1.0) {
+                // Macchina si muove via
                 this.macchinaX += 300 * dt; 
-                if (this.macchinaX > engine.width) {
+                if (this.macchinaX > engine.width + camX) { // Controllo aggiornato per camX
                     this.state = 3;
                     this.timer = 0;
                 }
             } else if (this.state === 3) {
+                // Transizione
                 endAnimation = null;
                 endTriggered = false;
                 startLevel(cur + 1);
@@ -313,7 +318,7 @@ const Game = (() => {
                 }
             }
             
-            // 4. Player
+            // 4. Player (visibile fino allo stato 2)
             if (this.state < 2) {
                 player.draw(ctx, camX); 
             }
@@ -434,7 +439,7 @@ const Game = (() => {
         // Se l'animazione è attiva, la disegniamo sopra tutto
         endAnimation.draw(ctx, camX);
     }
-  } // fine render
+  } 
 
   return {
     startNew: ()=> _start(true),
