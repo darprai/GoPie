@@ -25,11 +25,10 @@ const Game = (function() {
     // --- Gestione Livelli ---
 
     function loadLevels() {
-        // Funzione asincrona per caricare tutti i file JSON
         const levelPromises = [
             fetch('levels/level1.json').then(res => res.json()),
             fetch('levels/level2.json').then(res => res.json()),
-            fetch('levels/level_final.json').then(res => res.json())
+            fetch('levels/level3.json').then(res => res.json())
         ];
 
         return Promise.all(levelPromises)
@@ -38,9 +37,8 @@ const Game = (function() {
                 console.log("Livelli caricati con successo!");
             })
             .catch(error => {
-                // Cattura l'errore di parsing JSON e lo notifica all'utente
-                console.error("Errore nel caricamento di un file JSON del livello:", error);
-                alert("Errore caricamento livelli: Failed to parse level JSON from levels/levelX.json. Check the console for details on which file failed.");
+                console.error("Errore nel caricamento di un file JSON del livello. Controlla che i file level1.json, level2.json e level3.json siano JSON validi e nel percorso levels/:", error);
+                alert("Errore caricamento livelli: Failed to parse level JSON. Controlla la console per i dettagli sull'errore di sintassi.");
             });
     }
 
@@ -53,7 +51,6 @@ const Game = (function() {
         currentLevelIndex = index;
         currentLevel = levels[index];
         
-        // Inizializza o resetta il giocatore
         if (!player) {
             player = new Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else {
@@ -63,7 +60,7 @@ const Game = (function() {
             player.vy = 0;
         }
         
-        cameraX = 0; // Resetta la telecamera
+        cameraX = 0;
     }
 
     // --- Logica di Gioco (Update) ---
@@ -71,19 +68,16 @@ const Game = (function() {
     function update(dt, input) {
         if (!currentLevel || !player) return;
 
-        // 1. Aggiorna il giocatore
         player.update(dt, input, currentLevel.platforms);
 
-        // 2. Aggiorna Boss (solo se Level Finale)
         if (currentLevelIndex === 2 && currentLevel.boss) {
+            // Assicurati che BossFinal sia definito altrove, ad esempio in boss.js
             currentLevel.boss.update(dt, player);
         }
 
-        // 3. Gestione della Telecamera
         const targetX = player.x - canvas.width / 2 + player.w / 2;
         cameraX = Math.max(0, Math.min(targetX, currentLevel.length - canvas.width));
 
-        // 4. Controllo Fine Livello
         const endZone = currentLevel.endZone;
         if (player.x + player.w > endZone.x && 
             player.x < endZone.x + endZone.w &&
@@ -93,12 +87,10 @@ const Game = (function() {
             Game.nextLevel();
         }
 
-        // 5. Gestione Collisioni Nemici, Cuori e Trappole
         handleCollisions();
     }
     
     function handleCollisions() {
-        // Collisioni con i nemici (drink) e cuori
         if (currentLevel.enemies) {
             currentLevel.enemies = currentLevel.enemies.filter(enemy => {
                 if (rectsOverlap(player, enemy)) {
@@ -107,21 +99,20 @@ const Game = (function() {
                             player.x = Math.max(0, player.x - 50); 
                         } else {
                             Game.onPlayerDied();
-                            return true; // Non rimuove il nemico se il giocatore muore, tornerà con il level reset
+                            return true; 
                         }
-                        return false; // Rimuove il nemico dopo la collisione (se il giocatore è vivo)
+                        return false;
                     }
                     
                     if (enemy.type === 'heart') {
                         player.collectHeart();
-                        return false; // Rimuove il cuore raccolto
+                        return false; 
                     }
                 }
-                return true; // Conserva nemici e oggetti che non sono stati colpiti
+                return true; 
             });
         }
         
-        // Collisioni con le trappole (fall_death)
         if (currentLevel.invisible_traps) {
              for (let trap of currentLevel.invisible_traps) {
                  if (trap.type === 'fall_death' && rectsOverlap(player, trap)) {
@@ -138,32 +129,24 @@ const Game = (function() {
     function draw() {
         if (!currentLevel) return;
 
-        // Pulisci il Canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Sfondo del livello 
         ctx.fillStyle = "#87CEEB"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Disegna Piattaforme
         renderPlatforms(currentLevel.platforms, cameraX);
 
-        // Disegna Giocatore
         player.draw(ctx, cameraX);
         
-        // Disegna Nemici e Cuori (dopo il giocatore in modo che siano sopra)
         renderEnemies(currentLevel.enemies, cameraX);
 
-        // Disegna Zona di Arrivo
         const endZone = currentLevel.endZone;
         ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
         ctx.fillRect(Math.round(endZone.x - cameraX), endZone.y, endZone.w, endZone.h);
 
-        // Disegna HUD (Vite e Punteggio)
         renderHUD();
     }
     
-    // FUNZIONE DI RENDERING PIATTAFORME AGGIORNATA
     function renderPlatforms(platforms, camX) {
         for (let p of platforms) {
             const x = Math.round(p[0] - camX);
@@ -181,7 +164,6 @@ const Game = (function() {
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
                 ctx.drawImage(window.macchinaSprite, x, y, w, h);
             } else {
-                // Piattaforma standard
                 ctx.fillStyle = "#333333";
                 ctx.fillRect(x, y, w, h);
             }
@@ -259,7 +241,7 @@ const Game = (function() {
                 bgm.pause();
                 bgmFinal.loop = true;
                 bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
-                // Assumendo che level_final.json abbia un oggetto bossStart
+                // Assicurati che BossFinal sia definito
                 currentLevel.boss = new BossFinal(currentLevel.playerStart.x, currentLevel.playerStart.y); 
             }
             
@@ -269,7 +251,8 @@ const Game = (function() {
             gameEngine.stop();
             bgm.pause();
             bgmFinal.pause();
-            window.Ending.showWinScreen(player.score);
+            // Assicurati che window.Ending sia definito
+            window.Ending.showWinScreen(player.score); 
         }
     }
 
