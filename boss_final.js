@@ -27,13 +27,12 @@ const BossFinal = (() => {
     maxProjectiles = config.projectiles || 50;
     projectileSpeed = config.projectileSpeed || 7;
     cooldown = config.cooldown || 700;
-    thrown = 0; // Azzera i lanci all'inizio
+    thrown = 0; 
   }
 
   function shoot(player) {
     if (thrown >= maxProjectiles) return;
 
-    // Bersaglia il giocatore
     const targetX = player.x + player.w / 2;
     const targetY = player.y + player.h / 2;
     const bossCenterX = x + w / 2;
@@ -41,16 +40,12 @@ const BossFinal = (() => {
 
     const angle = Math.atan2(targetY - bossCenterY, targetX - bossCenterX);
     
-    // Aggiungi un po' di dispersione (facoltativo, rende il livello più difficile)
     const randomAngleOffset = (Math.random() - 0.5) * 0.4; 
     const finalAngle = angle + randomAngleOffset;
 
-    // Calcola la velocità in x e y
-    // USIAMO projectileSpeed * 100 per scaling:
     const vx = Math.cos(finalAngle) * projectileSpeed * 100; 
     const vy = Math.sin(finalAngle) * projectileSpeed * 100;
 
-    // Creiamo il proiettile e lo aggiungiamo all'array locale
     projectiles.push(new Projectile(bossCenterX - 8, bossCenterY - 8, vx, vy));
     thrown++;
     lastShot = performance.now();
@@ -59,32 +54,28 @@ const BossFinal = (() => {
   function update(dt, player, camX) {
     if (!active) return;
 
-    // 1. Logica di sparo
     if (thrown < maxProjectiles && performance.now() - lastShot > cooldown) {
       shoot(player);
     }
 
-    // 2. Aggiornamento proiettili
     projectiles.forEach(p => p.update(dt));
     
-    // 3. Rimuovi proiettili fuori dal campo visivo esteso
     projectiles = projectiles.filter(p => p.x > camX - 100 && p.x < camX + 1060 && p.y < 600);
-    
-    // La gestione delle collisioni e la logica di vittoria sono ora in game.js
   }
 
   function render(ctx, camX) {
     if (!active) return;
 
-    // Draw Boss (Golruk)
+    const drawX = Math.round(x - camX);
+    const drawY = Math.round(y);
+
     if (window.bossSprite && window.bossSprite.complete && window.bossSprite.width > 0) {
-      ctx.drawImage(window.bossSprite, Math.round(x - camX), Math.round(y), w, h);
+      ctx.drawImage(window.bossSprite, drawX, drawY, w, h);
     } else {
-      ctx.fillStyle = '#ff0000'; // Fallback Rettangolo
-      ctx.fillRect(Math.round(x - camX), Math.round(y), w, h);
+      ctx.fillStyle = '#ff0000'; 
+      ctx.fillRect(drawX, drawY, w, h);
     }
 
-    // Draw projectiles (Drink)
     projectiles.forEach(p => p.draw(ctx, camX));
   }
 
