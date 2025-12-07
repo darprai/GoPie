@@ -22,11 +22,12 @@ const BossFinal = (() => {
     active = true;
     x = startX;
     y = startY;
-    w = config.w || 60; // Usa i parametri dal JSON se esistono
+    w = config.w || 60; 
     h = config.h || 80;
     maxProjectiles = config.projectiles || 50;
     projectileSpeed = config.projectileSpeed || 7;
     cooldown = config.cooldown || 700;
+    thrown = 0; // Azzera i lanci all'inizio
   }
 
   function shoot(player) {
@@ -45,9 +46,11 @@ const BossFinal = (() => {
     const finalAngle = angle + randomAngleOffset;
 
     // Calcola la velocità in x e y
-    const vx = Math.cos(finalAngle) * projectileSpeed * 100; // *100 per scaling in Projectile
+    // USIAMO projectileSpeed * 100 per scaling:
+    const vx = Math.cos(finalAngle) * projectileSpeed * 100; 
     const vy = Math.sin(finalAngle) * projectileSpeed * 100;
 
+    // Creiamo il proiettile e lo aggiungiamo all'array locale
     projectiles.push(new Projectile(bossCenterX - 8, bossCenterY - 8, vx, vy));
     thrown++;
     lastShot = performance.now();
@@ -56,25 +59,25 @@ const BossFinal = (() => {
   function update(dt, player, camX) {
     if (!active) return;
 
-    // Shooting logic
+    // 1. Logica di sparo
     if (thrown < maxProjectiles && performance.now() - lastShot > cooldown) {
       shoot(player);
     }
 
-    // Update projectiles
+    // 2. Aggiornamento proiettili
     projectiles.forEach(p => p.update(dt));
-    // Remove projectiles out of bounds (fuori schermo)
+    
+    // 3. Rimuovi proiettili fuori dal campo visivo esteso
     projectiles = projectiles.filter(p => p.x > camX - 100 && p.x < camX + 1060 && p.y < 600);
-
-    // *ATTENZIONE*: La collisione con i proiettili del boss è stata spostata in game.js
-    // per permettere una logica di riavvio del livello specifica per Level 3.
+    
+    // La gestione delle collisioni e la logica di vittoria sono ora in game.js
   }
 
   function render(ctx, camX) {
     if (!active) return;
 
     // Draw Boss (Golruk)
-    if (window.bossSprite.complete && window.bossSprite.width > 0) {
+    if (window.bossSprite && window.bossSprite.complete && window.bossSprite.width > 0) {
       ctx.drawImage(window.bossSprite, Math.round(x - camX), Math.round(y), w, h);
     } else {
       ctx.fillStyle = '#ff0000'; // Fallback Rettangolo
