@@ -38,8 +38,7 @@
 
   <div id="ending" class="center" style="display:none">
     <h1 id="finalTitle">Pie diventa King</h1>
-    <p>Carica la foto finale:</p>
-    <input id="finalInput" type="file" accept="image/*">
+    <p>La foto finale:</p>
     <div id="finalImage"></div>
     <h2>THE END...?</h2>
     <button id="restartBtn">Restart</button>
@@ -57,7 +56,7 @@
   <script src="ending.js"></script>
 
   <script>
-    // Dichiarazione globale degli sprite per la gestione in game.js e player.js
+    // Dichiarazione globale degli sprite
     window.playerSprite = new Image();
     window.playerSprite.src = 'assets/sprites/pie.png';
     window.runSprite = new Image();
@@ -78,6 +77,8 @@
     window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
     window.macchinaSprite = new Image();
     window.macchinaSprite.src = 'assets/sprites/macchina.png';
+    window.icon512Sprite = new Image(); // Aggiunta anche per game.js
+    window.icon512Sprite.src = 'assets/sprites/icon-512.png';
     
     document.addEventListener("DOMContentLoaded", () => {
       if ('serviceWorker' in navigator) {
