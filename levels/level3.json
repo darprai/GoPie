@@ -1,9 +1,9 @@
 {
   "length": 960, 
   "playerStart": {"x": 80, "y": 480},
-  "cameraX": 0, 
+  "endZone": { "x": 900, "y": 480, "w": 20, "h": 40 }, 
   "platforms": [
-    {"x": 0, "y": 520, "w": 960, "h": 50, "sprite": "disco"}
+    [0, 520, 960, 50, "disco"]
   ],
   "enemies": [], 
   "invisible_traps": [],
@@ -14,6 +14,6 @@
     "h": 80,
     "projectiles": 50, 
     "cooldown": 500, 
-    "projectileSpeed": 10
+    "projectileSpeed": 300 
   }
 }
