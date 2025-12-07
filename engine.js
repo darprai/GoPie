@@ -1,65 +1,57 @@
-const Engine = function(canvas) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.width = canvas.width;
-    this.height = canvas.height;
-    this.running = false;
-    this.lastTime = 0;
-    this.keys = {}; // Oggetto per tenere traccia dei tasti premuti (inclusi i virtuali)
+const Engine = function(update, draw) {
+    let lastTime = performance.now();
+    let running = false;
+    this.keys = {}; // Mappa per lo stato dei tasti
+    let gameLoop;
+    const canvas = document.getElementById('game');
+    const input = this.keys; 
 
-    const KEY_MAP = {
-        32: 'Space',  // Spacebar
-        37: 'ArrowLeft',
-        39: 'ArrowRight',
-        38: 'ArrowUp'
+    // Gestione Input (Tastiera)
+    document.addEventListener('keydown', (e) => {
+        if (!running) return;
+        this.keys[e.key] = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+        this.keys[e.key] = false;
+    });
+
+    // Funzione principale del loop
+    const loop = (currentTime) => {
+        if (!running) return;
+
+        // Calcola Delta Time (dt) in secondi
+        const dt = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+
+        // 1. Aggiorna la logica di gioco
+        update(dt, input); 
+
+        // 2. Disegna lo stato corrente
+        draw();
+
+        gameLoop = requestAnimationFrame(loop);
     };
 
-    const keyDownHandler = (e) => {
-        const key = KEY_MAP[e.keyCode];
-        if (key && !this.keys[key]) {
-            this.keys[key] = true;
-            // Prevenire lo scroll del browser con Spacebar e Frecce
-            if (key === 'Space' || key.startsWith('Arrow')) {
-                e.preventDefault();
-            }
-        }
-    };
-
-    const keyUpHandler = (e) => {
-        const key = KEY_MAP[e.keyCode];
-        if (key) {
-            this.keys[key] = false;
-        }
-    };
-
-    this.start = function(update, render) {
-        this.update = update;
-        this.render = render;
-        this.running = true;
-        this.lastTime = performance.now();
-        window.engine = this; // Rende l'istanza accessibile a Player.js e Game.js
+    this.start = function() {
+        if (running) return;
+        running = true;
+        lastTime = performance.now();
+        gameLoop = requestAnimationFrame(loop);
         
-        document.addEventListener('keydown', keyDownHandler, false);
-        document.addEventListener('keyup', keyUpHandler, false);
-        
-        requestAnimationFrame(this.loop.bind(this));
+        // Attiva la gestione dei controlli mobile se necessario (vedi index.html)
     };
 
     this.stop = function() {
-        this.running = false;
-        document.removeEventListener('keydown', keyDownHandler, false);
-        document.removeEventListener('keyup', keyUpHandler, false);
+        running = false;
+        cancelAnimationFrame(gameLoop);
+        // Resetta l'input per evitare movimenti fantasma
+        this.keys = {}; 
     };
-
-    this.loop = function(currentTime) {
-        if (!this.running) return;
-
-        const dt = Math.min(100, currentTime - this.lastTime) / 1000; // Tempo in secondi, max 100ms
-        this.lastTime = currentTime;
-
-        this.update(dt);
-        this.render(this.ctx);
-
-        requestAnimationFrame(this.loop.bind(this));
+    
+    this.isRunning = function() {
+        return running;
     };
 };
+
+window.Engine = Engine;
