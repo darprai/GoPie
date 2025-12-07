@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  
   <title>Pie Adventure - Full</title>
 
   <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
@@ -61,7 +64,7 @@
         z-index: 10;
     }
     
-    /* --- NUOVA STRUTTURA CONTROLLI INVISIBILI --- */
+    /* --- STRUTTURA CONTROLLI INVISIBILI --- */
     
     .ctrl-area {
         position: absolute;
@@ -199,7 +202,7 @@
     
     
     document.addEventListener("DOMContentLoaded", () => {
-      // PWA service worker
+      // REGISTRAZIONE SERVICE WORKER (Necessario per PWA)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js')
           .catch(err => console.warn("SW error:", err));
@@ -220,8 +223,8 @@
       // LOGICA SCHERMO INTERO (Correzione)
       function toggleFullscreen() {
           const isFullscreen = document.fullscreenElement;
-          // Proviamo ad attivare la modalità full-screen sull'elemento HTML radice
           if (!isFullscreen) {
+              // Richiede full-screen sull'elemento HTML radice
               document.documentElement.requestFullscreen().catch(err => {
                   console.error(`Errore Schermo Intero: ${err.message}`);
               });
@@ -238,7 +241,7 @@
               gameContainer.classList.add('fullscreen');
               mobileControlsDiv.style.display = 'block'; 
               
-              // Nasconde il menu quando si entra in full screen (se era visibile)
+              // Nasconde il menu quando si entra in full screen
               document.getElementById('menu').style.display = 'none';
           } else {
               gameContainer.classList.remove('fullscreen');
