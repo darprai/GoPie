@@ -6,7 +6,7 @@ const Player = function(x, y) {
     this.vx = 0;
     this.vy = 0;
     this.speed = 250; 
-    this.jumpForce = -900; // FORZA DI SALTO AUMENTATA
+    this.jumpForce = -850; 
     this.gravity = 2500; 
     this.onGround = false;
     this.lives = 3; 
@@ -16,10 +16,8 @@ const Player = function(x, y) {
     this.animationFrame = 0;
     this.animationTimer = 0;
 
-    // Aggiungi un piccolo offset per rendere la collisione con il terreno più indulgente
     this.groundEpsilon = 5; 
 
-    // Velocità di reset (necessaria per il riavvio del livello)
     this.reset = function(x, y) {
         this.x = x;
         this.y = y;
@@ -30,7 +28,6 @@ const Player = function(x, y) {
         this.score = 0;
     };
     
-    // Incrementa le vite se < 3
     this.collectHeart = function() {
         if (this.lives < 3) {
             this.lives++;
@@ -38,7 +35,6 @@ const Player = function(x, y) {
         this.score += 50; 
     };
 
-    // Ritorna true se il giocatore ha ancora vite
     this.hit = function() {
         this.lives--;
         if (this.lives > 0) {
@@ -65,7 +61,6 @@ const Player = function(x, y) {
         }
 
         // 2. LOGICA DI SALTO
-        // Controlla sia Space che ArrowUp
         if ((keys.Space || keys.ArrowUp) && this.onGround) {
             this.vy = this.jumpForce;
             this.onGround = false;
@@ -78,14 +73,23 @@ const Player = function(x, y) {
         let newX = this.x + this.vx * dt;
         let newY = this.y + this.vy * dt;
 
+        // *** CORREZIONE: MORTE SE SI CADE SOTTO IL CANVAS (Y > 540) ***
+        // L'altezza del canvas è 540. Se Y supera questo, il giocatore è "out of bounds".
+        if (newY > 540) { 
+            // Chiama la funzione di gestione della morte per caduta (in Game.js)
+            window.Game.onPlayerFell();
+            return; // Interrompe l'aggiornamento per evitare glitch
+        }
+        // ***************************************************************
+
         // 5. COLLISIONI (X-axis)
         this.x = newX;
         for (let p of platforms) {
             if (rectsOverlap(this, p)) {
                 if (this.vx > 0) {
-                    this.x = p.x - this.w; // Colpisce a destra
+                    this.x = p.x - this.w; 
                 } else if (this.vx < 0) {
-                    this.x = p.x + p.w;  // Colpisce a sinistra
+                    this.x = p.x + p.w;  
                 }
                 this.vx = 0; 
             }
@@ -98,25 +102,21 @@ const Player = function(x, y) {
         for (let p of platforms) {
             if (rectsOverlap(this, p)) {
                 if (this.vy > 0) {
-                    // Atterra su piattaforma
-                    this.y = p.y - this.h + this.groundEpsilon; // Spinge leggermente su per evitare ricontrollo
+                    this.y = p.y - this.h + this.groundEpsilon; 
                     this.onGround = true;
                     this.vy = 0;
                 } else if (this.vy < 0) {
-                    // Colpisce testa
                     this.y = p.y + p.h;
                     this.vy = 0;
                 }
             }
         }
         
-        // Rimozione del groundEpsilon per evitare bug di salto multiplo
         if (this.onGround) {
             this.y = this.y - this.groundEpsilon;
         }
 
-
-        // 7. Animazione (solo Run)
+        // 7. Animazione
         if (this.isMoving) {
             this.animationTimer += dt;
             if (this.animationTimer > 0.1) {
@@ -124,7 +124,7 @@ const Player = function(x, y) {
                 this.animationTimer = 0;
             }
         } else {
-            this.animationFrame = 0; // Torna al frame di Idle
+            this.animationFrame = 0; 
         }
     };
 
@@ -133,24 +133,20 @@ const Player = function(x, y) {
         const y = Math.round(this.y);
         
         let spriteToUse = window.playerSprite;
-        let frameX = 0; // Idle frame
+        let frameX = 0; 
 
         if (this.isMoving && window.runSprite.complete) {
             spriteToUse = window.runSprite;
-            // Frame d'animazione per la corsa
             frameX = this.animationFrame * 40; 
         }
 
-        // Disegna l'ombra/contorno rosso in caso di danno (solo se non è l'ultimo livello)
         if (Game.getCurLevelIndex() !== 2 && this.lives <= 1 && Math.floor(performance.now() / 100) % 2 === 0) {
              ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
              ctx.fillRect(x, y, this.w, this.h);
         }
 
-        // Disegna lo sprite
         ctx.save();
         if (!this.facingRight) {
-            // Rifletti l'immagine orizzontalmente
             ctx.scale(-1, 1);
             ctx.drawImage(spriteToUse, frameX, 0, this.w, this.h, -(x + this.w), y, this.w, this.h);
         } else {
