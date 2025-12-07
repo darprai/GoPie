@@ -36,97 +36,26 @@
         text-align: center;
     }
     
-    /* Nuovo contenitore per il gioco e i controlli */
+    /* 2. Nuovo contenitore per il gioco - FORZA SCHERMO INTERO */
     #game-container {
-        position: relative;
+        position: fixed; /* Fisso per ignorare le barre del browser */
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh; /* Utilizziamo 100vh come base */
         display: none;
-        width: 960px; /* Deve corrispondere alla larghezza del canvas */
-        max-width: 100%;
-        margin: 0 auto;
+        margin: 0;
     }
-    
+
+    /* 3. Canvas e i suoi wrapper */
     #game {
         display: block;
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: contain; /* Adatta il canvas mantenendo l'aspect ratio (960x540) */
+        margin: auto;
     }
 
-    /* Stili per i pulsanti virtuali */
-    #mobile-controls {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: none;
-        pointer-events: none; 
-        z-index: 10;
-    }
-    
-    /* --- STRUTTURA CONTROLLI INVISIBILI (AGGIORNATA CON DEBUG VISIVO) --- */
-    
-    .ctrl-area {
-        position: absolute;
-        pointer-events: auto;
-        /* DEBUG VISIVO: Appena visibile (rosso 10% di opacità) */
-        background-color: rgba(255, 0, 0, 0.1); 
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-sizing: border-box;
-        opacity: 0.9; /* Per vedere le separazioni meglio sul mobile */
-    }
-
-    /* AREA SALTO (SPACE): Copre il 50% superiore del lato sinistro */
-    #jump-ctrl {
-        top: 0;
-        left: 0;
-        width: 50%; 
-        height: 50%;
-        background-color: rgba(0, 0, 255, 0.1); /* Blu per il salto */
-    }
-    
-    /* AREA DI MOVIMENTO SINISTRA (ArrowLeft): Sotto il salto */
-    #left-ctrl {
-        left: 0;
-        bottom: 0;
-        width: 50%; 
-        height: 50%; 
-        background-color: rgba(0, 255, 0, 0.1); /* Verde per Sinistra */
-    }
-    
-    /* AREA DI MOVIMENTO DESTRA (ArrowRight): Tutta la metà destra */
-    #right-ctrl {
-        right: 0;
-        top: 0; 
-        width: 50%; 
-        height: 100%; 
-        background-color: rgba(255, 165, 0, 0.1); /* Arancione per Destra */
-    }
-    
-    /* Pulsante Schermo Intero */
-    #fullscreenBtn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 40px;
-        height: 40px;
-        z-index: 20;
-        background-color: rgba(0, 0, 0, 0.5);
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-size: 18px;
-    }
-
-    /* Stile per lo schermo intero (assicura che il gioco copra tutto quando in full screen) */
-    #game-container.fullscreen {
-        width: 100vw;
-        height: 100vh;
-        position: fixed;
-        top: 0;
-        left: 0;
-        margin: 0;
-        max-width: none;
-    }
     /* Forza il body ad occupare l'intera viewport su mobile */
     body {
         margin: 0;
@@ -135,6 +64,67 @@
         width: 100vw;
         overflow: hidden;
     }
+    
+    /* --- CONTROLLI MOBILE VISIBILI E INVISIBILI (FINALIZZATI) --- */
+    
+    #mobile-controls {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: none; 
+        pointer-events: none; /* Il contenitore non blocca i clic */
+        z-index: 10;
+    }
+    
+    .ctrl-area {
+        position: absolute;
+        pointer-events: auto; /* Rende le aree cliccabili */
+        background-color: transparent; /* Invisibile */
+    }
+
+    /* AREA DI MOVIMENTO SINISTRA (ArrowLeft): Metà inferiore sinistra (sotto il pulsante Salta) */
+    #left-ctrl {
+        left: 0;
+        bottom: 0;
+        width: 30%; /* Area di tocco limitata */
+        height: 50%;
+    }
+    
+    /* AREA DI MOVIMENTO DESTRA (ArrowRight): Metà inferiore destra */
+    #right-ctrl {
+        right: 0;
+        bottom: 0;
+        width: 30%; /* Area di tocco limitata */
+        height: 50%; 
+    }
+    
+    /* PULSANTE SALTA VISIBILE E FUNZIONANTE (Nuova implementazione) */
+    #jump-btn {
+        position: absolute;
+        left: 10%; /* Posizione in basso a sinistra (vicino al controllo sinistro) */
+        bottom: 10%;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%; /* Tondo */
+        background-color: #FF0000; /* Rosso */
+        color: white;
+        border: 4px solid #fff;
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 52px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        cursor: pointer;
+        user-select: none;
+        pointer-events: auto;
+        z-index: 20;
+    }
+    
+    /* Disabilitiamo tutti gli altri tasti Salto (vecchie aree) */
+    #jump-ctrl { display: none; }
+    #fullscreenBtn { display: none; } /* Rimosso come richiesto */
 
 
   </style>
@@ -150,7 +140,7 @@
       <button id="saveBtn">Salva</button>
     </div>
     <p class="hint">
-      **Touch:** Tocca in basso a sinistra per muoverti a sinistra, a destra per muoverti a destra, in alto a sinistra per saltare.<br>
+      **Touch:** Tasti invisibili in basso per movimento. Usa il **pulsante rosso** per saltare.<br>
       Tastiera: ← → ↑ / Space
     </p>
   </div>
@@ -159,11 +149,9 @@
     
     <canvas id="game" width="960" height="540"></canvas>
     
-    <button id="fullscreenBtn">⛶</button>
+    <button id="jump-btn">JUMP</button>
     
     <div id="mobile-controls">
-        <div id="jump-ctrl" class="ctrl-area" data-key="Space"></div>
-        
         <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
         
         <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
@@ -215,57 +203,43 @@
       const newBtn = document.getElementById("newBtn");
       const contBtn = document.getElementById("contBtn");
       const saveBtn = document.getElementById("saveBtn");
-      const fullscreenBtn = document.getElementById("fullscreenBtn");
       const mobileControls = document.querySelectorAll('.ctrl-area'); 
-      const gameContainer = document.getElementById('game-container');
       const mobileControlsDiv = document.getElementById('mobile-controls'); 
+      const jumpBtn = document.getElementById("jump-btn"); // Nuovo pulsante Salta
 
       newBtn.addEventListener("click", () => Game.startNew());
       contBtn.addEventListener("click", () => Game.continue());
       saveBtn.addEventListener("click", () => Game.save());
       
-      // LOGICA SCHERMO INTERO
-      function toggleFullscreen() {
-          const isFullscreen = document.fullscreenElement;
-          if (!isFullscreen) {
-              // Richiede full-screen sull'elemento HTML radice
-              document.documentElement.requestFullscreen().catch(err => {
-                  console.error(`Errore Schermo Intero: ${err.message}`);
-              });
-          } else {
-              document.exitFullscreen();
+      // LOGICA JUMP BUTTON (Agganciato direttamente al tasto virtuale 'Space')
+      const startJump = (e) => {
+          e.preventDefault(); 
+          if (window.engine) {
+              window.engine.keys['Space'] = true;
           }
-      }
+      };
       
-      fullscreenBtn.addEventListener('click', toggleFullscreen);
-
-      
-      document.addEventListener('fullscreenchange', () => {
-          if (document.fullscreenElement) {
-              gameContainer.classList.add('fullscreen');
-              mobileControlsDiv.style.display = 'block'; 
-              
-              // Nasconde il menu quando si entra in full screen
-              document.getElementById('menu').style.display = 'none';
-          } else {
-              gameContainer.classList.remove('fullscreen');
-              // Mostra il menu se il gioco non è attivo
-              if (document.getElementById('game-container').style.display !== 'block') {
-                 document.getElementById('menu').style.display = 'flex';
-              }
-              // Nasconde i controlli se non siamo su mobile (per desktop)
-              if (!/Mobi|Android/i.test(navigator.userAgent)) {
-                 mobileControlsDiv.style.display = 'none'; 
-              }
+      const endJump = (e) => {
+          e.preventDefault();
+          if (window.engine) {
+              window.engine.keys['Space'] = false;
           }
-      });
+      };
 
-      // LOGICA AREE TOUCH (MULTI-TOUCH)
+      jumpBtn.addEventListener('touchstart', startJump, { passive: false });
+      jumpBtn.addEventListener('touchend', endJump, { passive: false });
+      jumpBtn.addEventListener('touchcancel', endJump, { passive: false });
+      jumpBtn.addEventListener('mousedown', startJump, { passive: false });
+      jumpBtn.addEventListener('mouseup', endJump, { passive: false });
+      jumpBtn.addEventListener('mouseout', endJump, { passive: false });
+
+
+      // LOGICA AREE TOUCH (MOVIMENTO - solo ArrowLeft e ArrowRight)
       mobileControls.forEach(area => {
           const key = area.getAttribute('data-key');
           
           const startKey = (e) => {
-              e.preventDefault(); // Impedisce lo zoom/scroll
+              e.preventDefault(); 
               if (window.engine) {
                   window.engine.keys[key] = true;
               }
@@ -289,7 +263,7 @@
           area.addEventListener('mouseout', endKey, { passive: false });
       });
 
-      // Su mobile, rendiamo i controlli disponibili (anche se invisibili)
+      // Su mobile, rendiamo i controlli disponibili
       if (/Mobi|Android/i.test(navigator.userAgent)) {
           mobileControlsDiv.style.display = 'block'; 
       }
