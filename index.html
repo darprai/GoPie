@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="style.css">
   
   <style>
-    /* Stili CSS omessi per brevità, usa quelli che hai fornito precedentemente */
+    /* Stili Base per Fullscreen e Menu */
     #menu, #ending {
         height: 100vh;
         width: 100vw;
@@ -58,6 +58,7 @@
         width: 100vw;
         overflow: hidden;
     }
+    /* Stili Controlli Mobile */
     #mobile-controls {
         position: absolute;
         top: 0;
@@ -112,11 +113,8 @@
   </div>
 
   <div id="game-container">
-    
     <canvas id="game" width="960" height="540"></canvas>
-    
     <button id="jump-btn"></button>
-    
     <div id="mobile-controls">
         <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
         <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
@@ -127,24 +125,7 @@
   <div id="ending" class="center" style="display:none">
     <h1 id="finalTitle">Pie diventa King</h1>
     <p>La foto finale:</p>
-    <div id="finalImage"></div>
-    <h2>THE END...?</h2>
-    <button id="restartBtn">Restart</button>
-  </div>
-
-  <audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
-  <audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
-
-  <script>
-    // Dichiarazione degli sprite (Verifica i percorsi in "assets/sprites/")
-    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
-    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
-    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
-    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
-    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
-    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
-    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
-    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
+    <div id="
     window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
     window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
     window.icon512Sprite = new Image();
