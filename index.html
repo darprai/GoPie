@@ -1,131 +1,207 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  
-  <title>Pie Adventure - Full</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <title>Pie Adventure - Full</title>
 
-  <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
-  <link rel="stylesheet" href="style.css">
-  
-  <style>
-    /* Stili Base per Fullscreen e Menu */
-    #menu, #ending {
-        height: 100vh;
-        width: 100vw;
-        position: fixed;
-        top: 0;
-        left: 0;
-        background-image: url('assets/sprites/icon-512.png');
-        background-size: cover;
-        background-position: center;
-        z-index: 100;
-    }
-    .center {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        width: 100%;
-        text-align: center;
-    }
-    #game-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh; 
-        display: none;
-        margin: 0;
-    }
-    #game {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: contain; 
-        margin: auto;
-    }
-    body {
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-    }
-    /* Stili Controlli Mobile */
-    #mobile-controls {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: none; 
-        pointer-events: none; 
-        z-index: 10;
-    }
-    .ctrl-area {
-        position: absolute;
-        pointer-events: auto; 
-        background-color: transparent; 
-    }
-    #left-ctrl { left: 0; bottom: 0; width: 30%; height: 50%; }
-    #right-ctrl { right: 0; bottom: 0; width: 30%; height: 50%; }
-    #jump-btn {
-        position: absolute;
-        left: 10%; 
-        bottom: 10%;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background-color: #FF0000;
-        color: transparent;
-        border: 4px solid #fff;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        cursor: pointer;
-        user-select: none;
-        pointer-events: auto;
-        z-index: 20;
-    }
-    #jump-ctrl { display: none; }
-    #fullscreenBtn { display: none; }
-  </style>
+  <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+  <link rel="stylesheet" href="style.css">
+  
+  <style>
+    /* Stili Base per Fullscreen e Menu (come fornito) */
+    #menu, #ending {
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-image: url('assets/sprites/icon-512.png');
+        background-size: cover;
+        background-position: center;
+        z-index: 100;
+    }
+    .center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        width: 100%;
+        text-align: center;
+        background-color: rgba(0, 0, 0, 0.7); /* Aggiunto sfondo scuro per leggibilità */
+    }
+    .buttons{margin:12px}
+    button{margin:6px;padding:10px 18px;border-radius:8px;border:none;background:var(--accent);color:#012;font-weight:700}
+    #game-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh; 
+        display: none;
+        margin: 0;
+    }
+    #game {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; 
+        margin: auto;
+    }
+    body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+    }
+    /* Stili Controlli Mobile (come fornito) */
+    #mobile-controls {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: none; 
+        pointer-events: none; 
+        z-index: 10;
+    }
+    .ctrl-area {
+        position: absolute;
+        pointer-events: auto; 
+        background-color: transparent; 
+    }
+    #left-ctrl { left: 0; bottom: 0; width: 30%; height: 50%; }
+    #right-ctrl { right: 0; bottom: 0; width: 30%; height: 50%; }
+    #jump-btn {
+        position: absolute;
+        right: 10%;  /* Spostato a destra per non coprire i controlli di movimento */
+        bottom: 10%;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #FF0000;
+        color: transparent;
+        border: 4px solid #fff;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        cursor: pointer;
+        user-select: none;
+        pointer-events: auto;
+        z-index: 20;
+        display: none; /* Inizialmente nascosto, mostrato solo su mobile */
+    }
+    #fullscreenBtn { display: none; }
+  </style>
 </head>
 
 <body>
 
-  <div id="menu" class="center">
-    <h1>Pie Adventure</h1>
-    <div class="buttons">
-      <button id="newBtn">Nuova Partita</button>
-      <button id="contBtn">Continua</button>
-      <button id="saveBtn">Salva</button>
-    </div>
-    <p class="hint">
-      **Touch:** Tasti invisibili in basso per movimento. Usa il **pulsante rosso** per saltare.<br>
-      Tastiera: ← → ↑ / Space
-    </p>
-  </div>
+  <div id="menu" class="center">
+    <h1>Pie Adventure</h1>
+    <div class="buttons">
+      <button id="newBtn" disabled>Nuova Partita (Caricamento...)</button>
+      <button id="contBtn">Continua</button>
+      <button id="saveBtn">Salva</button>
+    </div>
+    <p id="loading-message">Inizializzazione gioco...</p>
+    <p class="hint">
+      **Touch:** Tasti invisibili in basso per movimento. Usa il **pulsante rosso** per saltare.<br>
+      Tastiera: ← → ↑ / Space
+    </p>
+  </div>
 
-  <div id="game-container">
-    <canvas id="game" width="960" height="540"></canvas>
-    <button id="jump-btn"></button>
-    <div id="mobile-controls">
-        <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
-        <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
-    </div>
-  </div>
+  <div id="game-container">
+    <canvas id="game" width="960" height="540"></canvas>
+    <div id="mobile-controls">
+        <button id="jump-btn">JUMP</button> 
+        <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
+        <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
+    </div>
+  </div>
 
 
-  <div id="ending" class="center" style="display:none">
-    <h1 id="finalTitle">Pie diventa King</h1>
-    <p>La foto finale:</p>
-    <div id="
-    window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
-    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
-    window.icon512Sprite = new Image();
+  <div id="ending" class="center" style="display:none">
+    <h1 id="finalTitle"></h1>
+    <p>La foto finale:</p>
+    <button id="restartBtn">Torna al Menu</button>
+  </div>
+   
+    <audio id="bgm" src="assets/music/music_normal.mp3" preload="auto"></audio>
+  <audio id="bgm_final" src="assets/music/music_final.mp3" preload="auto"></audio>
+
+    <script>
+    // Precarica tutte le immagini per evitare flickering
+    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
+    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
+    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
+    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
+    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
+    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
+    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
+    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
+    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
+  </script>
+
+    <script src="rects.js"></script>
+  <script src="projectile.js"></script>
+  <script src="engine.js"></script>
+  <script src="player.js"></script>
+  <script src="boss_final.js"></script>
+  <script src="ending.js"></script>
+  <script src="game.js"></script>
+
+  <script>
+    // Logica di inizializzazione e binding
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // Binding dei pulsanti
+        document.getElementById('newBtn').addEventListener('click', window.Game.startNew);
+        document.getElementById('contBtn').addEventListener('click', window.Game.continue);
+        document.getElementById('saveBtn').addEventListener('click', window.Game.save);
+        document.getElementById('restartBtn').addEventListener('click', window.Ending.restartGame);
+
+        // Inizializzazione controlli mobile
+        function setupMobileControls() {
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
+            if (isTouchDevice) {
+                const controls = document.getElementById('mobile-controls');
+                const jumpBtn = document.getElementById('jump-btn');
+                controls.style.display = 'block';
+
+                const triggerKey = (key, type) => {
+                    if (!window.engine || !window.engine.isRunning()) return;
+                    window.engine.keys[key] = (type === 'start');
+                };
+
+                const addListeners = (el, pressKey) => {
+                    el.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        triggerKey(pressKey, 'start');
+                    });
+                    el.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        triggerKey(pressKey, 'end');
+                    });
+                };
+
+                addListeners(document.getElementById('left-ctrl'), 'ArrowLeft');
+                addListeners(document.getElementById('right-ctrl'), 'ArrowRight');
+                addListeners(jumpBtn, 'Space');
+                jumpBtn.style.display = 'block';
+            }
+        }
+        setupMobileControls();
+        
+        // Avvia il caricamento dei dati di gioco (livelli JSON)
+        window.Game.init(); 
+    });
+  </script>
+
+</body>
+</html>
