@@ -18,16 +18,15 @@
     #menu, #ending {
         height: 100vh;
         width: 100vw;
-        position: fixed; /* Assicura che copra tutto, anche in presenza di barre */
+        position: fixed;
         top: 0;
         left: 0;
         background-image: url('assets/sprites/icon-512.png');
         background-size: cover;
         background-position: center;
-        z-index: 100; /* Assicura che sia sopra tutto il resto */
+        z-index: 100;
     }
     .center {
-        /* Assicurati che il contenuto sia centrato all'interno di 100vh/100vw */
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -59,42 +58,48 @@
         left: 0;
         right: 0;
         bottom: 0;
-        display: none; /* Nascosti di default, gestiti da JS */
-        pointer-events: none; /* Rende il contenitore trasparente ai clic */
+        display: none;
+        pointer-events: none; 
         z-index: 10;
     }
     
-    /* --- STRUTTURA CONTROLLI INVISIBILI (AGGIORNATA) --- */
+    /* --- STRUTTURA CONTROLLI INVISIBILI (AGGIORNATA CON DEBUG VISIVO) --- */
     
     .ctrl-area {
         position: absolute;
-        pointer-events: auto; /* Rende le aree cliccabili */
-        background-color: transparent; /* Nasconde l'area */
-        /* Per DEBUG: usa 'background-color: rgba(255, 0, 0, 0.2);' */
+        pointer-events: auto;
+        /* DEBUG VISIVO: Appena visibile (rosso 10% di opacità) */
+        background-color: rgba(255, 0, 0, 0.1); 
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-sizing: border-box;
+        opacity: 0.9; /* Per vedere le separazioni meglio sul mobile */
     }
 
-    /* AREA SALTO A SINISTRA: Copre il 50% superiore del lato sinistro */
+    /* AREA SALTO (SPACE): Copre il 50% superiore del lato sinistro */
     #jump-ctrl {
         top: 0;
         left: 0;
-        width: 50%; /* Metà larghezza */
-        height: 50%; /* Metà altezza (fascia superiore) */
+        width: 50%; 
+        height: 50%;
+        background-color: rgba(0, 0, 255, 0.1); /* Blu per il salto */
     }
     
-    /* AREA DI MOVIMENTO SINISTRA: Spostata in basso a sinistra (sotto il salto) */
+    /* AREA DI MOVIMENTO SINISTRA (ArrowLeft): Sotto il salto */
     #left-ctrl {
         left: 0;
         bottom: 0;
-        width: 50%; /* Metà larghezza */
-        height: 50%; /* Metà altezza (fascia inferiore) */
+        width: 50%; 
+        height: 50%; 
+        background-color: rgba(0, 255, 0, 0.1); /* Verde per Sinistra */
     }
     
-    /* AREA DI MOVIMENTO DESTRA: Copre l'intera metà destra per il movimento */
+    /* AREA DI MOVIMENTO DESTRA (ArrowRight): Tutta la metà destra */
     #right-ctrl {
         right: 0;
-        top: 0; /* Parte dall'alto */
-        width: 50%; /* Metà destra */
-        height: 100%; /* Tutta l'altezza */
+        top: 0; 
+        width: 50%; 
+        height: 100%; 
+        background-color: rgba(255, 165, 0, 0.1); /* Arancione per Destra */
     }
     
     /* Pulsante Schermo Intero */
@@ -145,7 +150,7 @@
       <button id="saveBtn">Salva</button>
     </div>
     <p class="hint">
-      **Touch:** Tocca in basso ai lati per muoverti, in alto a sinistra per saltare.<br>
+      **Touch:** Tocca in basso a sinistra per muoverti a sinistra, a destra per muoverti a destra, in alto a sinistra per saltare.<br>
       Tastiera: ← → ↑ / Space
     </p>
   </div>
