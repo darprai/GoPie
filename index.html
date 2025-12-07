@@ -40,12 +40,12 @@
         left: 0;
         right: 0;
         bottom: 0;
-        display: none; /* Nascosti di default, Game.js li mostra su mobile/fullscreen */
+        display: none; /* Nascosti di default, gestiti da JS */
         pointer-events: none; /* Rende il contenitore trasparente ai clic */
         z-index: 10;
     }
     
-    /* --- STRUTTURA CONTROLLI INVISIBILI --- */
+    /* --- NUOVA STRUTTURA CONTROLLI INVISIBILI --- */
     
     .ctrl-area {
         position: absolute;
@@ -54,30 +54,29 @@
         /* Per DEBUG: usa 'background-color: rgba(255, 0, 0, 0.2);' */
     }
 
-    /* AREA DI MOVIMENTO (SINISTRA) */
+    /* AREA DI MOVIMENTO SINISTRA: Copre il 40% in basso a sinistra */
     #left-ctrl {
         left: 0;
         bottom: 0;
-        width: 30%; /* Occupiamo il 30% a sinistra */
-        height: 100%; /* Copre l'intera altezza per un facile tocco */
+        width: 40%;
+        height: 50%; /* Metà inferiore */
     }
     
-    /* AREA DI MOVIMENTO (DESTRA) */
+    /* AREA DI MOVIMENTO DESTRA: Copre il 40% in basso a destra */
     #right-ctrl {
         right: 0;
         bottom: 0;
-        width: 30%; /* Occupiamo il 30% a destra */
-        height: 100%; /* Copre l'intera altezza */
+        width: 40%;
+        height: 50%; /* Metà inferiore */
     }
 
-    /* AREA SALTO (CENTRALE) */
-    /* L'area centrale (Jump) si sovrappone alle aree laterali per consentire il multi-touch, 
-       ma in questo caso, rendiamo l'area centrale responsabile del salto. */
+    /* AREA SALTO: Copre la FASCIA SUPERIORE (permette il multi-touch) */
     #jump-ctrl {
-        left: 30%;
-        right: 30%;
-        bottom: 0;
-        height: 100%; /* Copre l'area centrale per il salto */
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50%; /* Metà superiore dello schermo */
+        width: 100%; /* Tutta la larghezza */
     }
     
     /* Pulsante Schermo Intero */
@@ -120,7 +119,7 @@
       <button id="saveBtn">Salva</button>
     </div>
     <p class="hint">
-      Touch: Tocca ai lati per muoverti, al centro per saltare.<br>
+      Touch: Tocca in basso ai lati per muoverti, nella metà superiore per saltare.<br>
       Tastiera: ← → ↑ / Space
     </p>
   </div>
@@ -161,7 +160,7 @@
   <script src="ending.js"></script>
 
   <script>
-    // Dichiarazione degli sprite (assumiamo siano corretti e puntino ai file)
+    // Dichiarazione degli sprite (devi assicurarti che questi percorsi siano corretti)
     window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
     window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
@@ -208,11 +207,10 @@
       document.addEventListener('fullscreenchange', () => {
           if (document.fullscreenElement) {
               gameContainer.classList.add('fullscreen');
-              // Mostra i controlli quando si entra in full screen (tipico mobile)
               mobileControlsDiv.style.display = 'block'; 
           } else {
               gameContainer.classList.remove('fullscreen');
-              // Nascondi i controlli all'uscita se l'utente è su desktop
+              // Nascondi i controlli solo se non siamo su un dispositivo mobile
               if (!/Mobi|Android/i.test(navigator.userAgent)) {
                  mobileControlsDiv.style.display = 'none'; 
               }
@@ -224,8 +222,7 @@
           const key = area.getAttribute('data-key');
           
           const startKey = (e) => {
-              // Impedisce lo zoom e lo scroll della pagina
-              e.preventDefault(); 
+              e.preventDefault(); // Impedisce lo zoom/scroll
               if (window.engine) {
                   window.engine.keys[key] = true;
               }
@@ -249,10 +246,8 @@
           area.addEventListener('mouseout', endKey, { passive: false });
       });
 
-      // Se l'utente è su mobile, assicuriamo che i controlli siano pronti ad apparire.
-      // Il Game.js li renderà invisibili se l'utente è su desktop.
+      // Se l'utente è su mobile, assicuriamo che i controlli siano pronti
       if (/Mobi|Android/i.test(navigator.userAgent)) {
-          // Nota: La visualizzazione effettiva avviene quando l'utente entra in Schermo Intero per una migliore immersività.
           mobileControlsDiv.style.display = 'block'; 
       }
     });
