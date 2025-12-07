@@ -64,7 +64,7 @@
         z-index: 10;
     }
     
-    /* --- STRUTTURA CONTROLLI INVISIBILI --- */
+    /* --- STRUTTURA CONTROLLI INVISIBILI (AGGIORNATA) --- */
     
     .ctrl-area {
         position: absolute;
@@ -73,29 +73,28 @@
         /* Per DEBUG: usa 'background-color: rgba(255, 0, 0, 0.2);' */
     }
 
-    /* AREA DI MOVIMENTO SINISTRA: Copre il 40% in basso a sinistra */
-    #left-ctrl {
-        left: 0;
-        bottom: 0;
-        width: 40%;
-        height: 50%; /* Metà inferiore */
-    }
-    
-    /* AREA DI MOVIMENTO DESTRA: Copre il 40% in basso a destra */
-    #right-ctrl {
-        right: 0;
-        bottom: 0;
-        width: 40%;
-        height: 50%; /* Metà inferiore */
-    }
-
-    /* AREA SALTO: Copre la FASCIA SUPERIORE (permette il multi-touch) */
+    /* AREA SALTO A SINISTRA: Copre il 50% superiore del lato sinistro */
     #jump-ctrl {
         top: 0;
         left: 0;
+        width: 50%; /* Metà larghezza */
+        height: 50%; /* Metà altezza (fascia superiore) */
+    }
+    
+    /* AREA DI MOVIMENTO SINISTRA: Spostata in basso a sinistra (sotto il salto) */
+    #left-ctrl {
+        left: 0;
+        bottom: 0;
+        width: 50%; /* Metà larghezza */
+        height: 50%; /* Metà altezza (fascia inferiore) */
+    }
+    
+    /* AREA DI MOVIMENTO DESTRA: Copre l'intera metà destra per il movimento */
+    #right-ctrl {
         right: 0;
-        height: 50%; /* Metà superiore dello schermo */
-        width: 100%; /* Tutta la larghezza */
+        top: 0; /* Parte dall'alto */
+        width: 50%; /* Metà destra */
+        height: 100%; /* Tutta l'altezza */
     }
     
     /* Pulsante Schermo Intero */
@@ -146,7 +145,7 @@
       <button id="saveBtn">Salva</button>
     </div>
     <p class="hint">
-      **Touch:** Tocca in basso ai lati per muoverti, nella metà superiore per saltare.<br>
+      **Touch:** Tocca in basso ai lati per muoverti, in alto a sinistra per saltare.<br>
       Tastiera: ← → ↑ / Space
     </p>
   </div>
@@ -158,11 +157,11 @@
     <button id="fullscreenBtn">⛶</button>
     
     <div id="mobile-controls">
+        <div id="jump-ctrl" class="ctrl-area" data-key="Space"></div>
+        
         <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
         
         <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
-        
-        <div id="jump-ctrl" class="ctrl-area" data-key="Space"></div>
     </div>
   </div>
 
@@ -220,7 +219,7 @@
       contBtn.addEventListener("click", () => Game.continue());
       saveBtn.addEventListener("click", () => Game.save());
       
-      // LOGICA SCHERMO INTERO (Correzione)
+      // LOGICA SCHERMO INTERO
       function toggleFullscreen() {
           const isFullscreen = document.fullscreenElement;
           if (!isFullscreen) {
