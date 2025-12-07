@@ -12,7 +12,6 @@ const Game = (function() {
     const ctx = canvas.getContext('2d');
     const menuDiv = document.getElementById('menu');
     const gameContainer = document.getElementById('game-container');
-    const endingDiv = document.getElementById('ending');
     const bgm = document.getElementById('bgm');
     const bgmFinal = document.getElementById('bgm_final');
 
@@ -24,16 +23,12 @@ const Game = (function() {
     let gameEngine;
 
     const PLATFORM_TYPE = {
-        DISCO: "disco",
-        DJDISC: "djdisc",
-        PALO: "palo",
-        MACCHINA: "macchina"
+        DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
 
     // --- Gestione Livelli ---
 
     function loadLevels() {
-        // Carica i JSON dalla cartella 'levels/'
         const levelPromises = [
             fetch('levels/level1.json').then(res => res.json()),
             fetch('levels/level2.json').then(res => res.json()),
@@ -48,6 +43,7 @@ const Game = (function() {
             .catch(error => {
                 console.error("Errore nel caricamento di un file JSON del livello:", error);
                 alert("Errore caricamento livelli: Controlla la console e i percorsi in 'levels/'.");
+                // Questo errore è critico e ferma l'avvio
             });
     }
 
@@ -60,18 +56,17 @@ const Game = (function() {
         currentLevelIndex = index;
         currentLevel = levels[index];
         
+        // Inizializza il giocatore
         if (!player) {
             player = new Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else {
-            player.x = currentLevel.playerStart.x;
-            player.y = currentLevel.playerStart.y;
-            player.vx = 0;
-            player.vy = 0;
+            // Se esiste, resettalo
+            player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
         }
         
         cameraX = 0;
         
-        // Reset/inizializzazione del Boss (Livello 3)
+        // Setup Boss (Livello 3)
         if (currentLevelIndex === 2 && window.BossFinal) {
              window.BossFinal.reset();
              const config = currentLevel.boss;
@@ -276,17 +271,18 @@ const Game = (function() {
     // --- Controllo Flusso di Gioco ---
 
     function startNew() {
+        // Nascondi Menu, Mostra Canvas
         menuDiv.style.display = 'none';
         gameContainer.style.display = 'block';
 
+        // Avvia Musica
         bgm.loop = true;
         bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
 
-        player = new Player(0, 0); 
-        
         currentLevelIndex = 0; 
         loadLevel(currentLevelIndex);
         
+        // Avvia il Game Engine
         if (gameEngine) {
             gameEngine.start();
         } else {
@@ -301,19 +297,16 @@ const Game = (function() {
         
         if (currentLevelIndex < levels.length) {
             if (currentLevelIndex === 2) {
+                // Passaggio al livello Boss
                 bgm.pause();
                 bgmFinal.loop = true;
                 bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
-                
-                if (window.BossFinal) {
-                    const config = levels[2].boss;
-                    window.BossFinal.start(config.x, config.y, config); 
-                }
             }
             
             loadLevel(currentLevelIndex);
             
         } else {
+            // Fine dei livelli (dovrebbe avvenire solo se il Level 3 non chiama endGameWin)
             gameEngine.stop();
             bgm.pause();
             bgmFinal.pause();
@@ -337,6 +330,7 @@ const Game = (function() {
         gameEngine.stop();
         
         if (player.lives <= 0) {
+            // Game Over
             player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
             
             setTimeout(() => {
@@ -346,6 +340,7 @@ const Game = (function() {
                 bgmFinal.pause();
             }, 1000);
         } else {
+             // Ricarica il livello corrente e riavvia il loop
              loadLevel(currentLevelIndex);
              gameEngine.start();
         }
@@ -360,15 +355,7 @@ const Game = (function() {
         alert("Funzione Salva non implementata.");
     }
     
-    function getCurLevelIndex() {
-        return currentLevelIndex;
-    }
-
-    function getCurLevelData() {
-        return currentLevel;
-    }
-
-
+    // Carica i livelli non appena la finestra è pronta (dopo aver caricato gli sprite in index.html)
     window.onload = loadLevels;
 
     return {
@@ -379,12 +366,8 @@ const Game = (function() {
         endGameWin: endGameWin,
         onPlayerDied: onPlayerDied,
         onPlayerFell: onPlayerFell,
-        getCurLevelIndex: getCurLevelIndex,
-        getCurLevelData: getCurLevelData
+        // ... (altre funzioni esposte)
     };
 })();
 
 window.Game = Game;
-        // 2. Collisioni Trappole Invisibili (es. buco nella mappa)
-        if (currentLevel.invisible_traps) {
-             for (let trap
