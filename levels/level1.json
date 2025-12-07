@@ -25,5 +25,5 @@
     {"x": 1600, "y": 550, "w": 200, "h": 50, "type": "fall_death", "invisible": true},
     {"x": 2000, "y": 550, "w": 200, "h": 50, "type": "fall_death", "invisible": true}
   ],
-  "endZone": {"x": 2600, "y": 400, "w": 20, "h": 60, "type": "palo"} 
+  "endZone": {"x": 2600, "y": 400, "w": 20, "h": 60, "type": "palo"}
 }
