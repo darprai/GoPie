@@ -113,7 +113,7 @@
         font-size: 18px;
     }
 
-    /* Stile per lo schermo intero */
+    /* Stile per lo schermo intero (assicura che il gioco copra tutto quando in full screen) */
     #game-container.fullscreen {
         width: 100vw;
         height: 100vh;
@@ -121,7 +121,7 @@
         top: 0;
         left: 0;
         margin: 0;
-        max-width: none; /* Rimuove il max-width fisso */
+        max-width: none;
     }
     /* Forza il body ad occupare l'intera viewport su mobile */
     body {
@@ -146,7 +146,7 @@
       <button id="saveBtn">Salva</button>
     </div>
     <p class="hint">
-      Touch: Tocca in basso ai lati per muoverti, nella metà superiore per saltare.<br>
+      **Touch:** Tocca in basso ai lati per muoverti, nella metà superiore per saltare.<br>
       Tastiera: ← → ↑ / Space
     </p>
   </div>
