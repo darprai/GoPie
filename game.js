@@ -56,10 +56,8 @@ const Game = (() => {
         window.icon512Sprite.src = 'assets/sprites/icon-512.png';
     }
     
-    // Mostra i controlli touch solo se non è un desktop
+    // Su mobile, rendiamo le aree touch sensibili all'inizio del gioco
     if (/Mobi|Android/i.test(navigator.userAgent)) {
-        // La visibilità iniziale del contenitore mobile è gestita dall'HTML/CSS.
-        // Qui ci assicuriamo che, se siamo su mobile, il contenitore sia pronto.
         document.getElementById('mobile-controls').style.pointerEvents = 'auto';
     }
 
