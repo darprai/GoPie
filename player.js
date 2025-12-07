@@ -18,7 +18,15 @@ class Player {
   }
 
   update(dt, input, platforms) {
-    const isLevel3 = window.Game.getCurLevelIndex() === 2;
+    // === FIX: Controllo di sicurezza per window.Game ===
+    const GameModule = window.Game;
+    let isLevel3 = false;
+    
+    // Verifica che il modulo Game sia pronto e che la funzione esista
+    if (GameModule && typeof GameModule.getCurLevelIndex === 'function') {
+        isLevel3 = GameModule.getCurLevelIndex() === 2;
+    }
+    // =================================================
 
     // Movement
     let dx = 0;
@@ -57,10 +65,10 @@ class Player {
         this.vy = 0;
         this.grounded = true;
       } 
-      // Collisione X (Non implementata per semplicità, il gioco è a scorrimento orizzontale)
+      // Collisione X (Non implementata per semplicità)
     }
 
-    // Gestione caduta nel vuoto (Trap: Morte istantanea se y è troppo alto/basso)
+    // Gestione caduta nel vuoto (Trap: Morte istantanea se y è troppo basso)
     if (this.y > 600 && !isLevel3) { // 600 è un valore approssimativo per "caduto di sotto"
       window.Game.onPlayerFell(); // Nuovo gestore per caduta
     }
