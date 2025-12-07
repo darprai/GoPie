@@ -1,113 +1,161 @@
-class Player {
-  constructor(x, y) {
+const Player = function(x, y) {
     this.x = x;
     this.y = y;
-    this.w = 40;
-    this.h = 60;
+    this.w = 40; 
+    this.h = 40; 
     this.vx = 0;
     this.vy = 0;
-    this.speed = 250;
-    this.jumpForce = 450;
-    this.grounded = false;
-    this.gravity = 980;
+    this.speed = 250; 
+    this.jumpForce = -750; 
+    this.gravity = 2500; 
+    this.onGround = false;
     this.lives = 3; 
     this.score = 0;
-    this.animTimer = 0;
-    this.frame = 0;
-    this.maxFrames = 8; 
-  }
+    this.facingRight = true;
+    this.isMoving = false;
+    this.animationFrame = 0;
+    this.animationTimer = 0;
 
-  update(dt, input, platforms) {
-    // === FIX: Controllo di sicurezza per window.Game ===
-    const GameModule = window.Game;
-    let isLevel3 = false;
-    
-    // Verifica che il modulo Game sia pronto e che la funzione esista
-    if (GameModule && typeof GameModule.getCurLevelIndex === 'function') {
-        isLevel3 = GameModule.getCurLevelIndex() === 2;
-    }
-    // =================================================
+    // Aggiungi un piccolo offset per rendere la collisione con il terreno più indulgente
+    this.groundEpsilon = 5; 
 
-    // Movement
-    let dx = 0;
-    if (!isLevel3) { // Movimento solo in level1 e level2
-        if (input.keys['ArrowLeft'] || input.keys['a'] || input.touch.left) dx = -1;
-        if (input.keys['ArrowRight'] || input.keys['d'] || input.touch.right) dx = 1;
-    }
-    
-    this.vx = dx * this.speed;
-
-    // Jumping
-    if ((input.keys['ArrowUp'] || input.keys[' '] || input.touch.jump) && this.grounded) {
-      this.vy = -this.jumpForce;
-      this.grounded = false;
-    }
-
-    // Apply movement
-    this.x += this.vx * dt;
-    this.y += this.vy * dt;
-    this.vy += this.gravity * dt;
-
-    // Animation
-    this.animTimer += dt;
-    if (this.animTimer > 0.1) {
-        this.frame = (this.frame + 1) % this.maxFrames;
-        this.animTimer = 0;
-    }
-
-
-    // Collision Detection
-    this.grounded = false;
-    for (let p of platforms) {
-      // Collisione Y
-      if (this.vy > 0 && rectsOverlap({x: this.x, y: this.y + this.vy * dt, w: this.w, h: this.h}, p)) {
-        this.y = p.y - this.h;
+    // Velocità di reset (necessaria per il riavvio del livello)
+    this.reset = function(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = 0;
         this.vy = 0;
-        this.grounded = true;
-      } 
-      // Collisione X (Non implementata per semplicità)
-    }
+        this.onGround = false;
+        this.lives = 3;
+        this.score = 0;
+    };
+    
+    // Incrementa le vite se < 3
+    this.collectHeart = function() {
+        if (this.lives < 3) {
+            this.lives++;
+        }
+        this.score += 50; 
+    };
 
-    // Gestione caduta nel vuoto (Trap: Morte istantanea se y è troppo basso)
-    if (this.y > 600 && !isLevel3) { // 600 è un valore approssimativo per "caduto di sotto"
-      window.Game.onPlayerFell(); // Nuovo gestore per caduta
-    }
+    // Ritorna true se il giocatore ha ancora vite
+    this.hit = function() {
+        this.lives--;
+        if (this.lives > 0) {
+            return true; 
+        }
+        return false; 
+    };
 
-    // Raccolta Cuori (Gestito in game.js per l'accesso ai dati del livello)
-  }
+    this.update = function(dt, input, platforms) {
+        const keys = input.keys;
+        
+        // 1. INPUT ORIZZONTALE
+        this.vx = 0;
+        if (keys.ArrowLeft) {
+            this.vx = -this.speed;
+            this.facingRight = false;
+            this.isMoving = true;
+        } else if (keys.ArrowRight) {
+            this.vx = this.speed;
+            this.facingRight = true;
+            this.isMoving = true;
+        } else {
+            this.isMoving = false;
+        }
 
-  collectHeart() {
-      this.lives = Math.min(5, this.lives + 1); // Max 5 cuori
-      this.score += 50; // Punti per cuore
-  }
+        // 2. LOGICA DI SALTO
+        // Controlla sia Space che ArrowUp
+        if ((keys.Space || keys.ArrowUp) && this.onGround) {
+            this.vy = this.jumpForce;
+            this.onGround = false;
+        }
 
-  hit() {
-    this.lives--;
-    return this.lives > 0;
-  }
+        // 3. GRAVITÀ
+        this.vy += this.gravity * dt;
 
-  draw(ctx, camX) {
-    const drawX = Math.round(this.x - camX);
-    const drawY = Math.round(this.y);
+        // 4. MOVIMENTO
+        let newX = this.x + this.vx * dt;
+        let newY = this.y + this.vy * dt;
 
-    // Usa lo sprite di corsa o lo sprite statico
-    let sprite = (Math.abs(this.vx) > 0.1 && this.grounded) ? window.runSprite : window.playerSprite;
+        // 5. COLLISIONI (X-axis)
+        this.x = newX;
+        for (let p of platforms) {
+            if (rectsOverlap(this, p)) {
+                if (this.vx > 0) {
+                    this.x = p.x - this.w; // Colpisce a destra
+                } else if (this.vx < 0) {
+                    this.x = p.x + p.w;  // Colpisce a sinistra
+                }
+                this.vx = 0; 
+            }
+        }
+        
+        // 6. COLLISIONI (Y-axis)
+        this.y = newY;
+        this.onGround = false;
 
-    if (sprite.complete && sprite.width > 0) {
-        // Disegno dello sprite Pie
-        const sW = sprite.width / this.maxFrames;
-        const sH = sprite.height;
-        ctx.drawImage(
-            sprite, 
-            this.frame * sW, 0, sW, sH, 
-            drawX, drawY, this.w, this.h
-        );
-    } else {
-        // Fallback rettangolo
-        ctx.fillStyle = '#00FF00';
-        ctx.fillRect(drawX, drawY, this.w, this.h);
-    }
-  }
-}
+        for (let p of platforms) {
+            if (rectsOverlap(this, p)) {
+                if (this.vy > 0) {
+                    // Atterra su piattaforma
+                    this.y = p.y - this.h + this.groundEpsilon; // Spinge leggermente su per evitare ricontrollo
+                    this.onGround = true;
+                    this.vy = 0;
+                } else if (this.vy < 0) {
+                    // Colpisce testa
+                    this.y = p.y + p.h;
+                    this.vy = 0;
+                }
+            }
+        }
+        
+        // Rimozione del groundEpsilon per evitare bug di salto multiplo
+        if (this.onGround) {
+            this.y = this.y - this.groundEpsilon;
+        }
 
-window.Player = Player;
+
+        // 7. Animazione (solo Run)
+        if (this.isMoving) {
+            this.animationTimer += dt;
+            if (this.animationTimer > 0.1) {
+                this.animationFrame = (this.animationFrame + 1) % 4;
+                this.animationTimer = 0;
+            }
+        } else {
+            this.animationFrame = 0; // Torna al frame di Idle
+        }
+    };
+
+    this.draw = function(ctx, camX) {
+        const x = Math.round(this.x - camX);
+        const y = Math.round(this.y);
+        
+        let spriteToUse = window.playerSprite;
+        let frameX = 0; // Idle frame
+
+        if (this.isMoving && window.runSprite.complete) {
+            spriteToUse = window.runSprite;
+            // Frame d'animazione per la corsa
+            frameX = this.animationFrame * 40; 
+        }
+
+        // Disegna l'ombra/contorno rosso in caso di danno (solo se non è l'ultimo livello)
+        if (Game.getCurLevelIndex() !== 2 && this.lives <= 1 && Math.floor(performance.now() / 100) % 2 === 0) {
+             ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+             ctx.fillRect(x, y, this.w, this.h);
+        }
+
+        // Disegna lo sprite
+        ctx.save();
+        if (!this.facingRight) {
+            // Rifletti l'immagine orizzontalmente
+            ctx.scale(-1, 1);
+            ctx.drawImage(spriteToUse, frameX, 0, this.w, this.h, -(x + this.w), y, this.w, this.h);
+        } else {
+            ctx.drawImage(spriteToUse, frameX, 0, this.w, this.h, x, y, this.w, this.h);
+        }
+        ctx.restore();
+    };
+};
