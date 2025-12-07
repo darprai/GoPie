@@ -222,7 +222,7 @@
           }
       };
 
-      // CORREZIONE: Uso degli eventi touch per garantire la reattività su mobile
+      // Correzione e gestione eventi per il pulsante Salta
       jumpBtn.addEventListener('touchstart', startJump, { passive: false });
       jumpBtn.addEventListener('touchend', endJump, { passive: false });
       jumpBtn.addEventListener('touchcancel', endJump, { passive: false });
