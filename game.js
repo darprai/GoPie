@@ -8,6 +8,7 @@ const Game = (() => {
   let engine, player, levels = [], cur = 0, camX = 0;
   let bossStarted = false;
   let endTriggered = false; 
+  let endAnimation = null; // Nuovo stato per l'animazione
 
   async function loadAllLevels() {
     levels = [];
@@ -65,6 +66,7 @@ const Game = (() => {
     camX = 0;
     bossStarted = false;
     BossFinal.reset();
+    endAnimation = null; // Resetta l'animazione all'inizio
 
     playMusic(cur);
 
@@ -132,6 +134,16 @@ const Game = (() => {
 
   function startLevel(n) {
     cur = n;
+    if (cur >= levels.length) {
+        // Se si supera l'ultimo livello (es. level 3), mostra la schermata finale
+        engine.stop();
+        document.getElementById('finalTitle').textContent = 'Pie diventa King';
+        document.getElementById('game').style.display = 'none';
+        document.getElementById('ending').style.display = 'block';
+        window.showFinalScreen(); 
+        return;
+    }
+
     playMusic(cur);
     const start = levels[cur].playerStart || {x: 80, y: 300};
     player = new Player(start.x, start.y);
@@ -139,6 +151,8 @@ const Game = (() => {
     camX = 0;
     bossStarted = false;
     BossFinal.reset();
+    endAnimation = null;
+    endTriggered = false;
     engine.start(update, render);
   }
   
@@ -148,6 +162,12 @@ const Game = (() => {
 
   function update(dt) {
     const lvl = levels[cur];
+    
+    // Se l'animazione finale è in corso, aggiorniamo solo quella
+    if (endAnimation) {
+        endAnimation.update(dt);
+        return; 
+    }
 
     const allPlatforms = (lvl.platforms || []).map(p => 
         Array.isArray(p) ? { x: p[0], y: p[1], w: p[2], h: p[3], isPlatform: true } : { ...p, isPlatform: true }
@@ -155,6 +175,7 @@ const Game = (() => {
 
     player.update(dt, { keys: engine.keys, touch: engine.touch }, allPlatforms);
 
+    // Gestione della telecamera (normale o fissa per il boss)
     if (cur !== 2) { 
         const margin = 300;
         const target = Math.min(
@@ -220,18 +241,19 @@ const Game = (() => {
         engine.stop();
         endTriggered = true;
         setTimeout(() => {
+             // Passa direttamente alla schermata finale dopo la vittoria del boss
             document.getElementById('finalTitle').textContent = 'Pie diventa King';
             document.getElementById('game').style.display = 'none';
             document.getElementById('ending').style.display = 'block';
-            window.showFinalScreen(); // Chiama la funzione in ending.js per l'immagine
+            window.showFinalScreen();
         }, 1000); 
     }
 
-    // level end (Level 1 e 2)
+    // level end (Level 1 e 2): CONTROLLO COLLISIONE CON IL PALO
     if (cur !== 2 && !endTriggered) {
-        const endZone = lvl.endZone || { x: (lvl.length || 2000) - 200, y: 0, w: 50, h: engine.height };
+        const palo = lvl.endZone;
 
-        if (player.x > endZone.x) { 
+        if (palo && rectsOverlap(palo, player)) { 
              endTriggered = true;
              engine.stop();
              setTimeout(() => startEndSequence(lvl), 500); 
@@ -239,12 +261,98 @@ const Game = (() => {
     }
   }
 
-  // Funzioni drawEndObjects e startEndSequence (omesse per brevità, sono state fornite in precedenza e sono corrette)
-  function drawEndObjects(ctx, camX, palo, ragazza, macchina) {
-    // ... Implementazione
-  }
+  // --- LOGICA ANIMAZIONE FINALE ---
+
   function startEndSequence(lvl) {
-    // ... Implementazione
+    const Palo = lvl.endZone;
+    const Ragazza = { x: Palo.x + 50, y: Palo.y, w: 50, h: 60 };
+    const Macchina = { x: Palo.x + 100, y: Palo.y + 10, w: 100, h: 60 };
+    
+    // Posiziona il giocatore in modo che sia vicino al Palo
+    player.x = Palo.x - 40;
+    player.y = Palo.y - player.h;
+    
+    // Blocco l'input del giocatore durante l'animazione
+    engine.keys = {}; 
+    
+    // Inizializza lo stato dell'animazione
+    endAnimation = {
+        state: 0, // 0: Palo raggiunto, 1: Ragazza si muove, 2: Macchina si muove, 3: Finito
+        timer: 0,
+        ragazzaX: Ragazza.x,
+        macchinaX: Macchina.x,
+        
+        update: function(dt) {
+            this.timer += dt;
+            
+            if (this.state === 0 && this.timer > 0.5) {
+                // FASE 1: Ragazza appare e si muove verso la macchina
+                this.state = 1;
+                this.timer = 0;
+            } else if (this.state === 1) {
+                // La Ragazza cammina lentamente verso la Macchina
+                this.ragazzaX += 50 * dt; 
+                if (this.ragazzaX >= Macchina.x) {
+                    this.ragazzaX = Macchina.x;
+                    this.state = 2;
+                    this.timer = 0;
+                }
+            } else if (this.state === 2 && this.timer > 1.0) {
+                // FASE 2: Macchina (con Pie e Ragazza dentro) si muove via
+                this.macchinaX += 300 * dt; // Velocità della macchina
+                if (this.macchinaX > engine.width) {
+                    this.state = 3;
+                    this.timer = 0;
+                }
+            } else if (this.state === 3) {
+                // FASE 3: Transizione al livello successivo
+                endAnimation = null;
+                endTriggered = false;
+                startLevel(cur + 1); // Carica il livello successivo!
+            }
+        },
+        
+        draw: function(ctx, camX) {
+            // 1. Palo (Zona di arrivo)
+            if (window.paloSprite.complete) {
+                // Il Palo è sempre disegnato nello stesso punto per l'animazione
+                ctx.drawImage(window.paloSprite, Math.round(Palo.x - camX), Math.round(Palo.y - 120), Palo.w, 120 + 60); 
+            }
+            
+            // 2. Ragazza (Visibile solo nelle fasi 1 e 2)
+            if (this.state >= 1 && this.state <= 2) {
+                if (window.ragazzaSprite.complete) {
+                    // Disegna la ragazza vicino alla macchina o che cammina
+                    ctx.drawImage(window.ragazzaSprite, Math.round(this.ragazzaX - camX), Math.round(Ragazza.y - Ragazza.h), Ragazza.w, Ragazza.h);
+                }
+            }
+            
+            // 3. Macchina (Visibile nelle fasi 1, 2 e 3)
+            if (this.state >= 1) {
+                if (window.macchinaSprite.complete) {
+                    // Disegna la macchina che si muove
+                    ctx.drawImage(window.macchinaSprite, Math.round(this.macchinaX - camX), Math.round(Macchina.y - 60), Macchina.w + 50, Macchina.h + 20); 
+                }
+            }
+            
+            // 4. Player (Visibile solo nella fase 0 e 1, poi sparisce nella macchina)
+            if (this.state < 2) {
+                // Disegno statico vicino al palo
+                player.draw(ctx, camX); 
+            }
+            
+            // Messaggio Finale (Opzionale)
+            if (this.state < 3) {
+                ctx.font = '30px Impact';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#FFD700';
+                ctx.fillText('Livello ' + (cur + 1) + ' Completato!', engine.width / 2, 50);
+                ctx.textAlign = 'left';
+            }
+        }
+    };
+    // Riavvia il loop d'animazione
+    engine.start(update, render); 
   }
 
 
@@ -254,6 +362,7 @@ const Game = (() => {
 
     // platforms
     (lvl.platforms || []).forEach(p => {
+        // ... (Logica di rendering delle piattaforme)
       let x, y, w, h, spriteName;
       
       if(Array.isArray(p)) {
@@ -278,6 +387,7 @@ const Game = (() => {
 
     // enemies (inclusi i cuori)
     (lvl.enemies || []).forEach(e => {
+        // ... (Logica di rendering dei nemici)
         let x = e.x, y = e.y, w = e.w || 20, h = e.h || 20;
 
         if (e.type === 'heart') {
@@ -311,29 +421,49 @@ const Game = (() => {
     // boss (Golruk)
     BossFinal.render(ctx, camX);
 
-    // player
-    player.draw(ctx, camX);
-
-    // HUD
-    ctx.fillStyle = '#fff';
-    ctx.font = '22px Arial';
-    ctx.fillText('Lives: ' + player.lives, 12, 28);
-    ctx.fillText('Score: ' + player.score, 12, 54); 
     
-    if (cur === 2) {
-      const thrownCount = BossFinal.thrown;
-      ctx.fillStyle = thrownCount >= 50 ? '#1ee0b8' : '#fff';
-      ctx.fillText('Drinks to dodge: ' + Math.max(0, 50 - thrownCount), 12, 80);
-      
-      if (thrownCount >= 50) {
-           ctx.font = '40px Impact';
-           ctx.textAlign = 'center';
-           ctx.fillStyle = '#FFD700';
-           ctx.fillText('Pie diventa King!', engine.width / 2, engine.height / 2);
-           ctx.textAlign = 'left';
-      }
+    // Se l'animazione NON è attiva, disegniamo il Palo e il Giocatore
+    if (!endAnimation) {
+        // Disegna la End Zone (Palo)
+        if (cur !== 2) {
+            const Palo = lvl.endZone;
+            if (Palo && window.paloSprite.complete) {
+                // Disegna il palo più in alto per includere il palo intero
+                ctx.drawImage(window.paloSprite, Math.round(Palo.x - camX), Math.round(Palo.y - 120), Palo.w, 120 + 60);
+            } else if (Palo) {
+                // Fallback Palo
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(Math.round(Palo.x - camX), Math.round(Palo.y), Palo.w, Palo.h);
+            }
+        }
+        
+        // player
+        player.draw(ctx, camX);
+        
+        // HUD e messaggi boss
+        ctx.fillStyle = '#fff';
+        ctx.font = '22px Arial';
+        ctx.fillText('Lives: ' + player.lives, 12, 28);
+        ctx.fillText('Score: ' + player.score, 12, 54); 
+        
+        if (cur === 2) {
+          const thrownCount = BossFinal.thrown;
+          ctx.fillStyle = thrownCount >= 50 ? '#1ee0b8' : '#fff';
+          ctx.fillText('Drinks to dodge: ' + Math.max(0, 50 - thrownCount), 12, 80);
+          
+          if (thrownCount >= 50) {
+               ctx.font = '40px Impact';
+               ctx.textAlign = 'center';
+               ctx.fillStyle = '#FFD700';
+               ctx.fillText('Pie diventa King!', engine.width / 2, engine.height / 2);
+               ctx.textAlign = 'left';
+          }
+        }
+    } else {
+        // Se l'animazione è attiva, la disegniamo sopra tutto
+        endAnimation.draw(ctx, camX);
     }
-  }
+  } // fine render
 
   return {
     startNew: ()=> _start(true),
