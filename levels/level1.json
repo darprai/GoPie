@@ -9,7 +9,8 @@
     {"x": 950, "y": 200, "w": 150, "h": 30, "sprite": "djdisc"},
     {"x": 1300, "y": 500, "w": 300, "h": 50, "sprite": "disco"},
     {"x": 1800, "y": 450, "w": 150, "h": 30, "sprite": "djdisc"},
-    {"x": 2200, "y": 400, "w": 300, "h": 50, "sprite": "disco"}
+    {"x": 2200, "y": 400, "w": 300, "h": 50, "sprite": "disco"},
+    {"x": 2550, "y": 460, "w": 100, "h": 50, "sprite": "djdisc"}
   ],
   "enemies": [
     {"x": 500, "y": 350, "type": "heart", "w": 32, "h": 32},
@@ -24,5 +25,5 @@
     {"x": 1600, "y": 550, "w": 200, "h": 50, "type": "fall_death", "invisible": true},
     {"x": 2000, "y": 550, "w": 200, "h": 50, "type": "fall_death", "invisible": true}
   ],
-  "endZone": {"x": 2600, "y": 0, "w": 50, "h": 540}
+  "endZone": {"x": 2600, "y": 400, "w": 20, "h": 60, "type": "palo"} 
 }
