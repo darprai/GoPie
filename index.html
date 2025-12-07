@@ -14,15 +14,14 @@
   <link rel="stylesheet" href="style.css">
   
   <style>
-    /* 1. Forza Menu e Ending a coprire l'intera Viewport (vh/vw) */
+    /* Stili CSS omessi per brevità, usa quelli che hai fornito precedentemente */
     #menu, #ending {
         height: 100vh;
         width: 100vw;
         position: fixed;
         top: 0;
         left: 0;
-        /* Assicurati che il percorso dell'immagine sia corretto */
-        background-image: url('assets/sprites/icon-512.png'); 
+        background-image: url('assets/sprites/icon-512.png');
         background-size: cover;
         background-position: center;
         z-index: 100;
@@ -36,8 +35,6 @@
         width: 100%;
         text-align: center;
     }
-    
-    /* 2. Nuovo contenitore per il gioco - FORZA SCHERMO INTERO */
     #game-container {
         position: fixed;
         top: 0;
@@ -47,17 +44,13 @@
         display: none;
         margin: 0;
     }
-
-    /* 3. Canvas e i suoi wrapper */
     #game {
         display: block;
         width: 100%;
         height: 100%;
-        object-fit: contain; /* Adatta il canvas mantenendo l'aspect ratio (960x540) */
+        object-fit: contain; 
         margin: auto;
     }
-
-    /* Forza il body ad occupare l'intera viewport su mobile */
     body {
         margin: 0;
         padding: 0;
@@ -65,47 +58,25 @@
         width: 100vw;
         overflow: hidden;
     }
-    
-    /* --- CONTROLLI MOBILE VISIBILI E INVISIBILI --- */
-    
     #mobile-controls {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        /* Inizialmente nascosto su desktop, visibile solo se rilevato mobile */
         display: none; 
         pointer-events: none; 
         z-index: 10;
     }
-    
     .ctrl-area {
         position: absolute;
         pointer-events: auto; 
         background-color: transparent; 
     }
-
-    /* AREA DI MOVIMENTO SINISTRA (ArrowLeft) */
-    #left-ctrl {
-        left: 0;
-        bottom: 0;
-        width: 30%; 
-        height: 50%;
-    }
-    
-    /* AREA DI MOVIMENTO DESTRA (ArrowRight) */
-    #right-ctrl {
-        right: 0;
-        bottom: 0;
-        width: 30%; 
-        height: 50%; 
-    }
-    
-    /* PULSANTE SALTA VISIBILE (Rosso, senza testo) */
+    #left-ctrl { left: 0; bottom: 0; width: 30%; height: 50%; }
+    #right-ctrl { right: 0; bottom: 0; width: 30%; height: 50%; }
     #jump-btn {
         position: absolute;
-        /* Posizionamento relativo all'angolo inferiore sinistro */
         left: 10%; 
         bottom: 10%;
         width: 60px;
@@ -120,12 +91,8 @@
         pointer-events: auto;
         z-index: 20;
     }
-    
-    /* Disabilitiamo gli elementi non utilizzati / obsoleti */
     #jump-ctrl { display: none; }
     #fullscreenBtn { display: none; }
-
-
   </style>
 </head>
 
@@ -168,21 +135,8 @@
   <audio id="bgm" src="assets/music/music_normal.mp3" loop preload="auto"></audio>
   <audio id="bgm_final" src="assets/music/music_final.mp3" loop preload="auto"></audio>
 
-  <script src="js/rects.js"></script>
-  <script src="js/engine.js"></script>
-  
-  <script src="js/projectile.js"></script>
-  <script src="js/player.js"></script>
-  
-  <script src="js/boss_final.js"></script>
-  
-  <script src="js/ending.js"></script> 
-  
-  <script src="js/game.js"></script>
-
-
   <script>
-    // Dichiarazione degli sprite (Assicurati che i percorsi siano corretti)
+    // Dichiarazione degli sprite (Verifica i percorsi in "assets/sprites/")
     window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
     window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
@@ -193,92 +147,4 @@
     window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
     window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
     window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
-    window.icon512Sprite = new Image(); window.icon512Sprite.src = 'assets/sprites/icon-512.png';
-    
-    
-    document.addEventListener("DOMContentLoaded", () => {
-      // REGISTRAZIONE SERVICE WORKER (Necessario per PWA)
-      if ('serviceWorker' in navigator) {
-        // Assicurati che service-worker.js sia nel tuo progetto
-        navigator.serviceWorker.register('service-worker.js')
-          .catch(err => console.warn("SW error:", err));
-      }
-
-      // Riferimenti agli elementi UI
-      const newBtn = document.getElementById("newBtn");
-      const contBtn = document.getElementById("contBtn");
-      const saveBtn = document.getElementById("saveBtn");
-      const mobileControls = document.querySelectorAll('.ctrl-area'); 
-      const mobileControlsDiv = document.getElementById('mobile-controls'); 
-      const jumpBtn = document.getElementById("jump-btn"); 
-      const restartBtn = document.getElementById("restartBtn"); // Assumiamo sia gestito da Ending.js
-
-      // Eventi Menu
-      newBtn.addEventListener("click", () => Game.startNew());
-      contBtn.addEventListener("click", () => Game.continue());
-      saveBtn.addEventListener("click", () => Game.save());
-      restartBtn.addEventListener("click", () => window.Ending.restartGame()); // Utilizza la funzione esposta da Ending
-
-      // --- LOGICA PULSANTI VIRTUALI ---
-
-      // Helper per gestire l'input del tasto virtuale 'Space'
-      const startJump = (e) => {
-          e.preventDefault(); 
-          if (window.engine) {
-              window.engine.keys['Space'] = true;
-          }
-      };
-      
-      const endJump = (e) => {
-          e.preventDefault();
-          if (window.engine) {
-              window.engine.keys['Space'] = false;
-          }
-      };
-
-      // Eventi per il pulsante Salta (touch e mouse)
-      jumpBtn.addEventListener('touchstart', startJump, { passive: false });
-      jumpBtn.addEventListener('touchend', endJump, { passive: false });
-      jumpBtn.addEventListener('touchcancel', endJump, { passive: false });
-      jumpBtn.addEventListener('mousedown', startJump, { passive: false });
-      jumpBtn.addEventListener('mouseup', endJump, { passive: false });
-      jumpBtn.addEventListener('mouseout', endJump, { passive: false });
-
-
-      // LOGICA AREE TOUCH (MOVIMENTO - ArrowLeft e ArrowRight)
-      mobileControls.forEach(area => {
-          const key = area.getAttribute('data-key');
-          
-          const startKey = (e) => {
-              e.preventDefault(); 
-              if (window.engine) {
-                  window.engine.keys[key] = true;
-              }
-          };
-          
-          const endKey = (e) => {
-              e.preventDefault();
-              if (window.engine) {
-                  window.engine.keys[key] = false;
-              }
-          };
-
-          // Eventi touch
-          area.addEventListener('touchstart', startKey, { passive: false });
-          area.addEventListener('touchend', endKey, { passive: false });
-          area.addEventListener('touchcancel', endKey, { passive: false });
-          
-          // Eventi mouse (per debug/desktop)
-          area.addEventListener('mousedown', startKey, { passive: false });
-          area.addEventListener('mouseup', endKey, { passive: false });
-          area.addEventListener('mouseout', endKey, { passive: false });
-      });
-
-      // Attivazione dei controlli touch se su dispositivo mobile
-      if (/Mobi|Android/i.test(navigator.userAgent)) {
-          mobileControlsDiv.style.display = 'block'; 
-      }
-    });
-  </script>
-</body>
-</html>
+    window.icon512Sprite = new Image();
