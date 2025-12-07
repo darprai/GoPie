@@ -1,7 +1,7 @@
 {
-  "length": 3000,
+  "length": 6000,
   "playerStart": { "x": 80, "y": 300 },
-  "endZone": { "x": 2800, "y": 480, "w": 20, "h": 60 },
+  "endZone": { "x": 5800, "y": 480, "w": 20, "h": 60 },
   "platforms": [
     // Piattaforma iniziale (Ground)
     [0, 500, 200, 40],
@@ -17,25 +17,51 @@
     // Piattaforma con Heart in alto
     [1300, 300, 200, 40],
     
-    // Piattaforma finale lunga
-    [1700, 500, 1200, 40]
+    // Piattaforma lunga (fino a metà)
+    [1700, 500, 1000, 40],
+    
+    // Nuove Sezioni Aggiunte (dopo 2700)
+    
+    // Salto tra piattaforme strette
+    [2900, 450, 80, 20],
+    [3100, 400, 80, 20],
+    [3300, 350, 80, 20],
+    
+    // Piattaforma lunga con nemici
+    [3600, 500, 800, 40],
+    
+    // Piattaforme alte (richiede precisione)
+    [4600, 300, 100, 20],
+    [4800, 200, 100, 20],
+    [5000, 300, 100, 20],
+    
+    // Piattaforma finale
+    [5200, 500, 800, 40]
   ],
   "enemies": [
-    // Nemici sulla piattaforma iniziale
+    // Nemici iniziali
     { "type": "drink", "x": 400, "y": 410, "w": 20, "h": 20 },
     { "type": "drink", "x": 850, "y": 210, "w": 20, "h": 20 },
     
     // Cuore in alto (difficile da raggiungere)
     { "type": "heart", "x": 1400, "y": 200, "w": 20, "h": 20 },
     
-    // Nemici sul percorso finale
+    // Nuovi Nemici
     { "type": "drink", "x": 2000, "y": 460, "w": 20, "h": 20 },
-    { "type": "drink", "x": 2400, "y": 460, "w": 20, "h": 20 }
+    { "type": "drink", "x": 2400, "y": 460, "w": 20, "h": 20 },
+    { "type": "drink", "x": 3700, "y": 460, "w": 20, "h": 20 },
+    { "type": "drink", "x": 4000, "y": 460, "w": 20, "h": 20 },
+    { "type": "drink", "x": 4200, "y": 460, "w": 20, "h": 20 },
+    { "type": "drink", "x": 5400, "y": 460, "w": 20, "h": 20 }
   ],
   "invisible_traps": [
     // Buco 1
     { "type": "fall_death", "x": 200, "y": 540, "w": 150, "h": 100 },
     // Buco 2
-    { "type": "fall_death", "x": 500, "y": 540, "w": 100, "h": 100 }
+    { "type": "fall_death", "x": 500, "y": 540, "w": 100, "h": 100 },
+    // Nuovi buchi
+    { "type": "fall_death", "x": 2700, "y": 540, "w": 200, "h": 100 },
+    { "type": "fall_death", "x": 3180, "y": 540, "w": 120, "h": 100 },
+    { "type": "fall_death", "x": 4400, "y": 540, "w": 200, "h": 100 }
   ]
 }
