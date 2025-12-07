@@ -11,11 +11,27 @@
   <link rel="stylesheet" href="style.css">
   
   <style>
-    /* Inserimento del background icon-512.png per la schermata principale (menu) */
+    /* 1. Forza Menu e Ending a coprire l'intera Viewport (vh/vw) */
     #menu, #ending {
+        height: 100vh;
+        width: 100vw;
+        position: fixed; /* Assicura che copra tutto, anche in presenza di barre */
+        top: 0;
+        left: 0;
         background-image: url('assets/sprites/icon-512.png');
         background-size: cover;
         background-position: center;
+        z-index: 100; /* Assicura che sia sopra tutto il resto */
+    }
+    .center {
+        /* Assicurati che il contenuto sia centrato all'interno di 100vh/100vw */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        width: 100%;
+        text-align: center;
     }
     
     /* Nuovo contenitore per il gioco e i controlli */
@@ -95,16 +111,24 @@
     }
 
     /* Stile per lo schermo intero */
-    @media (orientation: landscape) and (max-device-width: 991px) {
-        #game-container.fullscreen {
-            width: 100vw;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            margin: 0;
-        }
+    #game-container.fullscreen {
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        margin: 0;
+        max-width: none; /* Rimuove il max-width fisso */
     }
+    /* Forza il body ad occupare l'intera viewport su mobile */
+    body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+    }
+
 
   </style>
 </head>
@@ -193,24 +217,36 @@
       contBtn.addEventListener("click", () => Game.continue());
       saveBtn.addEventListener("click", () => Game.save());
       
-      // LOGICA SCHERMO INTERO
-      fullscreenBtn.addEventListener('click', () => {
-          if (!document.fullscreenElement) {
-              gameContainer.requestFullscreen().catch(err => {
+      // LOGICA SCHERMO INTERO (Correzione)
+      function toggleFullscreen() {
+          const isFullscreen = document.fullscreenElement;
+          // Proviamo ad attivare la modalità full-screen sull'elemento HTML radice
+          if (!isFullscreen) {
+              document.documentElement.requestFullscreen().catch(err => {
                   console.error(`Errore Schermo Intero: ${err.message}`);
               });
           } else {
               document.exitFullscreen();
           }
-      });
+      }
+      
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
+
       
       document.addEventListener('fullscreenchange', () => {
           if (document.fullscreenElement) {
               gameContainer.classList.add('fullscreen');
               mobileControlsDiv.style.display = 'block'; 
+              
+              // Nasconde il menu quando si entra in full screen (se era visibile)
+              document.getElementById('menu').style.display = 'none';
           } else {
               gameContainer.classList.remove('fullscreen');
-              // Nascondi i controlli solo se non siamo su un dispositivo mobile
+              // Mostra il menu se il gioco non è attivo
+              if (document.getElementById('game-container').style.display !== 'block') {
+                 document.getElementById('menu').style.display = 'flex';
+              }
+              // Nasconde i controlli se non siamo su mobile (per desktop)
               if (!/Mobi|Android/i.test(navigator.userAgent)) {
                  mobileControlsDiv.style.display = 'none'; 
               }
@@ -246,7 +282,7 @@
           area.addEventListener('mouseout', endKey, { passive: false });
       });
 
-      // Se l'utente è su mobile, assicuriamo che i controlli siano pronti
+      // Su mobile, rendiamo i controlli disponibili (anche se invisibili)
       if (/Mobi|Android/i.test(navigator.userAgent)) {
           mobileControlsDiv.style.display = 'block'; 
       }
