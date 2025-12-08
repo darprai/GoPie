@@ -1,4 +1,4 @@
-// game.js
+// game.js (file completo e aggiornato)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -15,17 +15,12 @@ const Game = (function() {
     let currentLevel;
     let cameraX = 0;
     let gameEngine; 
+    
+    // Rimosso il listener DOMContentLoaded qui. L'Engine sarà creato alla fine del file.
 
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
-    
-    // Inizializzazione Engine all'avvio del caricamento
-    document.addEventListener('DOMContentLoaded', () => {
-        gameEngine = new Engine(update, draw);
-        window.engine = gameEngine; 
-    });
-
 
     // --- Gestione Livelli ---
 
@@ -59,7 +54,6 @@ const Game = (function() {
         if (!player) {
             player = new Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else {
-            // Player.reset deve anche reimpostare le vite a 3 se chiamato dopo Game Over
             player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
         }
         
@@ -78,7 +72,8 @@ const Game = (function() {
         if (!currentLevel || !player) return;
 
         player.update(dt, input, currentLevel.platforms);
-
+        // ... (resto della funzione update)
+        
         if (currentLevelIndex === 2) {
             if (window.BossFinal && window.BossFinal.active) {
                 window.BossFinal.update(dt, player, cameraX);
@@ -108,12 +103,10 @@ const Game = (function() {
             currentLevel.enemies = currentLevel.enemies.filter(enemy => {
                 if (rectsOverlap(player, enemy)) {
                     
-                    // 🔑 FIX 4: Morte Istantanea con Drink
                     if (enemy.type === 'drink') {
-                        // Forziamo il Game Over
                         player.lives = 0; 
                         Game.onPlayerDied();
-                        return false; // Rimuove il drink
+                        return false; 
                     }
                     
                     if (enemy.type === 'heart') {
@@ -161,7 +154,7 @@ const Game = (function() {
         if (!currentLevel) return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // 🔑 FIX 1: Rimosso il riempimento solido del cielo (#87CEEB) per mostrare lo sfondo icon-512 del body.
+        // Nessun riempimento solido per mostrare lo sfondo icon-512 del body.
 
         renderPlatforms(currentLevel.platforms, cameraX);
         player.draw(ctx, cameraX);
@@ -178,9 +171,6 @@ const Game = (function() {
 
         renderHUD();
     }
-    
-    // ... (renderPlatforms, renderEnemies, renderHUD, renderBossHUD) ...
-    // Funzioni di rendering omesse per brevità, si assumono corrette.
     
     function renderPlatforms(platforms, camX) {
         for (let p of platforms) {
@@ -264,7 +254,6 @@ const Game = (function() {
         ctx.fillText(`Schivate: ${thrown} / ${max}`, x, y + 12);
     }
     
-    // 🔑 FIX 3: Funzione per richiedere lo schermo intero
     function toggleFullScreen() {
         const doc = window.document;
         const docEl = doc.documentElement;
@@ -301,11 +290,10 @@ const Game = (function() {
 
     function startNew() {
         if (levels.length === 0 || !gameEngine) {
-            alert("Il gioco non è pronto. Riprova più tardi.");
+            alert("Il gioco non è pronto o l'Engine non è stato inizializzato.");
             return;
         }
         
-        // 🔑 FIX 3: Avvia la modalità a schermo intero
         toggleFullScreen(); 
         
         menuDiv.style.display = 'none';
@@ -321,7 +309,6 @@ const Game = (function() {
     }
     
     function nextLevel() {
-        // ... (Logica nextLevel rimane invariata)
         currentLevelIndex++;
         
         if (currentLevelIndex < levels.length) {
@@ -353,20 +340,14 @@ const Game = (function() {
          Game.onPlayerDied();
     }
     
-    // 🔑 FIX 5: Riavvio Stabile del Livello in Corso dopo la Morte Definitiva
     function onPlayerDied() {
-        // Se il gioco si blocca, assicuriamoci che l'engine venga fermato immediatamente
         if (gameEngine) gameEngine.stop(); 
         
         if (player.lives <= 0) {
-            console.log(`Game Over! Riavvio automatico del livello ${currentLevelIndex} in corso.`);
-            
             setTimeout(() => {
                 
-                // 1. Ricarica e resetta il player (posizione e vite)
                 loadLevel(currentLevelIndex); 
                 
-                // 2. Gestione Musica
                 if (currentLevelIndex === 2) {
                     bgm.pause();
                     bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
@@ -375,16 +356,13 @@ const Game = (function() {
                     bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
                 }
                 
-                // 3. Assicura che la vista sia sul gioco
                 menuDiv.style.display = 'none';
                 gameContainer.style.display = 'block';
 
-                // 4. Riavvia il loop
                 if (gameEngine) gameEngine.start();
             }, 1500); 
             
         } else {
-            // Respawn immediato 
              loadLevel(currentLevelIndex);
              if (gameEngine) gameEngine.start(); 
         }
@@ -411,5 +389,18 @@ const Game = (function() {
         getCurLevelIndex: () => currentLevelIndex,
     };
 })();
+
+// 🔑 CORREZIONE CHIAVE: Creiamo l'Engine qui in modo che sia garantito
+// che sia disponibile prima che la funzione startNew venga chiamata dal click dell'utente.
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+if (window.Engine && canvas) {
+    const update = Game.update || function() {}; // Assicurati di avere le funzioni update/draw definite se non sono esposte
+    const draw = Game.draw || function() {};
+    Game.gameEngine = new Engine(Game.update, Game.draw); // Assegnazione diretta
+    window.engine = Game.gameEngine;
+} else {
+    console.warn("L'Engine non è stato inizializzato. Controlla che Engine.js sia caricato.");
+}
 
 window.Game = Game;
