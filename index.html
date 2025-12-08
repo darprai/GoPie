@@ -18,7 +18,7 @@
       --accent: #FF8C00;
     }
     
-    /* 🔑 FIX 3: Sfondo sul body per essere sempre visibile sotto la canvas */
+    /* 🔑 FIX 1 & 3: Sfondo sul body e stile per lo schermo intero */
     body {
         margin: 0;
         padding: 0;
@@ -30,7 +30,6 @@
         background-position: center;
     }
     
-    /* Manteniamo solo l'overlay scuro sul menu e ending */
     #menu, #ending {
         height: 100vh;
         width: 100vw;
@@ -38,7 +37,6 @@
         top: 0;
         left: 0;
         z-index: 100;
-        /* Rimosso background-image da qui per non duplicarlo */
     }
     .center {
         display: flex;
@@ -48,7 +46,6 @@
         height: 100%;
         width: 100%;
         text-align: center;
-        /* Overlay scuro per leggibilità */
         background-color: rgba(0, 0, 0, 0.7); 
     }
     .buttons{margin:12px}
@@ -63,7 +60,7 @@
         margin: 0;
     }
     #game {
-        /* La canvas ha un colore di sfondo (blu chiaro) definito in game.js, coprirà l'icon-512 */
+        /* FIX 1: La canvas deve essere a schermo intero (object-fit: contain mantiene l'aspect ratio) */
         display: block;
         width: 100%;
         height: 100%;
@@ -85,13 +82,11 @@
         pointer-events: auto;  
         background-color: transparent;  
     }
-    /* 🔑 FIX 1: Correzione Aree di Controllo Mobili */
-    /* Area di movimento Sinistra (Salto è a sinistra, quindi copre la parte bassa) */
+    /* Aree di movimento */
     #left-ctrl { left: 0; bottom: 0; width: 50%; height: 50%; } 
-    /* Area di movimento Destra (Copre la parte bassa destra) */
     #right-ctrl { right: 0; bottom: 0; width: 50%; height: 50%; } 
 
-    /* Pulsante Salto (Overlay sull'area Sinistra) */
+    /* 🔑 FIX 2: Pulsante Salto visibile e posizionato a sinistra */
     #jump-btn {
         position: absolute;
         left: 10%;   
@@ -108,7 +103,7 @@
         user-select: none;
         pointer-events: auto;
         z-index: 20;
-        display: none; 
+        display: none; /* Sarà reso 'block' dal codice JS in touch mode */
     }
     #fullscreenBtn { display: none; }
   </style>
@@ -179,12 +174,14 @@
         document.getElementById('saveBtn').addEventListener('click', window.Game.save);
         document.getElementById('restartBtn').addEventListener('click', window.Ending.restartGame);
 
-        // 🔑 FIX 1: Funzione di Setup Controlli Mobile più robusta
+        // Inizializzazione controlli mobile
         function setupMobileControls() {
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
             if (isTouchDevice) {
                 const controls = document.getElementById('mobile-controls');
                 const jumpBtn = document.getElementById('jump-btn');
+                
+                // 🔑 FIX 2: Mostra i controlli
                 controls.style.display = 'block';
 
                 const triggerKey = (key, type) => {
@@ -207,7 +204,9 @@
                 addListeners(document.getElementById('left-ctrl'), 'ArrowLeft');
                 addListeners(document.getElementById('right-ctrl'), 'ArrowRight');
                 addListeners(jumpBtn, 'Space'); 
-                jumpBtn.style.display = 'block';
+                
+                // 🔑 FIX 2: Mostra il pulsante Salto
+                jumpBtn.style.display = 'block'; 
             }
         }
         setupMobileControls();
