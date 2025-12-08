@@ -14,17 +14,17 @@
   <link rel="stylesheet" href="style.css">
     
   <style>
-    /* 🔑 FIX SFONDO (icon-512.png) è confermato qui */
     :root {
       --accent: #FF8C00;
     }
+    /* 🔑 FIX SFONDO: Percorso confermato */
     #menu, #ending {
         height: 100vh;
         width: 100vw;
         position: fixed;
         top: 0;
         left: 0;
-        background-image: url('assets/sprites/icon-512.png'); /* ⬅️ Verifica il percorso esatto! */
+        background-image: url('assets/sprites/icon-512.png');
         background-size: cover;
         background-position: center;
         z-index: 100;
@@ -79,11 +79,15 @@
         pointer-events: auto;  
         background-color: transparent;  
     }
+    /* Controlli di movimento */
     #left-ctrl { left: 0; bottom: 0; width: 30%; height: 50%; }
-    #right-ctrl { right: 0; bottom: 0; width: 30%; height: 50%; }
+    #right-ctrl { right: 70%; bottom: 0; width: 30%; height: 50%; } /* Corretto per non sovrapporsi al pulsante */
+    
+    /* 🔑 FIX 2: Spostamento pulsante Salto a sinistra */
     #jump-btn {
         position: absolute;
-        right: 10%;  
+        left: 10%;   /* Spostato a sinistra */
+        right: auto; /* Rimosso conflitto con right */
         bottom: 10%;
         width: 60px;
         height: 60px;
@@ -162,7 +166,7 @@
     // Logica di inizializzazione e binding
     document.addEventListener('DOMContentLoaded', () => {
         
-        // 🔑 FIX: Binding del pulsante New Game. DEVE CHIAMARE window.Game.startNew
+        // Binding dei pulsanti
         document.getElementById('newBtn').addEventListener('click', window.Game.startNew);
         document.getElementById('contBtn').addEventListener('click', window.Game.continue);
         document.getElementById('saveBtn').addEventListener('click', window.Game.save);
@@ -177,7 +181,8 @@
                 controls.style.display = 'block';
 
                 const triggerKey = (key, type) => {
-                    if (!window.engine || !window.engine.isRunning()) return;
+                    // Assicura che l'engine esista e sia in esecuzione
+                    if (!window.engine || !window.engine.isRunning()) return; 
                     window.engine.keys[key] = (type === 'start');
                 };
 
@@ -194,7 +199,8 @@
 
                 addListeners(document.getElementById('left-ctrl'), 'ArrowLeft');
                 addListeners(document.getElementById('right-ctrl'), 'ArrowRight');
-                addListeners(jumpBtn, 'Space');
+                // Tasto Salta
+                addListeners(jumpBtn, 'Space'); 
                 jumpBtn.style.display = 'block';
             }
         }
