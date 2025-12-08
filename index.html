@@ -14,11 +14,12 @@
   <link rel="stylesheet" href="style.css">
     
   <style>
+    /* Stili CSS integrati con le correzioni */
     :root {
       --accent: #FF8C00;
     }
     
-    /* 🔑 FIX 1 & 3: Sfondo sul body e stile per lo schermo intero */
+    /* FIX: Sfondo icon-512 sul body per essere sempre visibile dietro la canvas */
     body {
         margin: 0;
         padding: 0;
@@ -60,7 +61,6 @@
         margin: 0;
     }
     #game {
-        /* FIX 1: La canvas deve essere a schermo intero (object-fit: contain mantiene l'aspect ratio) */
         display: block;
         width: 100%;
         height: 100%;
@@ -86,7 +86,7 @@
     #left-ctrl { left: 0; bottom: 0; width: 50%; height: 50%; } 
     #right-ctrl { right: 0; bottom: 0; width: 50%; height: 50%; } 
 
-    /* 🔑 FIX 2: Pulsante Salto visibile e posizionato a sinistra */
+    /* FIX: Pulsante Salto a sinistra e visibile */
     #jump-btn {
         position: absolute;
         left: 10%;   
@@ -103,7 +103,7 @@
         user-select: none;
         pointer-events: auto;
         z-index: 20;
-        display: none; /* Sarà reso 'block' dal codice JS in touch mode */
+        display: none; 
     }
     #fullscreenBtn { display: none; }
   </style>
@@ -145,7 +145,7 @@
   <audio id="bgm_final" src="assets/music/music_final.mp3" preload="auto"></audio>
 
     <script>
-    // Precarica tutte le immagini
+    // Precarica tutte le immagini (assicurati che i percorsi siano corretti)
     window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
     window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
@@ -169,6 +169,7 @@
     // Logica di inizializzazione e binding
     document.addEventListener('DOMContentLoaded', () => {
         
+        // Binding dei pulsanti
         document.getElementById('newBtn').addEventListener('click', window.Game.startNew);
         document.getElementById('contBtn').addEventListener('click', window.Game.continue);
         document.getElementById('saveBtn').addEventListener('click', window.Game.save);
@@ -181,7 +182,6 @@
                 const controls = document.getElementById('mobile-controls');
                 const jumpBtn = document.getElementById('jump-btn');
                 
-                // 🔑 FIX 2: Mostra i controlli
                 controls.style.display = 'block';
 
                 const triggerKey = (key, type) => {
@@ -205,7 +205,6 @@
                 addListeners(document.getElementById('right-ctrl'), 'ArrowRight');
                 addListeners(jumpBtn, 'Space'); 
                 
-                // 🔑 FIX 2: Mostra il pulsante Salto
                 jumpBtn.style.display = 'block'; 
             }
         }
