@@ -1,4 +1,4 @@
-// La funzione rectsOverlap è definita in rects.js
+// game.js
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -19,6 +19,15 @@ const Game = (function() {
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
+    
+    // Inizializzazione Engine all'avvio per i controlli
+    // L'Engine viene creato una volta sola
+    window.onload = function() {
+        gameEngine = new Engine(update, draw);
+        window.engine = gameEngine; 
+        console.log("Engine di gioco inizializzato.");
+    };
+
 
     // --- Gestione Livelli ---
 
@@ -32,12 +41,11 @@ const Game = (function() {
         return Promise.all(levelPromises)
             .then(loadedLevels => {
                 levels = loadedLevels;
-                console.log("Livelli caricati con successo!");
                 return true;
             })
             .catch(error => {
                 console.error("Errore CRITICO nel caricamento di un file JSON del livello:", error);
-                return false; // Segnala fallimento
+                return false;
             });
     }
 
@@ -53,13 +61,11 @@ const Game = (function() {
         if (!player) {
             player = new Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else {
-            // Resetta la posizione del giocatore e gli HP (Player.reset deve gestire le vite)
             player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
         }
         
         cameraX = 0;
         
-        // Setup Boss (Livello 3)
         if (currentLevelIndex === 2 && window.BossFinal) {
              window.BossFinal.reset();
              const config = currentLevel.boss;
@@ -103,16 +109,13 @@ const Game = (function() {
             currentLevel.enemies = currentLevel.enemies.filter(enemy => {
                 if (rectsOverlap(player, enemy)) {
                     
-                    // 🔑 FIX 1: Drink Non Uccide
                     if (enemy.type === 'drink') {
                         if (player.hit()) {
-                            // Player subisce danno/knockback ma sopravvive per ora
                             player.x = Math.max(0, player.x - 50);  
                         } else {
-                            // Player muore (vite esaurite)
                             Game.onPlayerDied();
                         }
-                        return false; // Rimuove il drink
+                        return false; 
                     }
                     
                     if (enemy.type === 'heart') {
@@ -150,7 +153,7 @@ const Game = (function() {
                 } else {
                     Game.onPlayerDied();
                 }
-                return false; // Rimuove il proiettile
+                return false; 
             }
             return true; 
         });
@@ -159,6 +162,8 @@ const Game = (function() {
     function draw() {
         if (!currentLevel) return;
 
+        // 🔑 NOTA: Lo sfondo del cielo (blu) viene disegnato qui, coprendo lo sfondo del body.
+        // Lo sfondo icon-512 sarà visibile solo se questa canvas è trasparente o non copre tutto.
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#87CEEB"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -300,12 +305,11 @@ const Game = (function() {
         currentLevelIndex = 0; 
         loadLevel(currentLevelIndex);
         
+        // 🔑 FIX 1: L'Engine è già creato, lo avviamo soltanto
         if (gameEngine) {
             gameEngine.start();
         } else {
-            gameEngine = new Engine(update, draw);
-            window.engine = gameEngine; 
-            gameEngine.start();
+            console.error("Engine non inizializzato correttamente all'avvio!");
         }
     }
     
@@ -341,19 +345,16 @@ const Game = (function() {
          Game.onPlayerDied();
     }
     
-    // 🔑 FIX 4: Riavvio Automatico del Livello in Corso dopo la Morte Definitiva
     function onPlayerDied() {
         gameEngine.stop(); 
         
         if (player.lives <= 0) {
-            // Riavvio automatico immediato (dopo un breve ritardo per l'UX)
+            // Riavvio automatico immediato
             console.log(`Game Over! Riavvio automatico del livello ${currentLevelIndex} in corso.`);
             
             setTimeout(() => {
-                // Ricarica il livello corrente (che resetta le vite del player)
                 loadLevel(currentLevelIndex); 
                 
-                // Gestione Musica
                 if (currentLevelIndex === 2) {
                     bgm.pause();
                     bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
@@ -362,11 +363,11 @@ const Game = (function() {
                     bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
                 }
                 
-                gameEngine.start(); // Riavvia il loop di gioco
-            }, 1500); // Ritardo di 1.5 secondi
+                gameEngine.start(); 
+            }, 1500); 
             
         } else {
-            // Respawn immediato (player perde una vita ma ne ha ancora)
+            // Respawn immediato 
              loadLevel(currentLevelIndex);
              gameEngine.start(); 
         }
