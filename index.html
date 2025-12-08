@@ -14,12 +14,11 @@
   <link rel="stylesheet" href="style.css">
     
   <style>
-    /* Stili CSS integrati con le correzioni */
+    /* Stili CSS integrati */
     :root {
       --accent: #FF8C00;
     }
     
-    /* FIX: Sfondo icon-512 sul body per essere sempre visibile dietro la canvas */
     body {
         margin: 0;
         padding: 0;
@@ -86,7 +85,7 @@
     #left-ctrl { left: 0; bottom: 0; width: 50%; height: 50%; } 
     #right-ctrl { right: 0; bottom: 0; width: 50%; height: 50%; } 
 
-    /* FIX: Pulsante Salto a sinistra e visibile */
+    /* Pulsante Salto */
     #jump-btn {
         position: absolute;
         left: 10%;    
@@ -128,7 +127,7 @@
   <div id="game-container">
     <canvas id="game" width="960" height="540"></canvas>
     <div id="mobile-controls">
-      <button id="jump-btn">JUMP</button> 
+        <button id="jump-btn">JUMP</button> 
         <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
         <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
     </div>
@@ -169,6 +168,22 @@
     // Logica di inizializzazione e binding
     document.addEventListener('DOMContentLoaded', () => {
         
+        // 🔑 LOGICA FINALE: INIZIALIZZAZIONE DELL'ENGINE
+        // Controlla che Engine e Game siano stati caricati e che le funzioni siano esposte
+        if (window.Engine && window.Game && typeof window.Game.update === 'function' && typeof window.Game.draw === 'function') {
+            
+            const engineInstance = new Engine(window.Game.update, window.Game.draw);
+            
+            if (engineInstance) {
+                // Se l'Engine è creato, lo assegna a Game.js
+                window.Game.setEngine(engineInstance); 
+            } else {
+                console.warn("L'Engine non è stato inizializzato (fallito il controllo interno dell'Engine, es. Canvas mancante).");
+            }
+        } else {
+            console.error("ERRORE CRITICO: Engine.js o Game.js non sono stati caricati, o le funzioni update/draw non sono esposte. Controlla la console Rete per errori 404!");
+        }
+        
         // Binding dei pulsanti
         document.getElementById('newBtn').addEventListener('click', window.Game.startNew);
         document.getElementById('contBtn').addEventListener('click', window.Game.continue);
@@ -185,7 +200,7 @@
                 controls.style.display = 'block';
 
                 const triggerKey = (key, type) => {
-                    // Controlla che l'engine sia attivo prima di inviare l'input
+                    // Controlla l'engine globale assegnato
                     if (!window.engine || !window.engine.isRunning()) return; 
                     window.engine.keys[key] = (type === 'start');
                 };
@@ -210,7 +225,7 @@
         }
         setupMobileControls();
         
-        // Avvia la logica di caricamento dei livelli di Game.js
+        // Avvia il caricamento dei livelli
         window.Game.init(); 
     });
   </script>
