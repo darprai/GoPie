@@ -20,13 +20,11 @@ const Game = (function() {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
     
-    // Inizializzazione Engine all'avvio per i controlli
-    // L'Engine viene creato una volta sola
-    window.onload = function() {
+    // Inizializzazione Engine all'avvio del caricamento
+    document.addEventListener('DOMContentLoaded', () => {
         gameEngine = new Engine(update, draw);
         window.engine = gameEngine; 
-        console.log("Engine di gioco inizializzato.");
-    };
+    });
 
 
     // --- Gestione Livelli ---
@@ -61,6 +59,7 @@ const Game = (function() {
         if (!player) {
             player = new Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else {
+            // Player.reset deve anche reimpostare le vite a 3 se chiamato dopo Game Over
             player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
         }
         
@@ -74,7 +73,7 @@ const Game = (function() {
     }
 
     // --- Logica di Gioco (Update/Draw/Collisioni) ---
-
+    
     function update(dt, input) {
         if (!currentLevel || !player) return;
 
@@ -109,13 +108,12 @@ const Game = (function() {
             currentLevel.enemies = currentLevel.enemies.filter(enemy => {
                 if (rectsOverlap(player, enemy)) {
                     
+                    // 🔑 FIX 4: Morte Istantanea con Drink
                     if (enemy.type === 'drink') {
-                        if (player.hit()) {
-                            player.x = Math.max(0, player.x - 50);  
-                        } else {
-                            Game.onPlayerDied();
-                        }
-                        return false; 
+                        // Forziamo il Game Over
+                        player.lives = 0; 
+                        Game.onPlayerDied();
+                        return false; // Rimuove il drink
                     }
                     
                     if (enemy.type === 'heart') {
@@ -162,11 +160,8 @@ const Game = (function() {
     function draw() {
         if (!currentLevel) return;
 
-        // 🔑 NOTA: Lo sfondo del cielo (blu) viene disegnato qui, coprendo lo sfondo del body.
-        // Lo sfondo icon-512 sarà visibile solo se questa canvas è trasparente o non copre tutto.
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#87CEEB"; 
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // 🔑 FIX 1: Rimosso il riempimento solido del cielo (#87CEEB) per mostrare lo sfondo icon-512 del body.
 
         renderPlatforms(currentLevel.platforms, cameraX);
         player.draw(ctx, cameraX);
@@ -183,6 +178,9 @@ const Game = (function() {
 
         renderHUD();
     }
+    
+    // ... (renderPlatforms, renderEnemies, renderHUD, renderBossHUD) ...
+    // Funzioni di rendering omesse per brevità, si assumono corrette.
     
     function renderPlatforms(platforms, camX) {
         for (let p of platforms) {
@@ -265,9 +263,20 @@ const Game = (function() {
         ctx.font = '16px Arial';
         ctx.fillText(`Schivate: ${thrown} / ${max}`, x, y + 12);
     }
+    
+    // 🔑 FIX 3: Funzione per richiedere lo schermo intero
+    function toggleFullScreen() {
+        const doc = window.document;
+        const docEl = doc.documentElement;
 
+        const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
 
-    // --- Controllo Flusso di Gioco ---
+        if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+            requestFullScreen.call(docEl).catch(err => {
+                console.warn("Impossibile attivare il fullscreen (richiede interazione utente):", err);
+            });
+        } 
+    }
     
     function init() {
         const newBtn = document.getElementById('newBtn');
@@ -291,10 +300,13 @@ const Game = (function() {
     }
 
     function startNew() {
-        if (levels.length === 0) {
+        if (levels.length === 0 || !gameEngine) {
             alert("Il gioco non è pronto. Riprova più tardi.");
             return;
         }
+        
+        // 🔑 FIX 3: Avvia la modalità a schermo intero
+        toggleFullScreen(); 
         
         menuDiv.style.display = 'none';
         gameContainer.style.display = 'block';
@@ -305,15 +317,11 @@ const Game = (function() {
         currentLevelIndex = 0; 
         loadLevel(currentLevelIndex);
         
-        // 🔑 FIX 1: L'Engine è già creato, lo avviamo soltanto
-        if (gameEngine) {
-            gameEngine.start();
-        } else {
-            console.error("Engine non inizializzato correttamente all'avvio!");
-        }
+        gameEngine.start();
     }
     
     function nextLevel() {
+        // ... (Logica nextLevel rimane invariata)
         currentLevelIndex++;
         
         if (currentLevelIndex < levels.length) {
@@ -345,16 +353,20 @@ const Game = (function() {
          Game.onPlayerDied();
     }
     
+    // 🔑 FIX 5: Riavvio Stabile del Livello in Corso dopo la Morte Definitiva
     function onPlayerDied() {
-        gameEngine.stop(); 
+        // Se il gioco si blocca, assicuriamoci che l'engine venga fermato immediatamente
+        if (gameEngine) gameEngine.stop(); 
         
         if (player.lives <= 0) {
-            // Riavvio automatico immediato
             console.log(`Game Over! Riavvio automatico del livello ${currentLevelIndex} in corso.`);
             
             setTimeout(() => {
+                
+                // 1. Ricarica e resetta il player (posizione e vite)
                 loadLevel(currentLevelIndex); 
                 
+                // 2. Gestione Musica
                 if (currentLevelIndex === 2) {
                     bgm.pause();
                     bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
@@ -363,13 +375,18 @@ const Game = (function() {
                     bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
                 }
                 
-                gameEngine.start(); 
+                // 3. Assicura che la vista sia sul gioco
+                menuDiv.style.display = 'none';
+                gameContainer.style.display = 'block';
+
+                // 4. Riavvia il loop
+                if (gameEngine) gameEngine.start();
             }, 1500); 
             
         } else {
             // Respawn immediato 
              loadLevel(currentLevelIndex);
-             gameEngine.start(); 
+             if (gameEngine) gameEngine.start(); 
         }
     }
     
