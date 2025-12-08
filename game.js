@@ -1,4 +1,4 @@
-// La funzione rectsOverlap è definita in rects.js (file esterno)
+// La funzione rectsOverlap è definita in rects.js
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -14,7 +14,7 @@ const Game = (function() {
     let levels = [];
     let currentLevel;
     let cameraX = 0;
-    let gameEngine; // 🔑 Oggetto Engine per gestire il loop di gioco
+    let gameEngine; 
 
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
@@ -51,11 +51,9 @@ const Game = (function() {
         currentLevel = levels[index];
         
         if (!player) {
-            // Usa il costruttore Player
-            // Nota: Player deve essere una classe/funzione definita in player.js
             player = new Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else {
-            // Resetta la posizione del giocatore e le vite se è un respawn
+            // Resetta la posizione del giocatore e gli HP (Player.reset deve gestire le vite)
             player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
         }
         
@@ -105,13 +103,13 @@ const Game = (function() {
             currentLevel.enemies = currentLevel.enemies.filter(enemy => {
                 if (rectsOverlap(player, enemy)) {
                     
+                    // 🔑 FIX 1: Drink Non Uccide
                     if (enemy.type === 'drink') {
-                        // FIX: Gestione corretta della collisione col drink
                         if (player.hit()) {
                             // Player subisce danno/knockback ma sopravvive per ora
                             player.x = Math.max(0, player.x - 50);  
                         } else {
-                            // Player muore
+                            // Player muore (vite esaurite)
                             Game.onPlayerDied();
                         }
                         return false; // Rimuove il drink
@@ -160,7 +158,7 @@ const Game = (function() {
 
     function draw() {
         if (!currentLevel) return;
-        // Logica di disegno (omessa per brevità, si assume sia corretta)
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#87CEEB"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -181,9 +179,6 @@ const Game = (function() {
         renderHUD();
     }
     
-    // ... (renderPlatforms, renderEnemies, renderHUD, renderBossHUD omesse per brevità) ...
-    // Le ho omesse qui, ma vanno mantenute nel file reale.
-
     function renderPlatforms(platforms, camX) {
         for (let p of platforms) {
             const x = Math.round(p[0] - camX);
@@ -269,7 +264,6 @@ const Game = (function() {
 
     // --- Controllo Flusso di Gioco ---
     
-    // Funzione chiamata dall'HTML per avviare il caricamento (async)
     function init() {
         const newBtn = document.getElementById('newBtn');
         const loadingMessage = document.getElementById('loading-message');
@@ -282,7 +276,7 @@ const Game = (function() {
                 if (success) {
                     loadingMessage.textContent = "Livelli caricati! Premi Nuova Partita.";
                     newBtn.textContent = "Nuova Partita";
-                    newBtn.disabled = false; // 🔑 FIX: Abilita il pulsante
+                    newBtn.disabled = false;
                 } else {
                     loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console!";
                     newBtn.textContent = "Errore";
@@ -292,7 +286,6 @@ const Game = (function() {
     }
 
     function startNew() {
-        // FIX: La ripartenza non era bloccata, ma l'engine doveva essere gestito correttamente.
         if (levels.length === 0) {
             alert("Il gioco non è pronto. Riprova più tardi.");
             return;
@@ -308,10 +301,8 @@ const Game = (function() {
         loadLevel(currentLevelIndex);
         
         if (gameEngine) {
-            // Riavvia l'engine esistente
             gameEngine.start();
         } else {
-            // Crea e avvia l'engine la prima volta
             gameEngine = new Engine(update, draw);
             window.engine = gameEngine; 
             gameEngine.start();
@@ -350,23 +341,34 @@ const Game = (function() {
          Game.onPlayerDied();
     }
     
-    // FIX: Gestione della Ripartenza dopo la Morte (vite esaurite vs respawn)
+    // 🔑 FIX 4: Riavvio Automatico del Livello in Corso dopo la Morte Definitiva
     function onPlayerDied() {
-        gameEngine.stop(); // 🔑 FERMA SEMPRE IL LOOP DI GIOCO ALLA MORTE
+        gameEngine.stop(); 
         
         if (player.lives <= 0) {
-            // Se le vite sono esaurite, mostra il menu di Game Over
+            // Riavvio automatico immediato (dopo un breve ritardo per l'UX)
+            console.log(`Game Over! Riavvio automatico del livello ${currentLevelIndex} in corso.`);
+            
             setTimeout(() => {
-                gameContainer.style.display = 'none';
-                menuDiv.style.display = 'flex'; // Torna al menu principale
-                bgm.pause();
-                bgmFinal.pause();
-                // Il gioco rimane stoppato. Verrà riavviato da startNew()
-            }, 1000);
+                // Ricarica il livello corrente (che resetta le vite del player)
+                loadLevel(currentLevelIndex); 
+                
+                // Gestione Musica
+                if (currentLevelIndex === 2) {
+                    bgm.pause();
+                    bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
+                } else {
+                    bgmFinal.pause();
+                    bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
+                }
+                
+                gameEngine.start(); // Riavvia il loop di gioco
+            }, 1500); // Ritardo di 1.5 secondi
+            
         } else {
-            // Respawn immediato (il player perde una vita ma ne ha ancora)
+            // Respawn immediato (player perde una vita ma ne ha ancora)
              loadLevel(currentLevelIndex);
-             gameEngine.start(); // 🔑 RI-AVVIA IMMEDIATAMENTE IL LOOP DI GIOCO
+             gameEngine.start(); 
         }
     }
     
