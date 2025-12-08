@@ -1,9 +1,9 @@
-// game.js (file completo e aggiornato)
+// game.js (file completo e aggiornato - 100% robusto)
 
 const Game = (function() {
-    // Variabili e riferimenti agli elementi DOM
+    // Variabili e riferimenti agli elementi DOM (sicuri grazie a DOMContentLoaded in index.html)
     const canvas = document.getElementById('game');
-    const ctx = canvas ? canvas.getContext('2d') : null; // Gestione sicura del contesto
+    const ctx = canvas ? canvas.getContext('2d') : null;
     const menuDiv = document.getElementById('menu');
     const gameContainer = document.getElementById('game-container');
     const bgm = document.getElementById('bgm');
@@ -14,8 +14,8 @@ const Game = (function() {
     let levels = [];
     let currentLevel;
     let cameraX = 0;
-    let gameEngine = null; // Inizializzato a null
-
+    // Rimosso: let gameEngine = null; L'Engine sarà assegnato tramite setEngine
+    
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
@@ -50,7 +50,7 @@ const Game = (function() {
         currentLevel = levels[index];
         
         if (!player) {
-            // Assicurati che la classe Player sia definita prima (in player.js)
+            // Assicurati che la classe Player sia definita (in player.js)
             player = new Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else {
             player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
@@ -68,10 +68,10 @@ const Game = (function() {
     // --- Logica di Gioco (Update/Draw/Collisioni) ---
     
     function update(dt, input) {
-        if (!currentLevel || !player) return;
+        // Usa window.engine per controllare lo stato
+        if (!currentLevel || !player || !window.engine) return; 
 
         player.update(dt, input, currentLevel.platforms);
-        // ... (resto della funzione update)
         
         if (currentLevelIndex === 2) {
             if (window.BossFinal && window.BossFinal.active) {
@@ -119,7 +119,6 @@ const Game = (function() {
         
         if (currentLevel.invisible_traps) {
              for (let trap of currentLevel.invisible_traps) {
-                 // Assicurati che rectsOverlap esista e sia caricata (in rects.js)
                  if (trap.type === 'fall_death' && rectsOverlap(player, trap)) {
                      Game.onPlayerFell(); 
                      return; 
@@ -290,8 +289,8 @@ const Game = (function() {
     }
 
     function startNew() {
-        // **CORREZIONE**: gameEngine non è più nullo solo se l'Engine è stato creato con successo
-        if (!levels.length || !gameEngine) { 
+        // Usa window.engine (assegnato in index.html)
+        if (!levels.length || !window.engine) { 
             alert("Il gioco non è pronto o l'Engine non è stato inizializzato. Controlla la console.");
             return;
         }
@@ -307,7 +306,7 @@ const Game = (function() {
         currentLevelIndex = 0; 
         loadLevel(currentLevelIndex);
         
-        gameEngine.start();
+        window.engine.start(); // Chiama start sull'Engine globale
     }
     
     function nextLevel() {
@@ -323,8 +322,7 @@ const Game = (function() {
             loadLevel(currentLevelIndex);
             
         } else {
-            // Assicurati che l'Ending sia caricato (in ending.js)
-            gameEngine.stop();
+            window.engine.stop();
             bgm.pause();
             bgmFinal.pause();
             window.Ending.showLossScreen("Fine dei livelli.");
@@ -332,7 +330,7 @@ const Game = (function() {
     }
     
     function endGameWin() {
-        gameEngine.stop();
+        window.engine.stop();
         bgm.pause();
         bgmFinal.pause();
         window.Ending.showWinScreen("Pie diventa King!", player.score); 
@@ -344,7 +342,7 @@ const Game = (function() {
     }
     
     function onPlayerDied() {
-        if (gameEngine) gameEngine.stop(); 
+        if (window.engine) window.engine.stop(); 
         
         if (player.lives <= 0) {
             setTimeout(() => {
@@ -362,12 +360,12 @@ const Game = (function() {
                 menuDiv.style.display = 'none';
                 gameContainer.style.display = 'block';
 
-                if (gameEngine) gameEngine.start();
+                if (window.engine) window.engine.start();
             }, 1500); 
             
         } else {
               loadLevel(currentLevelIndex);
-              if (gameEngine) gameEngine.start(); 
+              if (window.engine) window.engine.start(); 
         }
     }
     
@@ -379,8 +377,12 @@ const Game = (function() {
     function saveGame() {
         alert("Funzione Salva non implementata.");
     }
+
+    // 🔑 NUOVO: Funzione per assegnare l'Engine dopo la sua creazione
+    function setEngine(engine) {
+        window.engine = engine; // Assegna l'engine all'oggetto globale per uso interno
+    }
     
-    // **CORREZIONE**: ESPOSIZIONE DELLE FUNZIONI update E draw
     return {
         startNew: startNew,
         continue: continueGame,
@@ -390,26 +392,12 @@ const Game = (function() {
         onPlayerDied: onPlayerDied,
         onPlayerFell: onPlayerFell,
         init: init, 
-        // 🔑 NUOVO: Esporre update e draw
-        update: update, 
-        draw: draw,
+        update: update, // ESPOSIZIONE
+        draw: draw,     // ESPOSIZIONE
+        setEngine: setEngine, // ESPOSIZIONE
         getCurLevelIndex: () => currentLevelIndex,
     };
 })();
 
-// 🔑 CORREZIONE CHIAVE: Inizializzazione Engine. 
-// L'engine è creato ORA. Le funzioni update e draw sono ora disponibili tramite Game.update/Game.draw.
-const canvas = document.getElementById('game');
-if (window.Engine && canvas && Game.update && Game.draw) {
-    // Controlla che Engine esista e che le funzioni siano state esposte
-    const engineInstance = new Engine(Game.update, Game.draw);
-    if (engineInstance) {
-        Game.gameEngine = engineInstance; // Assegnazione diretta al gameEngine interno al modulo Game
-        window.engine = engineInstance;
-    }
-} else {
-    // Questo warning apparirà se Engine.js non è caricato o se le funzioni non sono esposte
-    console.warn("L'Engine non è stato inizializzato. Controlla che Engine.js sia caricato e che Game.update/Game.draw siano esposte.");
-}
-
+// L'Engine NON viene inizializzato qui. Viene inizializzato in index.html
 window.Game = Game;
