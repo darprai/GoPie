@@ -1,9 +1,16 @@
 const Engine = function(update, draw) {
+    const canvas = document.getElementById('game');
+    
+    // **CORREZIONE**: Controlla se la canvas esiste. Se no, ferma l'inizializzazione.
+    if (!canvas) {
+        console.error("Errore Engine: Elemento Canvas 'game' non trovato nel DOM. Assicurati che index.html sia corretto.");
+        return null; // Restituisce null per indicare che l'engine non è stato creato
+    }
+
     let lastTime = performance.now();
     let running = false;
     this.keys = {}; // Mappa per lo stato dei tasti
     let gameLoop;
-    const canvas = document.getElementById('game');
     const input = this.keys; 
 
     // Gestione Input (Tastiera)
@@ -38,8 +45,6 @@ const Engine = function(update, draw) {
         running = true;
         lastTime = performance.now();
         gameLoop = requestAnimationFrame(loop);
-        
-        // Attiva la gestione dei controlli mobile se necessario (vedi index.html)
     };
 
     this.stop = function() {
@@ -52,6 +57,9 @@ const Engine = function(update, draw) {
     this.isRunning = function() {
         return running;
     };
+};
+
+window.Engine = Engine;
 };
 
 window.Engine = Engine;
