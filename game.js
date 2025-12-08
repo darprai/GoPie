@@ -1,6 +1,7 @@
-// La funzione rectsOverlap è definita in rects.js
+// La funzione rectsOverlap è definita in rects.js (file esterno)
 
 const Game = (function() {
+    // Variabili e riferimenti agli elementi DOM
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     const menuDiv = document.getElementById('menu');
@@ -13,7 +14,7 @@ const Game = (function() {
     let levels = [];
     let currentLevel;
     let cameraX = 0;
-    let gameEngine;
+    let gameEngine; // 🔑 Oggetto Engine per gestire il loop di gioco
 
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
@@ -21,7 +22,6 @@ const Game = (function() {
 
     // --- Gestione Livelli ---
 
-    // Ritorna una Promise per sapere quando il caricamento è terminato
     function loadLevels() {
         const levelPromises = [
             fetch('levels/level1.json').then(res => res.json()),
@@ -36,7 +36,7 @@ const Game = (function() {
                 return true;
             })
             .catch(error => {
-                console.error("Errore nel caricamento di un file JSON del livello:", error);
+                console.error("Errore CRITICO nel caricamento di un file JSON del livello:", error);
                 return false; // Segnala fallimento
             });
     }
@@ -52,8 +52,10 @@ const Game = (function() {
         
         if (!player) {
             // Usa il costruttore Player
+            // Nota: Player deve essere una classe/funzione definita in player.js
             player = new Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else {
+            // Resetta la posizione del giocatore e le vite se è un respawn
             player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
         }
         
@@ -104,18 +106,15 @@ const Game = (function() {
                 if (rectsOverlap(player, enemy)) {
                     
                     if (enemy.type === 'drink') {
-                        // 🔑 FIX 3 (Drink Non Uccide / Rimozione Incoerente):
-                        // Il drink deve essere rimosso SEMPRE, e onPlayerDied()
-                        // deve essere chiamato solo se player.hit() fallisce (morte).
+                        // FIX: Gestione corretta della collisione col drink
                         if (player.hit()) {
-                            // Player sopravvive e subisce knockback
+                            // Player subisce danno/knockback ma sopravvive per ora
                             player.x = Math.max(0, player.x - 50);  
                         } else {
-                            // Player muore (vite esaurite)
+                            // Player muore
                             Game.onPlayerDied();
-                            // Non serve return true qui (BUG ORIGINALE), il return false finale gestirà la rimozione
                         }
-                        return false; // Rimuove SEMPRE il drink dalla lista (oggetto consumato/pericolo)
+                        return false; // Rimuove il drink
                     }
                     
                     if (enemy.type === 'heart') {
@@ -152,7 +151,6 @@ const Game = (function() {
                     player.x = Math.max(0, player.x - 50);
                 } else {
                     Game.onPlayerDied();
-                    // Il proiettile viene rimosso (return false implicito al di fuori di questo if)
                 }
                 return false; // Rimuove il proiettile
             }
@@ -160,10 +158,9 @@ const Game = (function() {
         });
     }
 
-
     function draw() {
         if (!currentLevel) return;
-
+        // Logica di disegno (omessa per brevità, si assume sia corretta)
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#87CEEB"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -184,6 +181,9 @@ const Game = (function() {
         renderHUD();
     }
     
+    // ... (renderPlatforms, renderEnemies, renderHUD, renderBossHUD omesse per brevità) ...
+    // Le ho omesse qui, ma vanno mantenute nel file reale.
+
     function renderPlatforms(platforms, camX) {
         for (let p of platforms) {
             const x = Math.round(p[0] - camX);
@@ -282,17 +282,17 @@ const Game = (function() {
                 if (success) {
                     loadingMessage.textContent = "Livelli caricati! Premi Nuova Partita.";
                     newBtn.textContent = "Nuova Partita";
-                    newBtn.disabled = false;
+                    newBtn.disabled = false; // 🔑 FIX: Abilita il pulsante
                 } else {
                     loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console!";
                     newBtn.textContent = "Errore";
+                    newBtn.disabled = true;
                 }
             });
     }
 
-
     function startNew() {
-        // Controllo di sicurezza, non dovrebbe essere chiamato se levels.length === 0
+        // FIX: La ripartenza non era bloccata, ma l'engine doveva essere gestito correttamente.
         if (levels.length === 0) {
             alert("Il gioco non è pronto. Riprova più tardi.");
             return;
@@ -307,12 +307,11 @@ const Game = (function() {
         currentLevelIndex = 0; 
         loadLevel(currentLevelIndex);
         
-        // 🔑 FIX 2 (Blocco Ripartenza): 
-        // Assicurati che l'engine sia sempre gestito correttamente
         if (gameEngine) {
-            // Se l'engine esisteva ed era stato stoppato (dalla morte), riavvialo
+            // Riavvia l'engine esistente
             gameEngine.start();
         } else {
+            // Crea e avvia l'engine la prima volta
             gameEngine = new Engine(update, draw);
             window.engine = gameEngine; 
             gameEngine.start();
@@ -351,22 +350,23 @@ const Game = (function() {
          Game.onPlayerDied();
     }
     
+    // FIX: Gestione della Ripartenza dopo la Morte (vite esaurite vs respawn)
     function onPlayerDied() {
-        gameEngine.stop(); // Ferma il loop di gioco
+        gameEngine.stop(); // 🔑 FERMA SEMPRE IL LOOP DI GIOCO ALLA MORTE
         
         if (player.lives <= 0) {
-            // Se le vite sono esaurite, torna al menu.
+            // Se le vite sono esaurite, mostra il menu di Game Over
             setTimeout(() => {
                 gameContainer.style.display = 'none';
-                menuDiv.style.display = 'flex';
+                menuDiv.style.display = 'flex'; // Torna al menu principale
                 bgm.pause();
                 bgmFinal.pause();
-                // L'engine rimane stoppato, e verrà riavviato da startNew()
+                // Il gioco rimane stoppato. Verrà riavviato da startNew()
             }, 1000);
         } else {
-            // Respawn immediato nello stesso livello
+            // Respawn immediato (il player perde una vita ma ne ha ancora)
              loadLevel(currentLevelIndex);
-             gameEngine.start(); // Riavvia immediatamente il loop di gioco
+             gameEngine.start(); // 🔑 RI-AVVIA IMMEDIATAMENTE IL LOOP DI GIOCO
         }
     }
     
@@ -387,12 +387,9 @@ const Game = (function() {
         endGameWin: endGameWin,
         onPlayerDied: onPlayerDied,
         onPlayerFell: onPlayerFell,
-        init: init, // Espone la funzione di inizializzazione
+        init: init, 
         getCurLevelIndex: () => currentLevelIndex,
     };
-})();
-
-window.Game = Game;
 })();
 
 window.Game = Game;
