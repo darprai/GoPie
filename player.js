@@ -1,4 +1,4 @@
-// player.js (Versione con caduta illimitata, correzioni grafiche e Logica Collisione Y migliorata)
+// player.js (Versione con caduta illimitata, correzioni grafiche e Logica Collisione Y FINALIZZATA)
 
 const Player = function(x, y) {
     this.x = x;
@@ -100,7 +100,7 @@ const Player = function(x, y) {
 
         // **NOTA: La logica di morte per caduta è disabilitata come richiesto.**
 
-        // 5. COLLISIONI (X-axis)
+        // 5. COLLISIONI (X-axis) - Spostamento e Blocco Laterale
         this.x = newX;
         if (window.rectsOverlap) {
             for (let p of platforms) {
@@ -116,7 +116,7 @@ const Player = function(x, y) {
             }
         }
         
-        // 6. COLLISIONI (Y-axis) - Atterraggio
+        // 6. COLLISIONI (Y-axis) - Atterraggio, Testata e Blocco Sotto
         this.y = newY;
         if (window.rectsOverlap) {
             for (let p of platforms) {
@@ -127,15 +127,36 @@ const Player = function(x, y) {
                     const oldY = this.y - this.vy * dt;
                     
                     if (this.vy > 0 && oldY + this.h <= pRect.y) { 
-                        // ATTERRAGGIO (Giocatore arriva dall'alto)
+                        // **ATTERRAGGIO (dal sopra) - Caso standard**
                         this.y = pRect.y - this.h; 
                         this.onGround = true; 
                         this.vy = 0; 
                         
                     } else if (this.vy < 0 && oldY >= pRect.y + pRect.h) { 
-                        // TESTATA (Giocatore arriva dal basso)
+                        // **TESTATA (dal sotto) - Caso standard**
                         this.y = pRect.y + pRect.h; 
                         this.vy = 0; 
+                        
+                    } else if (this.vy > 0 && this.y + this.h > pRect.y && this.y < pRect.y) {
+                         // **CORREZIONE SPURIA 1: Atterraggio mancato per frame rate alto**
+                         this.y = pRect.y - this.h; 
+                         this.onGround = true; 
+                         this.vy = 0; 
+                         
+                    } else if (this.y + this.h > pRect.y && this.y < pRect.y + pRect.h) {
+                         // **CORREZIONE CRITICA: Gestione dell'intrappolamento/passaggio sotto**
+                         if (this.vy >= 0) { // Se stiamo cadendo o siamo fermi in Y
+                              if (this.y + this.h / 2 < pRect.y + pRect.h / 2) {
+                                  // Siamo più vicini alla cima della piattaforma -> forziamo l'atterraggio
+                                  this.y = pRect.y - this.h;
+                                  this.onGround = true;
+                                  this.vy = 0;
+                              } else {
+                                  // Siamo più vicini al fondo della piattaforma -> spingiamo giù
+                                  this.y = pRect.y + pRect.h;
+                                  this.vy = 0;
+                              }
+                         }
                     }
                 }
             }
