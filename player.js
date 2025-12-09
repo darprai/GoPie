@@ -1,3 +1,5 @@
+// Player.js (Definitivo con Risoluzione Collisioni precisa)
+
 const Player = function(x, y) {
     this.x = x;
     this.y = y;
@@ -19,8 +21,6 @@ const Player = function(x, y) {
     this.invincible = false;
     this.invincibilityTimer = 0;
     const INVINCIBILITY_DURATION = 1.5; 
-
-    this.groundEpsilon = 5; 
 
     this.reset = function(x, y) {
         this.x = x;
@@ -59,6 +59,7 @@ const Player = function(x, y) {
     };
 
     this.update = function(dt, input, platforms) {
+        // dt è il passo fisso (STEP) del Fixed Timestep Engine
         const keys = input;
         
         // GESTIONE INVINCIBILITÀ
@@ -85,13 +86,19 @@ const Player = function(x, y) {
         }
 
         // 2. LOGICA DI SALTO
+        // Reset onGround se siamo in aria per applicare gravità nel prossimo loop
+        if (!this.onGround) {
+            this.onGround = false; 
+        }
+        
         if ((keys.Space || keys.ArrowUp) && this.onGround) {
             this.vy = this.jumpForce;
-            this.onGround = false;
+            this.onGround = false; // Player non è più a terra dopo il salto
         }
 
         // 3. GRAVITÀ
-        this.vy += this.gravity * dt;
+        // Applica gravità indipendentemente da onGround (se VY=0, rimane 0 fino a quando non cade)
+        this.vy += this.gravity * dt; 
 
         // 4. MOVIMENTO
         let newX = this.x + this.vx * dt;
@@ -108,7 +115,6 @@ const Player = function(x, y) {
         for (let p of platforms) {
             const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
             
-            // Assicurati che rectsOverlap esista e sia definito globalmente in rects.js
             if (window.rectsOverlap && rectsOverlap(this, pRect)) { 
                 if (this.vx > 0) {
                     this.x = pRect.x - this.w; 
@@ -119,20 +125,13 @@ const Player = function(x, y) {
             }
         }
         
-        // 6. COLLISIONI (Y-axis) - MODIFICATO PER MAGGIORE STABILITÀ
+        // 6. COLLISIONI (Y-axis) - LOGICA SEMPLIFICATA E PRECISA
+        
+        // Prima, aggiorniamo la posizione Y
         this.y = newY;
         
-        // Passo 6a: Prepara una posizione di fallback 'grounded' per il player
-        // Creiamo un rettangolo appena SOTTO il player per vedere se tocchiamo terra
-        const futureGroundRect = {
-            x: this.x,
-            y: this.y + 1, // 1 pixel sotto la posizione attuale
-            w: this.w,
-            h: this.h 
-        };
-        
-        let wasOnGround = this.onGround;
-        this.onGround = false; // Presumiamo che non siamo a terra fino a prova contraria
+        // Reset temporaneo di onGround per verificare nuove collisioni
+        this.onGround = false; 
 
         for (let p of platforms) {
             const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
@@ -140,35 +139,20 @@ const Player = function(x, y) {
             if (window.rectsOverlap && rectsOverlap(this, pRect)) {
                 
                 if (this.vy > 0) { // **IL PLAYER STA CADENDO**
-                    // La collisione avviene dal basso (il player atterra)
-                    this.y = pRect.y - this.h; // Sposta il player sopra la piattaforma
+                    // Riposizionamento ESATTO sopra la piattaforma per evitare tunneling
+                    this.y = pRect.y - this.h; 
                     this.onGround = true;
-                    this.vy = 0;
+                    this.vy = 0; // Ferma il movimento verso il basso
                     
                 } else if (this.vy < 0) { // **IL PLAYER STA SALENDO (COLLISIONE DAL BASSO)**
-                    // La collisione avviene dall'alto (il player colpisce con la testa)
-                    this.y = pRect.y + pRect.h; // Sposta il player sotto la piattaforma
-                    this.vy = 0; // Inverte la direzione (sbatte la testa)
+                    // Riposizionamento ESATTO sotto la piattaforma (testata)
+                    this.y = pRect.y + pRect.h; 
+                    this.vy = 0; // Inverte la caduta, la gravità riprenderà nel prossimo step
                 }
             }
         }
         
-        // 6b: Controllo di stabilità: Se il player era a terra e VY è 0, 
-        // usiamo un controllo aggiuntivo per vedere se siamo ANCORA a terra.
-        if (this.vy === 0 && !this.onGround) {
-             // Controlla se la posizione futureGroundRect si sovrappone a QUALSIASI piattaforma
-             for (let p of platforms) {
-                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
-                 if (window.rectsOverlap && rectsOverlap(futureGroundRect, pRect)) {
-                     // Siamo a 1 pixel dal suolo, quindi siamo considerati a terra
-                     this.onGround = true;
-                     break; 
-                 }
-             }
-        }
-
-
-        // 7. Animazione
+        // 7. Animazione (Nessuna modifica)
         if (this.isMoving && this.onGround) { 
             this.animationTimer += dt;
             if (this.animationTimer > 0.1) {
