@@ -1,4 +1,4 @@
-// game.js (Versione Corretta: Camera, Sfondo, Respawn - Senza Trappole Invisibili)
+// game.js (Versione Corretta: Camera, Sfondo, Respawn - Senza Trappole Invisibili - Correzione Mobile)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -135,8 +135,6 @@ const Game = (function() {
                 return true; 
             });
         }
-        
-        // La logica per currentLevel.invisible_traps è stata rimossa, come richiesto dall'utente.
     }
     
     function handleBossCollisions() {
@@ -293,6 +291,10 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
+        // Aggiungo gestori di eventi per il pulsante, supportando sia click che touch
+        newBtn.addEventListener('click', startNew);
+        newBtn.addEventListener('touchstart', startNew);
+
         const spritePromises = [
             new Promise(resolve => window.playerSprite.onload = resolve),
             new Promise(resolve => window.runSprite.onload = resolve),
@@ -328,7 +330,11 @@ const Game = (function() {
             });
     }
 
-    function startNew() {
+    // La funzione startNew viene chiamata sia da click che da touchstart
+    function startNew(e) {
+        // Usa preventDefault per evitare il doppio evento (click e touch)
+        if(e) e.preventDefault(); 
+        
         if (!levels.length || !window.engine) { 
             console.error("Il gioco non è pronto o l'Engine non è stato inizializzato.");
             return;
@@ -346,6 +352,7 @@ const Game = (function() {
         menuDiv.style.display = 'none';
         gameContainer.style.display = 'block';
 
+        // L'avvio dell'audio deve avvenire all'interno di un evento utente (come touchstart/click)
         bgm.loop = true;
         bgm.play().catch(e => console.log("Audio BGM bloccato dal browser:", e));
         
