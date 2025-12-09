@@ -1,6 +1,7 @@
-// Player.js (Definitivo con Risoluzione Collisioni precisa)
+// Player.js (Definitivo V3: Correzione Atterraggio Stabile)
 
 const Player = function(x, y) {
+    // ... (Variabili iniziali Omissis)
     this.x = x;
     this.y = y;
     this.w = 40; 
@@ -86,19 +87,26 @@ const Player = function(x, y) {
         }
 
         // 2. LOGICA DI SALTO
-        // Reset onGround se siamo in aria per applicare gravità nel prossimo loop
-        if (!this.onGround) {
-            this.onGround = false; 
-        }
-        
         if ((keys.Space || keys.ArrowUp) && this.onGround) {
             this.vy = this.jumpForce;
             this.onGround = false; // Player non è più a terra dopo il salto
         }
 
         // 3. GRAVITÀ
-        // Applica gravità indipendentemente da onGround (se VY=0, rimane 0 fino a quando non cade)
-        this.vy += this.gravity * dt; 
+        // Se non siamo a terra, applichiamo la gravità.
+        if (!this.onGround) {
+            this.vy += this.gravity * dt; 
+        }
+
+        // --- INIZIO GESTIONE COLLISIONI ---
+        
+        // ******* PUNTO CRITICO: Reset di onGround *******
+        // Reset a false solo se il player si sta muovendo verticalmente o ha saltato.
+        // Se this.vy > 0 o this.vy < 0, il player è in aria.
+        if (this.vy !== 0) {
+            this.onGround = false;
+        }
+
 
         // 4. MOVIMENTO
         let newX = this.x + this.vx * dt;
@@ -125,29 +133,26 @@ const Player = function(x, y) {
             }
         }
         
-        // 6. COLLISIONI (Y-axis) - LOGICA SEMPLIFICATA E PRECISA
+        // 6. COLLISIONI (Y-axis) - LA LOGICA ANTICADUTA
         
-        // Prima, aggiorniamo la posizione Y
+        // Aggiorna la posizione Y
         this.y = newY;
         
-        // Reset temporaneo di onGround per verificare nuove collisioni
-        this.onGround = false; 
-
         for (let p of platforms) {
             const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
             
             if (window.rectsOverlap && rectsOverlap(this, pRect)) {
                 
-                if (this.vy > 0) { // **IL PLAYER STA CADENDO**
-                    // Riposizionamento ESATTO sopra la piattaforma per evitare tunneling
+                if (this.vy > 0) { // **IL PLAYER STA CADENDO (ATTERRAGGIO)**
+                    // Riposizionamento ESATTO sopra la piattaforma
                     this.y = pRect.y - this.h; 
-                    this.onGround = true;
-                    this.vy = 0; // Ferma il movimento verso il basso
+                    this.onGround = true; // STABILIZZAZIONE!
+                    this.vy = 0; // Ferma il movimento verso il basso (CRUCIALE)
                     
-                } else if (this.vy < 0) { // **IL PLAYER STA SALENDO (COLLISIONE DAL BASSO)**
-                    // Riposizionamento ESATTO sotto la piattaforma (testata)
+                } else if (this.vy < 0) { // **IL PLAYER STA SALENDO (TESTATA)**
+                    // Riposizionamento ESATTO sotto la piattaforma
                     this.y = pRect.y + pRect.h; 
-                    this.vy = 0; // Inverte la caduta, la gravità riprenderà nel prossimo step
+                    this.vy = 0; // Inverte la caduta (la gravità riprenderà nel prossimo step)
                 }
             }
         }
@@ -165,6 +170,7 @@ const Player = function(x, y) {
     };
 
     this.draw = function(ctx, camX) {
+        // ... (Logica di disegno omessa per brevità, è rimasta la stessa)
         const x = Math.round(this.x - camX);
         const y = Math.round(this.y);
         
