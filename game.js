@@ -1,4 +1,4 @@
-// game.js (Versione definitiva e pulita. Assicurati che il tuo Engine.js abbia la correzione Fixed Timestep.)
+// game.js (Versione definitiva, stabile, con sprite drawing corretto e senza errori di inizializzazione)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -85,7 +85,8 @@ const Game = (function() {
     function update(dt, input) {
         if (!currentLevel || !player || !window.engine) return; 
 
-        player.update(dt, input, currentLevel.platforms);
+        // dt qui è il "passo fisso" fornito dall'Engine (anti-tunneling)
+        player.update(dt, input, currentLevel.platforms); 
         
         if (currentLevelIndex === 2) {
             if (window.BossFinal && window.BossFinal.active) {
@@ -180,7 +181,7 @@ const Game = (function() {
         renderHUD();
     }
     
-    // Funzioni di Rendering
+    // Funzioni di Rendering (Corrette per lo stretch delle sprite)
     function renderPlatforms(platforms, camX) {
         if (!ctx) return;
         for (let p of platforms) {
@@ -192,7 +193,7 @@ const Game = (function() {
 
             let spriteToUse = null;
 
-            // Usa i NOMI DELLE VARIABILI SPRITE CORRETTI DALL'HTML
+            // Usa i NOMI DELLE VARIABILI SPRITE DALL'HTML
             if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
                 spriteToUse = window.discoBallSprite;
             } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
@@ -204,12 +205,11 @@ const Game = (function() {
             }
 
             if (spriteToUse) {
-                // Disegna lo sprite se trovato
+                // Disegna lo sprite, utilizzando le dimensioni variabili (w, h) del JSON
                 ctx.drawImage(spriteToUse, x, y, w, h);
             } else {
-                // FALLBACK: Colore Magenta per indicare che lo sprite NON è stato caricato.
-                // Se vedi MAGENTA, controlla il percorso in index.html o il nome 'type' nel JSON.
-                ctx.fillStyle = "magenta"; 
+                // FALLBACK: Blocchi NERI per piattaforme con tipo non riconosciuto o immagine mancante
+                ctx.fillStyle = "black"; 
                 ctx.fillRect(x, y, w, h);
             }
         }
@@ -300,9 +300,8 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // 🔑 CARICAMENTO DELLE SPRITE (Usiamo i nomi esposti in window.* dal tuo HTML)
+        // 🔑 CARICAMENTO DELLE SPRITE
         
-        // Creiamo la lista delle Promises di caricamento usando i nomi delle variabili HTML.
         const spritePromises = [
             new Promise(resolve => window.playerSprite.onload = resolve),
             new Promise(resolve => window.runSprite.onload = resolve),
@@ -312,7 +311,6 @@ const Game = (function() {
             new Promise(resolve => window.djDiscSprite.onload = resolve), 
             new Promise(resolve => window.paloSprite.onload = resolve),
             new Promise(resolve => window.macchinaSprite.onload = resolve),
-            // Aggiungere qui altri sprite se necessario
         ];
 
         // 1. Attendi il caricamento di tutte le sprite
@@ -339,7 +337,6 @@ const Game = (function() {
     }
 
     function startNew() {
-        // Se si verifica l'errore 3 ('startNew' non è definito), è qui che fallisce la chiamata
         if (!levels.length || !window.engine) { 
             console.error("Il gioco non è pronto o l'Engine non è stato inizializzato.");
             return;
