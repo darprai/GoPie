@@ -1,4 +1,4 @@
-// game.js (Versione completa con caricamento delle sprite, percorsi corretti e piattaforme di fallback NERE)
+// game.js (Versione definitiva con caricamento sprite corretto e fallback NERO)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
