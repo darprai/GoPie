@@ -1,4 +1,4 @@
-// game.js (Versione completa con tutte le funzioni di rendering e le correzioni di stabilità)
+// game.js (Versione completa con caricamento delle sprite in init)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -15,6 +15,10 @@ const Game = (function() {
     let currentLevel;
     let cameraX = 0;
     
+    // VARIABILI GLOBALI PER LE SPRITE (saranno definite in init)
+    // Se queste variabili non sono definite globalmente, i renderer non le vedranno.
+    // L'uso di window.nomeSprite assicura che player.js e game.js le vedano.
+
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
@@ -42,17 +46,26 @@ const Game = (function() {
     function loadLevel(index) {
         if (!levels[index]) {
             console.error(`Livello ${index} non trovato.`);
-            return false; // Restituisce false se il livello non c'è
+            return false;
         }
 
         currentLevelIndex = index;
         currentLevel = levels[index];
         
+        if (!window.Player) {
+            console.error("ERRORE: Player class (window.Player) non è definita. Controlla che player.js sia caricato correttamente.");
+            return false;
+        }
+        
         // Inizializzazione del Player O reset della posizione
-        if (!player && window.Player) { 
+        if (!player) { 
+            if (!currentLevel.playerStart || typeof currentLevel.playerStart.x === 'undefined') {
+                 console.error("Dati del livello incompleti: manca playerStart.");
+                 return false;
+            }
             player = new window.Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
-        } else if (player) {
-            player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
+        } else {
+            player.resetFull(currentLevel.playerStart.x, currentLevel.playerStart.y); // Usiamo resetFull se l'hai implementato
         }
         
         cameraX = 0;
@@ -63,13 +76,12 @@ const Game = (function() {
              window.BossFinal.start(config.x, config.y, config); 
         }
         
-        return !!player; // Restituisce true solo se il player è stato creato o resettato
+        return !!player;
     }
 
     // --- Logica di Gioco (Update/Draw/Collisioni) ---
     
     function update(dt, input) {
-        // CONTROLLO DI SICUREZZA
         if (!currentLevel || !player || !window.engine) return; 
 
         player.update(dt, input, currentLevel.platforms);
@@ -149,7 +161,6 @@ const Game = (function() {
     }
 
     function draw() {
-        // CONTROLLO DI SICUREZZA
         if (!currentLevel || !ctx || !player) return; 
 
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
@@ -168,7 +179,7 @@ const Game = (function() {
         renderHUD();
     }
     
-    // Funzioni di Rendering (ORA COMPLETE)
+    // Funzioni di Rendering
     function renderPlatforms(platforms, camX) {
         if (!ctx) return;
         for (let p of platforms) {
@@ -276,9 +287,53 @@ const Game = (function() {
         hintText.style.display = 'none'; 
 
         newBtn.disabled = true;
-        newBtn.textContent = "Caricamento in corso..."; 
+        newBtn.textContent = "Caricamento risorse in corso..."; 
+        
+        // 🔑 CARICAMENTO DELLE SPRITE con i percorsi richiesti
+        
+        // Player Sprites
+        window.playerSprite = new Image();
+        window.playerSprite.src = 'assets/sprites/pie.png'; 
+        
+        window.runSprite = new Image();
+        window.runSprite.src = 'assets/sprites/run.png'; // PERCORSO SPECIFICO RICHIESTO
+        
+        // Altre Sprites essenziali per il rendering e l'HUD
+        window.heartSprite = new Image();
+        window.heartSprite.src = 'assets/sprites/heart.png'; 
+        
+        window.drinkEnemySprite = new Image();
+        window.drinkEnemySprite.src = 'assets/sprites/drink.png'; 
+        
+        // Platform Sprites (assicurati che questi percorsi siano corretti)
+        window.discoBallSprite = new Image();
+        window.discoBallSprite.src = 'assets/sprites/disco_ball.png';
+        
+        window.djDiscSprite = new Image();
+        window.djDiscSprite.src = 'assets/sprites/dj_disc.png';
 
-        loadLevels()
+        window.paloSprite = new Image();
+        window.paloSprite.src = 'assets/sprites/palo.png';
+
+        window.macchinaSprite = new Image();
+        window.macchinaSprite.src = 'assets/sprites/macchina.png';
+        
+        
+        // Crea una Promise per attendere il caricamento di tutte le sprite
+        const spritePromises = [
+            new Promise(resolve => window.playerSprite.onload = resolve),
+            new Promise(resolve => window.runSprite.onload = resolve),
+            new Promise(resolve => window.heartSprite.onload = resolve),
+            new Promise(resolve => window.drinkEnemySprite.onload = resolve),
+            new Promise(resolve => window.discoBallSprite.onload = resolve),
+            new Promise(resolve => window.djDiscSprite.onload = resolve),
+            new Promise(resolve => window.paloSprite.onload = resolve),
+            new Promise(resolve => window.macchinaSprite.onload = resolve),
+        ];
+
+        // 1. Attendi il caricamento di tutte le sprite
+        Promise.all(spritePromises)
+            .then(() => loadLevels()) // 2. Poi carica i livelli JSON
             .then(success => {
                 if (success) {
                     newBtn.textContent = "Nuova Partita";
@@ -289,6 +344,12 @@ const Game = (function() {
                     loadingMessage.style.display = 'block'; 
                     newBtn.disabled = true;
                 }
+            })
+            .catch(error => {
+                 console.error("Errore nel caricamento delle SPRITE. Verifica i percorsi in game.js:", error);
+                 loadingMessage.textContent = "Errore CRITICO nel caricamento di una o più sprite. Verifica i percorsi!";
+                 loadingMessage.style.display = 'block'; 
+                 newBtn.disabled = true;
             });
     }
 
@@ -300,7 +361,6 @@ const Game = (function() {
         
         toggleFullScreen(); 
         
-        // 🔑 Creiamo il player ORA prima di avviare l'engine.
         const playerLoaded = loadLevel(0); 
 
         if (!playerLoaded) {
@@ -314,7 +374,7 @@ const Game = (function() {
         bgm.loop = true;
         bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
         
-        window.engine.start(); // L'Engine parte DOPO che player è stato creato
+        window.engine.start(); 
     }
     
     function nextLevel() {
