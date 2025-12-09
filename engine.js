@@ -1,3 +1,5 @@
+// Engine.js (Definitivo con Fixed Timestep)
+
 const Engine = function(update, draw) {
     const canvas = document.getElementById('game');
     
@@ -37,7 +39,7 @@ const Engine = function(update, draw) {
         // Aggiunge il tempo trascorso all'accumulatore
         accumulator += dt;
 
-        // 2. >>> AGGIORNAMENTO A PASSI FISSI (RISOLUZIONE TUNNELING) <<<
+        // 2. AGGIORNAMENTO A PASSI FISSI (RISOLUZIONE TUNNELING)
         // Processa il gioco in passi fissi finché c'è tempo nell'accumulatore
         while (accumulator >= STEP) {
             // Chiama la funzione update del gioco con il passo fisso (STEP)
@@ -46,7 +48,6 @@ const Engine = function(update, draw) {
         }
 
         // 3. Disegno
-        // Il disegno viene chiamato solo una volta per frame, indipendentemente dai passi di update
         draw(); 
 
         gameLoop = requestAnimationFrame(loop);
