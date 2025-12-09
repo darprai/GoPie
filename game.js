@@ -1,4 +1,4 @@
-// game.js (Versione definitiva con caricamento sprite corretto e fallback NERO)
+// game.js (Versione definitiva con caricamento sprite corretto e fallback MAGENTA per debug)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -15,7 +15,8 @@ const Game = (function() {
     let currentLevel;
     let cameraX = 0;
     
-    // VARIABILI GLOBALI PER LE SPRITE (saranno definite in init)
+    // Variabile per il debug (aggiunta per l'esempio)
+    window.Game.debugMode = true;
 
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
@@ -191,18 +192,30 @@ const Game = (function() {
             const h = p[3];
             const type = p[4]; 
 
+            let spriteToUse = null;
+
+            // Tenta di trovare lo sprite basato sul tipo e verifica che sia pronto
             if (type === PLATFORM_TYPE.DISCO && window.discoSprite && window.discoSprite.complete) {
-                ctx.drawImage(window.discoSprite, x, y, w, h);
+                spriteToUse = window.discoSprite;
             } else if (type === PLATFORM_TYPE.DJDISC && window.djdiscSprite && window.djdiscSprite.complete) {
-                ctx.drawImage(window.djdiscSprite, x, y, w, h);
+                spriteToUse = window.djdiscSprite;
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
-                ctx.drawImage(window.paloSprite, x, y, w, h);
+                spriteToUse = window.paloSprite;
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
-                ctx.drawImage(window.macchinaSprite, x, y, w, h);
+                spriteToUse = window.macchinaSprite;
+            }
+
+            if (spriteToUse) {
+                // Disegna lo sprite se trovato
+                ctx.drawImage(spriteToUse, x, y, w, h);
             } else {
-                // FALLBACK: Piattaforma disegnata in nero
-                ctx.fillStyle = "black"; 
+                // FALLBACK: Colore Magenta per indicare che lo sprite non è stato caricato
+                ctx.fillStyle = "magenta"; 
                 ctx.fillRect(x, y, w, h);
+                
+                if (window.Game.debugMode) {
+                     // Non loggare continuamente, solo se il caricamento non è andato a buon fine
+                }
             }
         }
     }
