@@ -9,7 +9,7 @@ const Game = (function() {
     const bgm = document.getElementById('bgm');
     const bgmFinal = document.getElementById('bgm_final');
 
-    let player;
+    let player; // La variabile player è dichiarata qui
     let currentLevelIndex = 0;
     let levels = [];
     let currentLevel;
@@ -48,6 +48,7 @@ const Game = (function() {
         currentLevelIndex = index;
         currentLevel = levels[index];
         
+        // Inizializzazione del Player o Reset della posizione
         if (!player && window.Player) { 
             player = new window.Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else if (player) {
@@ -66,6 +67,7 @@ const Game = (function() {
     // --- Logica di Gioco (Update/Draw/Collisioni) ---
     
     function update(dt, input) {
+        // CONTROLLO DI SICUREZZA 1: Assicurati che il player sia definito prima di aggiornarlo.
         if (!currentLevel || !player || !window.engine) return; 
 
         player.update(dt, input, currentLevel.platforms);
@@ -144,10 +146,14 @@ const Game = (function() {
     }
 
     function draw() {
-        if (!currentLevel || !ctx) return;
+        // CONTROLLO DI SICUREZZA 2: Assicurati che il player sia definito prima di disegnarlo.
+        if (!currentLevel || !ctx || !player) return; 
+
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
         renderPlatforms(currentLevel.platforms, cameraX);
-        player.draw(ctx, cameraX);
+        
+        player.draw(ctx, cameraX); 
+        
         renderEnemies(currentLevel.enemies, cameraX);
         const endZone = currentLevel.endZone;
         ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
@@ -159,7 +165,7 @@ const Game = (function() {
         renderHUD();
     }
     
-    // Ometto le funzioni di rendering dettagliate
+    // Funzioni di Rendering
     function renderPlatforms(platforms, camX) {
         if (!ctx) return;
         for (let p of platforms) {
@@ -202,7 +208,7 @@ const Game = (function() {
     }
 
     function renderHUD() {
-        if (!ctx) return;
+        if (!ctx || !player) return; 
         ctx.fillStyle = 'white';
         ctx.font = '20px Arial';
         ctx.fillText(`Punteggio: ${player.score}`, 10, 30);
@@ -257,30 +263,27 @@ const Game = (function() {
         } 
     }
     
+    // Funzioni di Controllo Gioco
     function init() {
         const newBtn = document.getElementById('newBtn');
         const loadingMessage = document.getElementById('loading-message');
         const hintText = document.getElementById('hint-text');
 
-        loadingMessage.style.display = 'none'; // Nascondi
-        hintText.style.display = 'none'; // Nascondi
+        loadingMessage.style.display = 'none'; 
+        hintText.style.display = 'none'; 
 
         newBtn.disabled = true;
-        newBtn.textContent = "Caricamento in corso..."; // Solo il pulsante mostra il loading
+        newBtn.textContent = "Caricamento in corso..."; 
 
         loadLevels()
             .then(success => {
                 if (success) {
-                    // Caricamento OK: non mostrare messaggi, ma abilita il pulsante
                     newBtn.textContent = "Nuova Partita";
                     newBtn.disabled = false;
-                    // Mostra l'hint solo dopo che è pronto (se vuoi)
-                    // hintText.style.display = 'block'; 
                 } else {
-                    // ERRORE CRITICO: Mostra il messaggio nella console e sul pulsante
                     newBtn.textContent = "Errore di Caricamento (vedi console)";
                     loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console Rete!";
-                    loadingMessage.style.display = 'block'; // Mostra solo in caso di errore
+                    loadingMessage.style.display = 'block'; 
                     newBtn.disabled = true;
                 }
             });
@@ -301,7 +304,7 @@ const Game = (function() {
         bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
 
         currentLevelIndex = 0; 
-        loadLevel(currentLevelIndex);
+        loadLevel(currentLevelIndex); 
         
         window.engine.start(); 
     }
