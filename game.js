@@ -1,16 +1,18 @@
-// game.js (Versione Corretta: Camera, Sfondo, Respawn - Senza Trappole Invisibili - Correzione Mobile)
+// game.js (Versione Finale con Correzioni Mobile e Percorsi Audio/Sprite)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
     const ctx = canvas ? canvas.getContext('2d') : null;
     const menuDiv = document.getElementById('menu');
     const gameContainer = document.getElementById('game-container');
-    const bgm = document.getElementById('bgm');
-    const bgmFinal = document.getElementById('bgm_final');
     
-    // Variabile globale per lo sfondo del canvas
+    // VARIABILI AUDIO AGGIORNATE (Corrispondenti a index.html)
+    const musicNormal = document.getElementById('music_normal');
+    const musicFinal = document.getElementById('music_final');
+    
+    // Variabile globale per lo sfondo del canvas (Corretto per 'sprites/')
     window.backgroundSprite = new Image();
-    window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
+    window.backgroundSprite.src = 'sprites/icon-512.png'; 
 
     let player; 
     let currentLevelIndex = 0;
@@ -23,6 +25,7 @@ const Game = (function() {
     };
 
     function loadLevels() {
+        // PERCORSI LIVELLI: Controlla che la cartella 'levels/' esista!
         const levelPromises = [
             fetch('levels/level1.json').then(res => res.json()),
             fetch('levels/level2.json').then(res => res.json()),
@@ -36,6 +39,11 @@ const Game = (function() {
             })
             .catch(error => {
                 console.error("Errore CRITICO nel caricamento di un file JSON del livello. Verifica il percorso 'levels/*.json'.", error);
+                // Visualizza l'errore a schermo
+                const loadingMessage = document.getElementById('loading-message');
+                loadingMessage.textContent = "ERRORE: Impossibile caricare i livelli (404/Network). Controlla la cartella 'levels/'.";
+                loadingMessage.style.display = 'block'; 
+                document.getElementById('newBtn').disabled = true;
                 return false;
             });
     }
@@ -49,8 +57,9 @@ const Game = (function() {
         currentLevelIndex = index;
         currentLevel = JSON.parse(JSON.stringify(levels[index]));
         
+        // Verifica che le dipendenze JS siano caricate
         if (!window.Player) {
-            console.error("ERRORE: Player class (window.Player) non è definita.");
+            console.error("ERRORE: Player class (window.Player) non è definita. Controlla che 'player.js' sia stato caricato correttamente.");
             return false;
         }
         
@@ -71,6 +80,7 @@ const Game = (function() {
         
         cameraX = 0;
         
+        // Verifica la dipendenza del Boss (boss_final.js)
         if (currentLevelIndex === 2 && window.BossFinal) {
              window.BossFinal.reset();
              const config = currentLevel.boss;
@@ -159,12 +169,10 @@ const Game = (function() {
     function draw() {
         if (!currentLevel || !ctx || !player) return; 
 
-        // 1. Disegna Sfondo (Correzione per Schermo Intero)
+        // 1. Disegna Sfondo
         if (window.backgroundSprite && window.backgroundSprite.complete) {
-            // Disegna l'immagine di sfondo per coprire TUTTO il canvas (960x540)
             ctx.drawImage(window.backgroundSprite, 0, 0, canvas.width, canvas.height);
         } else {
-            // Fallback: Sfondo Nero
             ctx.fillStyle = '#000000'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height); 
         }
@@ -175,7 +183,7 @@ const Game = (function() {
         
         renderEnemies(currentLevel.enemies, cameraX);
         
-        // Disegna EndZone (per debug)
+        // Disegna EndZone (opzionale/debug)
         const endZone = currentLevel.endZone;
         ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
         ctx.fillRect(Math.round(endZone.x - cameraX), endZone.y, endZone.w, endZone.h);
@@ -198,6 +206,8 @@ const Game = (function() {
 
             let spriteToUse = null;
 
+            // Assicurati che questi nomi di variabile (window.discoBallSprite, ecc.) corrispondano
+            // a quelli definiti nel blocco <script> di index.html
             if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
                 spriteToUse = window.discoBallSprite;
             } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
@@ -291,40 +301,48 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // Aggiungo gestori di eventi per il pulsante, supportando sia click che touch
-        newBtn.addEventListener('click', startNew);
-        newBtn.addEventListener('touchstart', startNew);
+        // I gestori di eventi 'click' e 'touchstart' sono in index.html, 
+        // ma è buona pratica includerli qui se non lo fossero stati.
+        // newBtn.addEventListener('click', startNew);
+        // newBtn.addEventListener('touchstart', startNew);
 
-        const spritePromises = [
-            new Promise(resolve => window.playerSprite.onload = resolve),
-            new Promise(resolve => window.runSprite.onload = resolve),
-            new Promise(resolve => window.heartSprite.onload = resolve),
-            new Promise(resolve => window.drinkEnemySprite.onload = resolve),
-            new Promise(resolve => window.discoBallSprite.onload = resolve), 
-            new Promise(resolve => window.djDiscSprite.onload = resolve), 
-            new Promise(resolve => window.paloSprite.onload = resolve),
-            new Promise(resolve => window.macchinaSprite.onload = resolve),
-            new Promise(resolve => window.bossSprite.onload = resolve),
-            new Promise(resolve => window.backgroundSprite.onload = resolve), 
+        // Lista delle immagini da caricare (deve corrispondere a index.html)
+        const spritesToLoad = [
+            window.playerSprite, window.runSprite, window.heartSprite, 
+            window.drinkEnemySprite, window.discoBallSprite, window.djDiscSprite, 
+            window.paloSprite, window.macchinaSprite, window.bossSprite,
+            window.backgroundSprite
         ];
+        
+        // Creazione di Promise per il caricamento delle sole Sprite
+        const spritePromises = spritesToLoad.map(sprite => {
+            return new Promise((resolve, reject) => {
+                if (sprite.complete) {
+                    resolve();
+                } else {
+                    sprite.onload = resolve;
+                    sprite.onerror = () => {
+                        console.error(`Errore nel caricamento della sprite: ${sprite.src}`);
+                        reject(`Errore nel caricamento della sprite: ${sprite.src}`);
+                    };
+                }
+            });
+        });
 
         Promise.all(spritePromises)
-            .then(() => loadLevels()) 
+            .then(() => loadLevels()) // Carica i livelli solo dopo le sprite
             .then(success => {
                 if (success) {
                     newBtn.textContent = "Nuova Partita";
                     newBtn.disabled = false;
                     hintText.style.display = 'block'; 
                 } else {
-                    newBtn.textContent = "Errore di Caricamento (vedi console)";
-                    loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console Rete!";
-                    loadingMessage.style.display = 'block'; 
-                    newBtn.disabled = true;
+                    // Il messaggio di errore del livello è gestito in loadLevels()
                 }
             })
             .catch(error => {
-                 console.error("Errore nel caricamento delle SPRITE. Verifica i percorsi in index.html:", error);
-                 loadingMessage.textContent = "Errore CRITICO nel caricamento di una o più sprite. Verifica i percorsi in index.html!";
+                 console.error("Errore critico durante il caricamento delle risorse (Sprite/Livelli):", error);
+                 loadingMessage.textContent = `Errore critico di caricamento. Verifica i percorsi: ${error}`;
                  loadingMessage.style.display = 'block'; 
                  newBtn.disabled = true;
             });
@@ -332,7 +350,6 @@ const Game = (function() {
 
     // La funzione startNew viene chiamata sia da click che da touchstart
     function startNew(e) {
-        // Usa preventDefault per evitare il doppio evento (click e touch)
         if(e) e.preventDefault(); 
         
         if (!levels.length || !window.engine) { 
@@ -352,9 +369,11 @@ const Game = (function() {
         menuDiv.style.display = 'none';
         gameContainer.style.display = 'block';
 
-        // L'avvio dell'audio deve avvenire all'interno di un evento utente (come touchstart/click)
-        bgm.loop = true;
-        bgm.play().catch(e => console.log("Audio BGM bloccato dal browser:", e));
+        // Avvio Audio
+        if (musicNormal) {
+            musicNormal.loop = true;
+            musicNormal.play().catch(e => console.log("Audio BGM bloccato dal browser:", e));
+        }
         
         window.engine.start(); 
     }
@@ -364,25 +383,29 @@ const Game = (function() {
         
         if (currentLevelIndex < levels.length) {
             if (currentLevelIndex === 2) {
-                bgm.pause();
-                bgmFinal.loop = true;
-                bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
+                // Passaggio al boss: Cambia musica
+                if (musicNormal) musicNormal.pause();
+                if (musicFinal) {
+                    musicFinal.loop = true;
+                    musicFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
+                }
             }
             
             loadLevel(currentLevelIndex, true); 
             
         } else {
+            // Fine Contenuto del Gioco
             window.engine.stop();
-            bgm.pause();
-            bgmFinal.pause();
+            if (musicNormal) musicNormal.pause();
+            if (musicFinal) musicFinal.pause();
             window.Ending.showLossScreen("Fine dei livelli (hai finito il contenuto).");
         }
     }
     
     function endGameWin() {
         if (window.engine) window.engine.stop();
-        bgm.pause();
-        bgmFinal.pause();
+        if (musicNormal) musicNormal.pause();
+        if (musicFinal) musicFinal.pause();
         if (player) window.Ending.showWinScreen("Pie diventa King!", player.score); 
     }
 
@@ -393,12 +416,13 @@ const Game = (function() {
             
             loadLevel(currentLevelIndex, true); 
             
+            // Ripristina la musica corretta
             if (currentLevelIndex === 2) {
-                bgm.pause();
-                bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
+                if (musicNormal) musicNormal.pause();
+                if (musicFinal) musicFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
             } else {
-                bgmFinal.pause();
-                bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
+                if (musicFinal) musicFinal.pause();
+                if (musicNormal) musicNormal.play().catch(e => console.log("Errore riproduzione BGM:", e));
             }
             
             menuDiv.style.display = 'none';
