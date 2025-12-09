@@ -1,4 +1,4 @@
-// game.js (file completo e aggiornato)
+// game.js (file completo e corretto)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -9,7 +9,7 @@ const Game = (function() {
     const bgm = document.getElementById('bgm');
     const bgmFinal = document.getElementById('bgm_final');
 
-    let player; // La variabile player è dichiarata qui
+    let player; 
     let currentLevelIndex = 0;
     let levels = [];
     let currentLevel;
@@ -67,7 +67,7 @@ const Game = (function() {
     // --- Logica di Gioco (Update/Draw/Collisioni) ---
     
     function update(dt, input) {
-        // CONTROLLO DI SICUREZZA 1: Assicurati che il player sia definito prima di aggiornarlo.
+        // CONTROLLO DI SICUREZZA
         if (!currentLevel || !player || !window.engine) return; 
 
         player.update(dt, input, currentLevel.platforms);
@@ -146,7 +146,7 @@ const Game = (function() {
     }
 
     function draw() {
-        // CONTROLLO DI SICUREZZA 2: Assicurati che il player sia definito prima di disegnarlo.
+        // CONTROLLO DI SICUREZZA AGGIUNTO: Evita il crash se player non è inizializzato.
         if (!currentLevel || !ctx || !player) return; 
 
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
