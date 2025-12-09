@@ -1,80 +1,81 @@
-// engine.js (Ottimizzato: Fixed Timestep, Input Keyboard/Simulated)
+// engine.js (AGGIORNATO: Aggiunta gestione Touch Input)
 
-const Engine = function(update, draw) {
-    const canvas = document.getElementById('game');
-    
-    if (!canvas) {
-        console.error("Errore Engine: Elemento Canvas 'game' non trovato nel DOM.");
-        return null; 
-    }
-
-    const MAX_FRAME_TIME = 0.25; 
-    const STEP = 1 / 120; 
-
-    let lastTime = performance.now();
-    let accumulator = 0; 
+const Engine = (function() {
+    let lastTime = 0;
     let running = false;
-    this.keys = {}; // Mappa i tasti attivi (ArrowLeft, ArrowRight, Space, ArrowUp)
-    let gameLoop;
-    const input = this.keys; 
+    let input = {}; 
     
-    // --- GESTIONE INPUT (TASTIERA) ---
-    // Questi listener gestiscono sia la tastiera fisica (Desktop) sia l'input simulato dai controlli touch (Mobile)
-
-    document.addEventListener('keydown', (e) => {
+    function loop(time) {
         if (!running) return;
-        this.keys[e.key] = true;
-    });
 
-    document.addEventListener('keyup', (e) => {
-        if (!running) return;
-        this.keys[e.key] = false;
-    });
+        const dt = Math.min(0.05, (time - lastTime) / 1000); 
+        lastTime = time;
 
-    // NOTA: I listener Touch sono stati spostati nell'index.html per il binding diretto ai tasti virtuali.
-
-    // --- LOOP DI GIOCO ---
-
-    const loop = (currentTime) => {
-        if (!running) return;
+        if (window.Game && window.Game.update) {
+            window.Game.update(dt, input);
+        }
         
-        let dt = (currentTime - lastTime) / 1000;
-        lastTime = currentTime;
-        dt = Math.min(dt, MAX_FRAME_TIME); 
-        
-        accumulator += dt;
-
-        while (accumulator >= STEP) {
-            update(STEP, input); 
-            accumulator -= STEP;
+        if (window.Game && window.Game.draw) {
+            window.Game.draw();
         }
 
-        draw(); 
-
-        gameLoop = requestAnimationFrame(loop);
-    };
-
-    this.start = function() {
+        requestAnimationFrame(loop);
+    }
+    
+    function start() {
         if (running) return;
         running = true;
         lastTime = performance.now();
-        accumulator = 0; 
-        gameLoop = requestAnimationFrame(loop);
-    };
-
-    this.stop = function() {
+        requestAnimationFrame(loop);
+    }
+    
+    function stop() {
         running = false;
-        cancelAnimationFrame(gameLoop);
-        this.keys = {}; 
-    };
+    }
     
-    this.isRunning = function() {
-        return running;
-    };
-    
-    this.setKey = function(key, state) {
-        this.keys[key] = state;
-    };
-}; 
+    function handleKeyDown(e) {
+        input[e.key] = true;
+    }
 
-window.Engine = Engine;
+    function handleKeyUp(e) {
+        input[e.key] = false;
+    }
+
+    // --- NUOVA LOGICA TOUCH ---
+    function handleTouchStart(e) {
+        // Impedisce lo scrolling
+        e.preventDefault(); 
+        
+        // Simula la pressione di un tasto per l'input (Esempio: Tocco = Spazio/Salto)
+        // Questo dipende molto da come è strutturato il tuo input mobile. 
+        // Se non hai un gamepad virtuale, potresti voler mappare il tocco a "salto".
+        
+        // Per semplicità, qui mappiamo il tocco sullo schermo al tasto 'Space' per il salto.
+        // Se hai dei bottoni sullo schermo, devi mappare il tocco di quei bottoni.
+        input['Space'] = true; 
+    }
+
+    function handleTouchEnd(e) {
+        e.preventDefault();
+        input['Space'] = false;
+    }
+    
+    // Inizializzazione degli ascoltatori
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    // Aggiunta gestione Touch
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+    
+    // Inizializza l'Engine nel contesto globale
+    window.Game.setEngine({ start, stop }); 
+    
+    return {
+        start: start,
+        stop: stop,
+        getInput: () => input 
+    };
+})();
+
+// L'Engine viene avviato solo quando l'utente preme "Nuova Partita"
