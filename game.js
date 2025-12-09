@@ -1,4 +1,4 @@
-// game.js (file completo e corretto)
+// game.js (file completo e aggiornato)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -145,7 +145,6 @@ const Game = (function() {
 
     function draw() {
         if (!currentLevel || !ctx) return;
-        // La pulizia del canvas è sufficiente, lo sfondo è dato dal CSS in index.html.
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
         renderPlatforms(currentLevel.platforms, cameraX);
         player.draw(ctx, cameraX);
@@ -160,11 +159,7 @@ const Game = (function() {
         renderHUD();
     }
     
-    // Ometto le funzioni di rendering dettagliate e altre funzioni di gioco 
-    // (renderPlatforms, renderEnemies, renderHUD, renderBossHUD, toggleFullScreen, 
-    // nextLevel, endGameWin, onPlayerFell, onPlayerDied, continueGame, saveGame)
-    // che sono le stesse fornite in precedenza.
-
+    // Ometto le funzioni di rendering dettagliate
     function renderPlatforms(platforms, camX) {
         if (!ctx) return;
         for (let p of platforms) {
@@ -265,20 +260,27 @@ const Game = (function() {
     function init() {
         const newBtn = document.getElementById('newBtn');
         const loadingMessage = document.getElementById('loading-message');
+        const hintText = document.getElementById('hint-text');
 
-        loadingMessage.textContent = "Caricamento Livelli in corso...";
+        loadingMessage.style.display = 'none'; // Nascondi
+        hintText.style.display = 'none'; // Nascondi
+
         newBtn.disabled = true;
+        newBtn.textContent = "Caricamento in corso..."; // Solo il pulsante mostra il loading
 
         loadLevels()
             .then(success => {
                 if (success) {
-                    loadingMessage.textContent = "Livelli caricati! Premi Nuova Partita.";
+                    // Caricamento OK: non mostrare messaggi, ma abilita il pulsante
                     newBtn.textContent = "Nuova Partita";
                     newBtn.disabled = false;
+                    // Mostra l'hint solo dopo che è pronto (se vuoi)
+                    // hintText.style.display = 'block'; 
                 } else {
-                    // SE QUESTO MESSAGGIO COMPARE, CONTROLLA I FILE JSON IN levels/ (errore 404)
+                    // ERRORE CRITICO: Mostra il messaggio nella console e sul pulsante
+                    newBtn.textContent = "Errore di Caricamento (vedi console)";
                     loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console Rete!";
-                    newBtn.textContent = "Errore";
+                    loadingMessage.style.display = 'block'; // Mostra solo in caso di errore
                     newBtn.disabled = true;
                 }
             });
