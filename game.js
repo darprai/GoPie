@@ -1,4 +1,4 @@
-// game.js (Versione Corretta: Camera, Sfondo, Respawn)
+// game.js (Versione Corretta: Camera, Sfondo, Respawn - Senza Trappole Invisibili)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -35,7 +35,6 @@ const Game = (function() {
                 return true;
             })
             .catch(error => {
-                // Questo errore è ora atteso e gestito dal JSON corretto
                 console.error("Errore CRITICO nel caricamento di un file JSON del livello. Verifica il percorso 'levels/*.json'.", error);
                 return false;
             });
@@ -137,15 +136,7 @@ const Game = (function() {
             });
         }
         
-        if (currentLevel.invisible_traps) {
-             for (let trap of currentLevel.invisible_traps) {
-                 if (window.rectsOverlap && trap.type === 'fall_death' && rectsOverlap(player, trap)) {
-                     // Nonostante la caduta non uccida, le trappole invisibili lo fanno (morte per trappola)
-                     Game.onPlayerFell(); 
-                     return; 
-                 }
-             }
-          }
+        // La logica per currentLevel.invisible_traps è stata rimossa, come richiesto dall'utente.
     }
     
     function handleBossCollisions() {
@@ -410,11 +401,6 @@ const Game = (function() {
         }, 100); 
     }
     
-    function onPlayerFell() {
-          // Usato per le trappole invisibili di morte
-          Game.onPlayerDied();
-    }
-    
     function setEngine(engine) {
         window.engine = engine; 
     }
@@ -424,7 +410,6 @@ const Game = (function() {
         nextLevel: nextLevel,
         endGameWin: endGameWin,
         onPlayerDied: onPlayerDied,
-        onPlayerFell: onPlayerFell,
         init: init, 
         update: update, 
         draw: draw,     
