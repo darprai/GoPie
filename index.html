@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Go Pie Go</title>
     <style>
-        /* ... (CSS omesso per brevità, rimane invariato) ... */
         body {
             display: flex;
             justify-content: center;
@@ -18,8 +17,9 @@
             overflow: hidden; 
         }
         #game-container {
-            display: none;
+            display: block; /* Modificato: mostriamo subito il container per l'inizializzazione */
             position: relative;
+            /* Le dimensioni del canvas dovrebbero essere 960x540 */
             width: 960px;
             height: 540px;
             max-width: 100vw; 
@@ -98,44 +98,45 @@
     </div>
 </div>
 
-<audio id="bgm" loop>
-    <source src="assets/audio/bgm.mp3" type="audio/mpeg">
+<audio id="music_normal" loop>
+    <source src="assets/music/music_normal.mp3" type="audio/mpeg">
     Il tuo browser non supporta l'elemento audio.
 </audio>
-<audio id="bgm_final" loop>
-    <source src="assets/audio/bgm_final.mp3" type="audio/mpeg">
+<audio id="music_final" loop>
+    <source src="assets/music/music_final.mp3" type="audio/mpeg">
     Il tuo browser non supporta l'elemento audio.
 </audio>
 
 <script>
     // Inizializzazione delle immagini all'inizio
-    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/player_idle.png';
-    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/player_run.png';
-    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
-    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink_enemy.png';
-    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco_platform.png';
-    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/dj_disc.png';
-    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
-    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
-    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/boss.png';
-    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/sfondo.png';
+    window.playerSprite = new Image(); window.playerSprite.src = 'spristes/pie.png'; 
+    window.runSprite = new Image(); window.runSprite.src = 'spristes/run.png'; 
+    window.heartSprite = new Image(); window.heartSprite.src = 'spristes/heart.png'; 
+    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'spristes/drink.png'; 
+    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'spristes/disco.png'; 
+    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'spristes/djdisc.png'; 
+    window.paloSprite = new Image(); window.paloSprite.src = 'spristes/palo.png'; 
+    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'spristes/macchina.png'; 
+    window.bossSprite = new Image(); window.bossSprite.src = 'spristes/golruk.png'; 
+    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'spristes/icon-512.png'; // Usiamo una sprite comune come sfondo
 </script>
 
 <script src="js/rects.js"></script>
 <script src="js/player.js"></script>
-<script src="js/boss.js"></script>
-<script src="js/ending.js"></script>
+<script src="js/boss_final.js"></script> <script src="js/ending.js"></script>
 <script src="js/game.js"></script>
 <script src="js/engine.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('game-container').style.display = 'block';
-
+        
+        // Ho rimosso il display='block' qui sopra nel CSS e lo lasciamo. 
+        // L'importante è che Game.init() sia chiamato dopo che il DOM è pronto.
+        
         if (window.Game && window.Game.init) {
             window.Game.init();
         } else {
-             // Questo errore indica che uno degli script sopra non è stato caricato.
+             // Questo è l'errore che ricevi quando gli script non vengono caricati (404)
              console.error("ERRORE CRITICO: Game object non trovato. Controlla che TUTTI i file in 'js/' esistano.");
         }
         
