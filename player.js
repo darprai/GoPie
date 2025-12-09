@@ -16,10 +16,9 @@ const Player = function(x, y) {
     this.animationFrame = 0;
     this.animationTimer = 0;
     
-    // NUOVO: Stato di invincibilità per prevenire danni continui
     this.invincible = false;
     this.invincibilityTimer = 0;
-    const INVINCIBILITY_DURATION = 1.5; // 1.5 secondi di invincibilità dopo aver subito un danno
+    const INVINCIBILITY_DURATION = 1.5; 
 
     this.groundEpsilon = 5; 
 
@@ -29,11 +28,8 @@ const Player = function(x, y) {
         this.vx = 0;
         this.vy = 0;
         this.onGround = false;
-        // Mantiene vite e punteggio al reset, se il reset non è una nuova partita completa
-        // Per un reset completo, dovresti resettare lives e score qui o chiamare un metodo separato.
     };
     
-    // NUOVO: Metodo per il reset completo dello stato
     this.resetFull = function(x, y) {
         this.reset(x, y);
         this.lives = 3; 
@@ -49,12 +45,12 @@ const Player = function(x, y) {
 
     this.hit = function() {
         if (this.invincible) {
-            return true; // Ha subito un colpo, ma è invincibile, quindi non perde vita
+            return true; 
         }
         
         this.lives--;
         this.invincible = true;
-        this.invincibilityTimer = 0; // Azzera il timer
+        this.invincibilityTimer = 0; 
         
         if (this.lives > 0) {
             return true; 
@@ -112,7 +108,6 @@ const Player = function(x, y) {
         for (let p of platforms) {
             const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
             
-            // Assicurati che rectsOverlap esista globalmente (dovrebbe essere in rects.js)
             if (window.rectsOverlap && rectsOverlap(this, pRect)) { 
                 if (this.vx > 0) {
                     this.x = pRect.x - this.w; 
@@ -123,38 +118,55 @@ const Player = function(x, y) {
             }
         }
         
-        // 6. COLLISIONI (Y-axis)
+        // 6. COLLISIONI (Y-axis) - MODIFICATO PER LA STABILITÀ
         this.y = newY;
         this.onGround = false;
+        
+        // Rivediamo la collisione Y: si assume che la rectsOverlap sia la funzione globale
+
+        let fell = true; // Assumiamo che stia cadendo a meno che non si trovi su qualcosa
 
         for (let p of platforms) {
             const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
             
             if (window.rectsOverlap && rectsOverlap(this, pRect)) {
-                if (this.vy > 0) { // Se sta cadendo (o è fermo e si appoggia)
+                
+                if (this.vy > 0) { // **IL PLAYER STA CADENDO**
+                    // Sposta il player sopra la piattaforma
                     this.y = pRect.y - this.h; 
                     this.onGround = true;
                     this.vy = 0;
-                } else if (this.vy < 0) { // Se sta saltando e colpisce da sotto
+                    fell = false;
+                    
+                } else if (this.vy < 0) { // **IL PLAYER STA SALENDO (COLLISIONE DAL BASSO)**
+                    // Sposta il player sotto la piattaforma
                     this.y = pRect.y + pRect.h;
                     this.vy = 0;
                 }
             }
         }
+        
+        // Se dopo aver controllato tutte le piattaforme, il player è ancora a terra
+        if (this.vy === 0) {
+             // Controllo aggiuntivo per assicurarsi che non si muova lateralmente fuori da una piattaforma
+             // Se il player è su una piattaforma, lo consideriamo a terra anche se vy=0
+             // Manteniamo this.onGround = (this.vy === 0 && !fell);
+        }
 
         // 7. Animazione
-        if (this.isMoving && this.onGround) { // Animazione solo se si muove E tocca terra
+        if (this.isMoving && this.onGround) { 
             this.animationTimer += dt;
             if (this.animationTimer > 0.1) {
                 this.animationFrame = (this.animationFrame + 1) % 4;
                 this.animationTimer = 0;
             }
         } else {
-            this.animationFrame = 0; // Fermo o in volo -> frame di stand-by
+            this.animationFrame = 0; 
         }
     };
 
     this.draw = function(ctx, camX) {
+        // ... (Il resto della funzione draw rimane invariato)
         const x = Math.round(this.x - camX);
         const y = Math.round(this.y);
         
@@ -162,7 +174,6 @@ const Player = function(x, y) {
         let frameX = 0;
         let spriteReady = false;
 
-        // Decidi quale sprite usare
         if (this.isMoving && window.runSprite && window.runSprite.complete) {
             spriteToUse = window.runSprite;
             frameX = this.animationFrame * 40;
@@ -173,29 +184,24 @@ const Player = function(x, y) {
             spriteReady = true;
         }
 
-        // Se l'invincibilità è attiva, facciamo lampeggiare il player
         if (this.invincible && Math.floor(this.invincibilityTimer * 10) % 2 === 0) {
-            // Se invincibile e il timer è su un frame "dispari", saltiamo il disegno.
-            // Oppure, possiamo solo disegnare il quadrato rosso più sotto.
+            // Non disegnare se invincibile e sul frame "off"
         } else if (spriteReady) {
-            // Disegna la sprite se è pronta e non è un frame di invincibilità "off"
             ctx.save();
             if (!this.facingRight) {
                 ctx.scale(-1, 1);
-                // Disegna l'immagine capovolta
                 ctx.drawImage(spriteToUse, frameX, 0, 40, 40, -(x + this.w), y, this.w, this.h); 
             } else {
                 ctx.drawImage(spriteToUse, frameX, 0, 40, 40, x, y, this.w, this.h);
             }
             ctx.restore();
         } else {
-            // SOLUZIONE SE PIE.PNG NON COMPAIONO: Disegna un quadrato solido.
-            // Questo assicura che il player sia visibile anche se le immagini non sono caricate.
+            // Disegna un quadrato solido se le sprite non sono pronte
             ctx.fillStyle = 'blue';
             ctx.fillRect(x, y, this.w, this.h);
         }
 
-        // Gestione lampeggio vita bassa (vecchio stile)
+        // Disegno vita bassa/invincibilità visiva
         if (window.Game && window.Game.getCurLevelIndex() !== 2 && this.lives <= 1 && Math.floor(performance.now() / 100) % 2 === 0) {
             ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
             ctx.fillRect(x, y, this.w, this.h);
