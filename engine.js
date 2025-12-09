@@ -3,7 +3,7 @@ const Engine = function(update, draw) {
     
     // Controllo di sicurezza: se il canvas non è trovato, l'Engine non viene creato.
     if (!canvas) {
-        console.error("Errore Engine: Elemento Canvas 'game' non trovato nel DOM.");
+        console.error("Errore Engine: Elemento Canvas 'game' non trovato nel DOM. Assicurati che index.html sia corretto.");
         return null; 
     }
 
@@ -20,6 +20,7 @@ const Engine = function(update, draw) {
     });
 
     document.addEventListener('keyup', (e) => {
+        if (!running) return;
         this.keys[e.key] = false;
     });
 
@@ -40,6 +41,7 @@ const Engine = function(update, draw) {
         gameLoop = requestAnimationFrame(loop);
     };
 
+    // Metodo per avviare il loop di gioco
     this.start = function() {
         if (running) return;
         running = true;
@@ -47,15 +49,19 @@ const Engine = function(update, draw) {
         gameLoop = requestAnimationFrame(loop);
     };
 
+    // Metodo per fermare il loop di gioco
     this.stop = function() {
         running = false;
         cancelAnimationFrame(gameLoop);
+        // Resetta l'input per evitare movimenti fantasma
         this.keys = {}; 
     };
     
+    // Metodo per verificare se il loop è attivo
     this.isRunning = function() {
         return running;
     };
-};
+    
+}; // <--- La chiusura corretta del costruttore 'const Engine = function(...)'
 
 window.Engine = Engine;
