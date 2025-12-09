@@ -1,4 +1,4 @@
-// game.js (Versione Corretta: Sfondo, Respawn, Punteggio)
+// game.js (Versione Corretta: Camera, Sfondo, Respawn)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -8,9 +8,9 @@ const Game = (function() {
     const bgm = document.getElementById('bgm');
     const bgmFinal = document.getElementById('bgm_final');
     
-    // VARIABILE GLOBALE PER LO SFONDO DEL CANVAS
+    // Variabile globale per lo sfondo del canvas (usata per creare un pattern)
     window.backgroundSprite = new Image();
-    window.backgroundSprite.src = 'assets/sprites/icon-512.png'; // Uso questa come sfondo del livello
+    window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
 
     let player; 
     let currentLevelIndex = 0;
@@ -21,8 +21,6 @@ const Game = (function() {
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
-
-    // --- Logica Livelli (Identica) ---
 
     function loadLevels() {
         const levelPromises = [
@@ -83,8 +81,6 @@ const Game = (function() {
     }
 
 
-    // --- Logica di Gioco (Update/Draw) ---
-
     function update(dt, input) {
         if (!currentLevel || !player || !window.engine) return; 
 
@@ -97,8 +93,14 @@ const Game = (function() {
             }
         }
         
+        // Logica Telecamera Stabilizzata
         const targetX = player.x - canvas.width / 2 + player.w / 2;
+        
         cameraX = Math.max(0, Math.min(targetX, currentLevel.length - canvas.width));
+        
+        if (currentLevel.length <= canvas.width) {
+             cameraX = 0; 
+        }
 
         // Condizione di fine livello
         const endZone = currentLevel.endZone;
@@ -167,12 +169,12 @@ const Game = (function() {
 
         // Disegna Sfondo Fisso
         if (window.backgroundSprite && window.backgroundSprite.complete) {
-            // Ripeti lo sfondo orizzontalmente se il livello è più lungo
+            // Usa createPattern per ripetere lo sfondo
             const pattern = ctx.createPattern(window.backgroundSprite, 'repeat');
             ctx.fillStyle = pattern;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         } else {
-            // Fallback: Sfondo Nero se l'immagine manca (CORREZIONE per lo sfondo bianco)
+            // Fallback: Sfondo Nero se l'immagine manca
             ctx.fillStyle = '#000000'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height); 
         }
@@ -299,7 +301,6 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // Precaricamento Sprite (incluso backgroundSprite)
         const spritePromises = [
             new Promise(resolve => window.playerSprite.onload = resolve),
             new Promise(resolve => window.runSprite.onload = resolve),
@@ -310,7 +311,7 @@ const Game = (function() {
             new Promise(resolve => window.paloSprite.onload = resolve),
             new Promise(resolve => window.macchinaSprite.onload = resolve),
             new Promise(resolve => window.bossSprite.onload = resolve),
-            new Promise(resolve => window.backgroundSprite.onload = resolve), // AGGIUNTO
+            new Promise(resolve => window.backgroundSprite.onload = resolve), 
         ];
 
         Promise.all(spritePromises)
@@ -343,7 +344,6 @@ const Game = (function() {
         
         toggleFullScreen(); 
         
-        // Nuova Partita: resetta il punteggio (preserveScore=false)
         const playerLoaded = loadLevel(0, false); 
 
         if (!playerLoaded) {
@@ -387,16 +387,13 @@ const Game = (function() {
         if (player) window.Ending.showWinScreen("Pie diventa King!", player.score); 
     }
 
-    // Funzione chiamata quando si cade o si muore
     function onPlayerDied() {
         if (window.engine) window.engine.stop(); 
         
-        // Piccolo ritardo per mostrare l'effetto prima del respawn
         setTimeout(() => {
             
             loadLevel(currentLevelIndex, true); 
             
-            // Gestione Audio (si riavvia la musica corretta)
             if (currentLevelIndex === 2) {
                 bgm.pause();
                 bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
@@ -409,7 +406,7 @@ const Game = (function() {
             gameContainer.style.display = 'block';
 
             if (window.engine) window.engine.start();
-        }, 100); // Ridotto a 100ms per un respawn più veloce
+        }, 100); 
     }
     
     function onPlayerFell() {
@@ -422,8 +419,6 @@ const Game = (function() {
     
     return {
         startNew: startNew,
-        continue: () => console.log("Continua non implementato"),
-        save: () => console.log("Salva non implementato"),
         nextLevel: nextLevel,
         endGameWin: endGameWin,
         onPlayerDied: onPlayerDied,
