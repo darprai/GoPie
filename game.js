@@ -1,7 +1,6 @@
-// game.js (Versione definitiva e stabile per Mobile/Desktop)
+// game.js (Versione definitiva con logica Respawn e Punteggio)
 
 const Game = (function() {
-    // Variabili e riferimenti agli elementi DOM
     const canvas = document.getElementById('game');
     const ctx = canvas ? canvas.getContext('2d') : null;
     const menuDiv = document.getElementById('menu');
@@ -15,13 +14,11 @@ const Game = (function() {
     let currentLevel;
     let cameraX = 0;
     
-    // Variabile PLATFORM_TYPE
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
 
-    // --- Gestione Livelli (Omissis) ---
-    // [Le funzioni loadLevels e loadLevel rimangono le stesse]
+    // --- Gestione Livelli (Identica) ---
 
     function loadLevels() {
         const levelPromises = [
@@ -41,32 +38,33 @@ const Game = (function() {
             });
     }
 
-    function loadLevel(index) {
+    function loadLevel(index, preserveScore = true) {
         if (!levels[index]) {
             console.error(`Livello ${index} non trovato.`);
             return false;
         }
 
         currentLevelIndex = index;
-        currentLevel = levels[index];
+        currentLevel = JSON.parse(JSON.stringify(levels[index])); // Cloniamo il livello per ripopolare i nemici/cuori
         
         if (!window.Player) {
-            console.error("ERRORE: Player class (window.Player) non è definita. Controlla che player.js sia caricato correttamente.");
+            console.error("ERRORE: Player class (window.Player) non è definita.");
             return false;
         }
         
+        const startX = currentLevel.playerStart.x;
+        const startY = currentLevel.playerStart.y;
+        
         if (!player) { 
-            if (!currentLevel.playerStart || typeof currentLevel.playerStart.x === 'undefined') {
-                 console.error("Dati del livello incompleti: manca playerStart.");
-                 return false;
-            }
-            player = new window.Player(currentLevel.playerStart.x, currentLevel.playerStart.y); 
+            player = new window.Player(startX, startY); 
         } else {
-             if (player.resetFull) {
-                 player.resetFull(currentLevel.playerStart.x, currentLevel.playerStart.y);
-             } else {
-                 player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
-             }
+            const currentScore = player.score;
+            if (preserveScore) {
+                player.reset(startX, startY); 
+                player.score = currentScore; // Mantieni il punteggio tra i respawn
+            } else {
+                player.resetFull(startX, startY); // Nuova Partita: resetta tutto
+            }
         }
         
         cameraX = 0;
@@ -81,8 +79,7 @@ const Game = (function() {
     }
 
 
-    // --- Logica di Gioco (Update/Draw/Collisioni) (Omissis) ---
-    // [Le funzioni update, draw e helper rimangono le stesse]
+    // --- Logica di Gioco (Update/Draw/Collisioni) ---
 
     function update(dt, input) {
         if (!currentLevel || !player || !window.engine) return; 
@@ -99,6 +96,7 @@ const Game = (function() {
         const targetX = player.x - canvas.width / 2 + player.w / 2;
         cameraX = Math.max(0, Math.min(targetX, currentLevel.length - canvas.width));
 
+        // Condizione di fine livello
         const endZone = currentLevel.endZone;
         if (player.x + player.w > endZone.x && 
             player.x < endZone.x + endZone.w &&
@@ -119,12 +117,11 @@ const Game = (function() {
             currentLevel.enemies = currentLevel.enemies.filter(enemy => {
                 if (window.rectsOverlap && rectsOverlap(player, enemy)) {
                     if (enemy.type === 'drink') {
-                        player.lives = 0; 
-                        Game.onPlayerDied();
+                        Game.onPlayerDied(); // Muori toccando il drink
                         return false; 
                     }
                     if (enemy.type === 'heart') {
-                        player.collectHeart();
+                        player.collectHeart(); // Raccogli il cuore
                         return false; 
                     }
                 }
@@ -153,10 +150,9 @@ const Game = (function() {
         window.BossFinal.projectiles = window.BossFinal.projectiles.filter(p => {
             if (rectsOverlap(player, p)) {
                 if (player.hit()) {
-                    player.x = Math.max(0, player.x - 50);
-                } else {
-                    Game.onPlayerDied();
+                    player.x = Math.max(0, player.x - 50); // Sposta indietro se invincibile
                 }
+                // La logica di morte/respawn è ora gestita dentro player.hit()
                 return false; 
             }
             return true; 
@@ -172,9 +168,12 @@ const Game = (function() {
         player.draw(ctx, cameraX); 
         
         renderEnemies(currentLevel.enemies, cameraX);
+        
+        // Disegna EndZone (per debug, si può rimuovere)
         const endZone = currentLevel.endZone;
         ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
         ctx.fillRect(Math.round(endZone.x - cameraX), endZone.y, endZone.w, endZone.h);
+        
         if (currentLevelIndex === 2 && window.BossFinal && window.BossFinal.active) {
             window.BossFinal.render(ctx, cameraX);
             renderBossHUD(); 
@@ -234,21 +233,9 @@ const Game = (function() {
     function renderHUD() {
         if (!ctx || !player) return; 
         ctx.fillStyle = 'white';
-        ctx.font = '20px Arial';
-        ctx.fillText(`Punteggio: ${player.score}`, 10, 30);
-        
-        const heartSize = 25;
-        const spacing = 5;
-        for (let i = 0; i < 3; i++) {
-            const x = canvas.width - (i + 1) * (heartSize + spacing);
-            const y = 10;
-            if (i < player.lives && window.heartSprite && window.heartSprite.complete) {
-                ctx.drawImage(window.heartSprite, x, y, heartSize, heartSize);
-            } else {
-                ctx.strokeStyle = 'red';
-                ctx.strokeRect(x, y, heartSize, heartSize);
-            }
-        }
+        ctx.font = '24px Arial';
+        // Mostra solo il punteggio
+        ctx.fillText(`PUNTEGGIO: ${player.score}`, 10, 30);
     }
     
     function renderBossHUD() {
@@ -258,10 +245,10 @@ const Game = (function() {
         const max = currentLevel.boss.projectiles;
         const progress = thrown / max;
         
-        const barW = canvas.width - 40;
+        const barW = canvas.width / 3;
         const barH = 15;
-        const x = 20;
-        const y = 55;
+        const x = canvas.width - barW - 20;
+        const y = 30;
         
         ctx.fillStyle = 'gray';
         ctx.fillRect(x, y, barW, barH);
@@ -270,8 +257,10 @@ const Game = (function() {
         ctx.fillRect(x, y, barW * progress, barH);
         
         ctx.fillStyle = 'white';
-        ctx.font = '16px Arial';
-        ctx.fillText(`Schivate: ${thrown} / ${max}`, x, y + 12);
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(`BOSS: ${thrown} / ${max}`, canvas.width - 20, y - 5);
+        ctx.textAlign = 'left'; // Reset
     }
     
     function toggleFullScreen() {
@@ -299,6 +288,8 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
+        // ... (Promesse di caricamento sprite omessi, sono identiche)
+
         const spritePromises = [
             new Promise(resolve => window.playerSprite.onload = resolve),
             new Promise(resolve => window.runSprite.onload = resolve),
@@ -308,6 +299,7 @@ const Game = (function() {
             new Promise(resolve => window.djDiscSprite.onload = resolve), 
             new Promise(resolve => window.paloSprite.onload = resolve),
             new Promise(resolve => window.macchinaSprite.onload = resolve),
+            new Promise(resolve => window.bossSprite.onload = resolve), // Aggiunto Boss
         ];
 
         Promise.all(spritePromises)
@@ -340,20 +332,19 @@ const Game = (function() {
         
         toggleFullScreen(); 
         
-        const playerLoaded = loadLevel(0); 
+        // Nuova Partita: resetta il punteggio (preserveScore=false)
+        const playerLoaded = loadLevel(0, false); 
 
         if (!playerLoaded) {
-             console.error("Impossibile avviare il gioco: Il player non è stato inizializzato. Controlla player.js.");
+             console.error("Impossibile avviare il gioco: Il player non è stato inizializzato.");
              return;
         }
 
         menuDiv.style.display = 'none';
         gameContainer.style.display = 'block';
 
-        // Tenta di avviare l'audio BGM (necessita di interazione utente per l'autoplay su mobile)
         bgm.loop = true;
-        // Il .catch è essenziale su mobile, in quanto il browser potrebbe bloccare la riproduzione
-        bgm.play().catch(e => console.log("Audio BGM bloccato dal browser (richiede interazione utente):", e));
+        bgm.play().catch(e => console.log("Audio BGM bloccato dal browser:", e));
         
         window.engine.start(); 
     }
@@ -362,19 +353,22 @@ const Game = (function() {
         currentLevelIndex++;
         
         if (currentLevelIndex < levels.length) {
+            // Passaggio al livello Boss
             if (currentLevelIndex === 2) {
                 bgm.pause();
                 bgmFinal.loop = true;
                 bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
             }
             
-            loadLevel(currentLevelIndex);
+            // Passa al livello successivo mantenendo il punteggio (preserveScore=true)
+            loadLevel(currentLevelIndex, true); 
             
         } else {
+            // Se finiscono i livelli, è una sconfitta tecnica
             window.engine.stop();
             bgm.pause();
             bgmFinal.pause();
-            window.Ending.showLossScreen("Fine dei livelli.");
+            window.Ending.showLossScreen("Fine dei livelli (hai finito il contenuto).");
         }
     }
     
@@ -382,49 +376,46 @@ const Game = (function() {
         if (window.engine) window.engine.stop();
         bgm.pause();
         bgmFinal.pause();
+        // Usa il punteggio del player
         if (player) window.Ending.showWinScreen("Pie diventa King!", player.score); 
     }
 
-    function onPlayerFell() {
-          if (player) player.lives = 0;
-          Game.onPlayerDied();
-    }
-    
+    // Funzione chiamata quando si cade o si muore
     function onPlayerDied() {
         if (window.engine) window.engine.stop(); 
         
-        if (!player || player.lives <= 0) {
-            setTimeout(() => {
-                
-                loadLevel(currentLevelIndex); 
-                
-                if (currentLevelIndex === 2) {
-                    bgm.pause();
-                    bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
-                } else {
-                    bgmFinal.pause();
-                    bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
-                }
-                
-                menuDiv.style.display = 'none';
-                gameContainer.style.display = 'block';
-
-                if (window.engine) window.engine.start();
-            }, 1500); 
+        // Ricarica il livello corrente mantenendo il punteggio
+        setTimeout(() => {
             
-        } else {
-              loadLevel(currentLevelIndex);
-              if (window.engine) window.engine.start(); 
-        }
+            loadLevel(currentLevelIndex, true); 
+            
+            // Gestione Audio
+            if (currentLevelIndex === 2) {
+                bgm.pause();
+                bgmFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
+            } else {
+                bgmFinal.pause();
+                bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
+            }
+            
+            menuDiv.style.display = 'none';
+            gameContainer.style.display = 'block';
+
+            if (window.engine) window.engine.start();
+        }, 1000); // 1 secondo di pausa prima del respawn
+    }
+    
+    function onPlayerFell() {
+          // La caduta è considerata morte
+          Game.onPlayerDied();
     }
     
     function continueGame() {
-        alert("Funzione Continua non implementata. Avvio una Nuova Partita.");
-        startNew();
+        // Funzione omessa, ma mantenuta per il binding nell'index se volessi ripristinarla
     }
     
     function saveGame() {
-        alert("Funzione Salva non implementata.");
+        // Funzione omessa
     }
 
     function setEngine(engine) {
