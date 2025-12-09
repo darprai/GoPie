@@ -1,140 +1,157 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>Pie Adventure - Full</title>
-    <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-    <link rel="stylesheet" href="style.css"> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pie's Adventure</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden; /* Evita lo scrolling su mobile */
+        }
+        #game-container {
+            display: none;
+            position: relative;
+            /* Le dimensioni del canvas dovrebbero essere 960x540 */
+            width: 960px;
+            height: 540px;
+            max-width: 100vw; 
+            max-height: 100vh;
+            background-color: black;
+            border: 2px solid white;
+        }
+        #game {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #menu, #ending-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
+        }
+        #menu h1, #ending-screen h1 {
+            color: #ff00ff;
+        }
+        .menu-button, #restartBtn {
+            padding: 15px 30px;
+            font-size: 24px;
+            margin-top: 20px;
+            cursor: pointer;
+            background-color: #00ffcc;
+            border: none;
+            border-radius: 5px;
+            color: black;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .menu-button:hover:not(:disabled), #restartBtn:hover {
+            background-color: #00e0b3;
+        }
+        .menu-button:disabled {
+            background-color: #555;
+            color: #999;
+            cursor: default;
+        }
+        #loading-message, #hint-text {
+            margin-top: 15px;
+            font-size: 16px;
+        }
+        #ending-screen {
+            display: none;
+        }
+    </style>
 </head>
-
 <body>
 
-    <div id="menu" class="center">
-        <h1>Pie Adventure</h1>
-        <div class="buttons">
-            <button id="newBtn" disabled>Nuova Partita (Caricamento...)</button>
-        </div>
+<div id="game-container">
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <div id="menu">
+        <h1>PIE'S ADVENTURE</h1>
+        <p>Un platformer per diventare King della disco!</p>
+        <button id="newBtn" class="menu-button">Caricamento...</button>
+        <p id="loading-message" style="display:none; color: red;"></p>
+        <p id="hint-text" style="display:none;">Usa ⬅️ ➡️ per muoverti e ⬆️ / Spazio per saltare.</p>
+    </div>
+
+    <div id="ending-screen">
+        <h1 id="ending-title"></h1>
+        <p id="ending-score"></p>
+        <button id="restartBtn" class="menu-button">Torna al Menu</button>
+    </div>
+</div>
+
+<audio id="bgm" loop>
+    <source src="assets/audio/bgm.mp3" type="audio/mpeg">
+    Il tuo browser non supporta l'elemento audio.
+</audio>
+<audio id="bgm_final" loop>
+    <source src="assets/audio/bgm_final.mp3" type="audio/mpeg">
+    Il tuo browser non supporta l'elemento audio.
+</audio>
+
+<script>
+    // Inizializzazione delle immagini all'inizio
+    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/player_idle.png';
+    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/player_run.png';
+    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
+    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink_enemy.png';
+    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco_platform.png';
+    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/dj_disc.png';
+    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
+    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
+    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/boss.png';
+    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/sfondo.png';
+</script>
+
+<script src="js/rects.js"></script>
+<script src="js/player.js"></script>
+<script src="js/boss.js"></script>
+<script src="js/ending.js"></script>
+<script src="js/game.js"></script>
+<script src="js/engine.js"></script>
+
+<script>
+    // La logica critica per l'avvio: Game.init() deve essere chiamato DOPO che il DOM è pronto.
+    document.addEventListener('DOMContentLoaded', function() {
+        // Nasconde il menu all'inizio, mostra solo il container
+        document.getElementById('game-container').style.display = 'block';
+
+        if (window.Game && window.Game.init) {
+            window.Game.init();
+        } else {
+             console.error("ERRORE: Game object non trovato. Controlla l'ordine degli script JS.");
+        }
         
-        <p id="loading-message" style="display:none;">Inizializzazione gioco...</p> 
-
-        <p class="hint" id="hint-text" style="display:none;">
-            **Mobile:** Aree touch in basso per Muoviti. **Pulsante Salto Rosso** (sinistra) per saltare.<br>
-            Tastiera: ← → ↑ / Space
-        </p>
-    </div>
-
-    <div id="game-container">
-        <canvas id="game" width="960" height="540"></canvas>
-        <div id="mobile-controls">
-            <button id="jump-btn">JUMP</button> 
-            <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
-            <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
-        </div>
-    </div>
-
-    <div id="ending" class="center" style="display:none">
-        <h1 id="finalTitle"></h1>
-        <p>La foto finale:</p>
-        <button id="restartBtn">Torna al Menu</button>
-    </div>
-        
-    <audio id="bgm" src="assets/music/music_normal.mp3" preload="auto"></audio>
-    <audio id="bgm_final" src="assets/music/music_final.mp3" preload="auto"></audio>
-
-    <script>
-        // Precarica tutte le immagini (tutte in assets/sprites)
-        window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
-        window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
-        window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
-        window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
-        window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
-        window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
-        window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
-        window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
-        window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
-        window.projectileSprite = new Image(); window.projectileSprite.src = 'assets/sprites/drink.png'; 
-        // L'immagine di sfondo del CANVAS è caricata e gestita in game.js, ma la precarichiamo qui per l'onload
-        window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
-    </script>
-
-    <script src="rects.js"></script>
-    <script src="projectile.js"></script>
-    <script src="engine.js"></script>
-    <script src="player.js"></script>
-    <script src="boss_final.js"></script>
-    <script src="ending.js"></script>
-    <script src="game.js"></script>
-
-    <script>
-        // Logica di inizializzazione e binding
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // LOGICA FINALE: INIZIALIZZAZIONE DELL'ENGINE
-            if (window.Engine && window.Game && typeof window.Game.update === 'function' && typeof window.Game.draw === 'function') {
-                
-                const engineInstance = new Engine(window.Game.update, window.Game.draw);
-                
-                if (engineInstance) {
-                    window.Game.setEngine(engineInstance);  
-                    window.engine = engineInstance;
-                } else {
-                    console.warn("L'Engine non è stato inizializzato.");
-                }
-            } else {
-                console.error("ERRORE CRITICO: Engine.js o Game.js non sono stati caricati.");
-            }
-            
-            // Binding dei pulsanti
-            document.getElementById('newBtn').addEventListener('click', window.Game.startNew);
-            document.getElementById('restartBtn').addEventListener('click', window.Ending.restartGame);
-
-            // Inizializzazione controlli mobile
-            function setupMobileControls() {
-                const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
-                const controls = document.getElementById('mobile-controls');
-                
-                if (isTouchDevice) {
-                    controls.style.display = 'block';
-                }
-                
-                const triggerKey = (key, type) => {
-                    if (!window.engine) return; 
-                    window.engine.keys[key] = (type === 'start');
-                };
-
-                const addAreaListeners = (el, pressKey) => {
-                    el.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        triggerKey(pressKey, 'start');
-                    }, { passive: false });
-                    el.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        triggerKey(pressKey, 'end');
-                    }, { passive: false });
-                    el.addEventListener('touchcancel', (e) => { 
-                        triggerKey(pressKey, 'end');
-                    }, { passive: false });
-                };
-
-                addAreaListeners(document.getElementById('left-ctrl'), 'ArrowLeft');
-                addAreaListeners(document.getElementById('right-ctrl'), 'ArrowRight');
-
-                const jumpBtn = document.getElementById('jump-btn');
-                jumpBtn.style.display = isTouchDevice ? 'block' : 'none'; 
-                
-                addAreaListeners(jumpBtn, 'Space'); 
-            }
-            setupMobileControls();
-            
-            // Avvia il caricamento dei livelli
-            window.Game.init(); 
+        // Listener per il pulsante di restart sulla schermata finale
+        const restartBtn = document.getElementById('restartBtn');
+        restartBtn.addEventListener('click', () => {
+             document.getElementById('ending-screen').style.display = 'none';
+             document.getElementById('menu').style.display = 'flex';
         });
-    </script>
-
+        restartBtn.addEventListener('touchstart', (e) => {
+             e.preventDefault(); 
+             document.getElementById('ending-screen').style.display = 'none';
+             document.getElementById('menu').style.display = 'flex';
+        });
+    });
+</script>
 </body>
 </html>
