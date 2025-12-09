@@ -1,7 +1,7 @@
-// game.js (file completo e aggiornato per Engine esterno)
+// game.js (file completo e corretto)
 
 const Game = (function() {
-    // Variabili e riferimenti agli elementi DOM (sicuri grazie a DOMContentLoaded in index.html)
+    // Variabili e riferimenti agli elementi DOM
     const canvas = document.getElementById('game');
     const ctx = canvas ? canvas.getContext('2d') : null;
     const menuDiv = document.getElementById('menu');
@@ -15,7 +15,6 @@ const Game = (function() {
     let currentLevel;
     let cameraX = 0;
     
-    // Le costanti di tipo piattaforma
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
@@ -35,7 +34,7 @@ const Game = (function() {
                 return true;
             })
             .catch(error => {
-                console.error("Errore CRITICO nel caricamento di un file JSON del livello:", error);
+                console.error("Errore CRITICO nel caricamento di un file JSON del livello. Verifica il percorso 'levels/*.json'.", error);
                 return false;
             });
     }
@@ -49,7 +48,6 @@ const Game = (function() {
         currentLevelIndex = index;
         currentLevel = levels[index];
         
-        // Assicurati che Player sia definito prima (in player.js)
         if (!player && window.Player) { 
             player = new window.Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
         } else if (player) {
@@ -58,7 +56,6 @@ const Game = (function() {
         
         cameraX = 0;
         
-        // Logica specifica per il livello Boss
         if (currentLevelIndex === 2 && window.BossFinal) {
              window.BossFinal.reset();
              const config = currentLevel.boss;
@@ -69,7 +66,6 @@ const Game = (function() {
     // --- Logica di Gioco (Update/Draw/Collisioni) ---
     
     function update(dt, input) {
-        // Usa window.engine (assegnato in index.html)
         if (!currentLevel || !player || !window.engine) return; 
 
         player.update(dt, input, currentLevel.platforms);
@@ -81,11 +77,9 @@ const Game = (function() {
             }
         }
         
-        // Aggiornamento Camera
         const targetX = player.x - canvas.width / 2 + player.w / 2;
         cameraX = Math.max(0, Math.min(targetX, currentLevel.length - canvas.width));
 
-        // Controllo End Zone
         const endZone = currentLevel.endZone;
         if (player.x + player.w > endZone.x && 
             player.x < endZone.x + endZone.w &&
@@ -103,15 +97,12 @@ const Game = (function() {
     function handleCollisions() {
         if (currentLevel.enemies) {
             currentLevel.enemies = currentLevel.enemies.filter(enemy => {
-                // Assicurati che rectsOverlap esista e sia caricata (in rects.js)
                 if (window.rectsOverlap && rectsOverlap(player, enemy)) {
-                    
                     if (enemy.type === 'drink') {
                         player.lives = 0; 
                         Game.onPlayerDied();
                         return false; 
                     }
-                    
                     if (enemy.type === 'heart') {
                         player.collectHeart();
                         return false; 
@@ -141,7 +132,6 @@ const Game = (function() {
         
         window.BossFinal.projectiles = window.BossFinal.projectiles.filter(p => {
             if (rectsOverlap(player, p)) {
-                
                 if (player.hit()) {
                     player.x = Math.max(0, player.x - 50);
                 } else {
@@ -155,27 +145,26 @@ const Game = (function() {
 
     function draw() {
         if (!currentLevel || !ctx) return;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+        // La pulizia del canvas è sufficiente, lo sfondo è dato dal CSS in index.html.
+        ctx.clearRect(0, 0, canvas.width, canvas.height); 
         renderPlatforms(currentLevel.platforms, cameraX);
         player.draw(ctx, cameraX);
         renderEnemies(currentLevel.enemies, cameraX);
-
-        // Disegna End Zone (verde semi-trasparente)
         const endZone = currentLevel.endZone;
         ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
         ctx.fillRect(Math.round(endZone.x - cameraX), endZone.y, endZone.w, endZone.h);
-
         if (currentLevelIndex === 2 && window.BossFinal && window.BossFinal.active) {
             window.BossFinal.render(ctx, cameraX);
             renderBossHUD(); 
         }
-
         renderHUD();
     }
     
-    // ... (renderPlatforms, renderEnemies, renderHUD, renderBossHUD rimangono uguali) ...
+    // Ometto le funzioni di rendering dettagliate e altre funzioni di gioco 
+    // (renderPlatforms, renderEnemies, renderHUD, renderBossHUD, toggleFullScreen, 
+    // nextLevel, endGameWin, onPlayerFell, onPlayerDied, continueGame, saveGame)
+    // che sono le stesse fornite in precedenza.
+
     function renderPlatforms(platforms, camX) {
         if (!ctx) return;
         for (let p of platforms) {
@@ -259,8 +248,6 @@ const Game = (function() {
         ctx.font = '16px Arial';
         ctx.fillText(`Schivate: ${thrown} / ${max}`, x, y + 12);
     }
-    // ... (fine delle funzioni di rendering) ...
-    
     
     function toggleFullScreen() {
         const doc = window.document;
@@ -289,7 +276,8 @@ const Game = (function() {
                     newBtn.textContent = "Nuova Partita";
                     newBtn.disabled = false;
                 } else {
-                    loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console!";
+                    // SE QUESTO MESSAGGIO COMPARE, CONTROLLA I FILE JSON IN levels/ (errore 404)
+                    loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console Rete!";
                     newBtn.textContent = "Errore";
                     newBtn.disabled = true;
                 }
@@ -297,8 +285,6 @@ const Game = (function() {
     }
 
     function startNew() {
-        // CORREZIONE: Usa window.engine (assegnato in index.html)
-        // Se levels.length è 0, significa che i file JSON non sono stati caricati (errore 404 sui JSON)
         if (!levels.length || !window.engine) { 
             alert("Il gioco non è pronto o l'Engine non è stato inizializzato. Controlla la console.");
             return;
@@ -315,7 +301,7 @@ const Game = (function() {
         currentLevelIndex = 0; 
         loadLevel(currentLevelIndex);
         
-        window.engine.start(); // Chiama start sull'Engine globale
+        window.engine.start(); 
     }
     
     function nextLevel() {
@@ -387,7 +373,6 @@ const Game = (function() {
         alert("Funzione Salva non implementata.");
     }
 
-    // 🔑 NUOVO: Funzione per assegnare l'Engine dopo la sua creazione (chiamata da index.html)
     function setEngine(engine) {
         window.engine = engine; 
     }
