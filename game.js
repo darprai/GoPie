@@ -1,4 +1,4 @@
-// game.js (Versione definitiva, stabile, con sprite drawing corretto e senza errori di inizializzazione)
+// game.js (Versione definitiva e stabile per Mobile/Desktop)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -20,7 +20,8 @@ const Game = (function() {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
 
-    // --- Gestione Livelli ---
+    // --- Gestione Livelli (Omissis) ---
+    // [Le funzioni loadLevels e loadLevel rimangono le stesse]
 
     function loadLevels() {
         const levelPromises = [
@@ -54,7 +55,6 @@ const Game = (function() {
             return false;
         }
         
-        // Inizializzazione del Player O reset della posizione
         if (!player) { 
             if (!currentLevel.playerStart || typeof currentLevel.playerStart.x === 'undefined') {
                  console.error("Dati del livello incompleti: manca playerStart.");
@@ -80,13 +80,14 @@ const Game = (function() {
         return !!player;
     }
 
-    // --- Logica di Gioco (Update/Draw/Collisioni) ---
-    
+
+    // --- Logica di Gioco (Update/Draw/Collisioni) (Omissis) ---
+    // [Le funzioni update, draw e helper rimangono le stesse]
+
     function update(dt, input) {
         if (!currentLevel || !player || !window.engine) return; 
 
-        // dt qui è il "passo fisso" fornito dall'Engine (anti-tunneling)
-        player.update(dt, input, currentLevel.platforms); 
+        player.update(dt, input, currentLevel.platforms);
         
         if (currentLevelIndex === 2) {
             if (window.BossFinal && window.BossFinal.active) {
@@ -181,7 +182,8 @@ const Game = (function() {
         renderHUD();
     }
     
-    // Funzioni di Rendering (Corrette per lo stretch delle sprite)
+    // Funzioni di Rendering (Omissis)
+    
     function renderPlatforms(platforms, camX) {
         if (!ctx) return;
         for (let p of platforms) {
@@ -193,7 +195,6 @@ const Game = (function() {
 
             let spriteToUse = null;
 
-            // Usa i NOMI DELLE VARIABILI SPRITE DALL'HTML
             if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
                 spriteToUse = window.discoBallSprite;
             } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
@@ -205,10 +206,8 @@ const Game = (function() {
             }
 
             if (spriteToUse) {
-                // Disegna lo sprite, utilizzando le dimensioni variabili (w, h) del JSON
                 ctx.drawImage(spriteToUse, x, y, w, h);
             } else {
-                // FALLBACK: Blocchi NERI per piattaforme con tipo non riconosciuto o immagine mancante
                 ctx.fillStyle = "black"; 
                 ctx.fillRect(x, y, w, h);
             }
@@ -300,8 +299,6 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // 🔑 CARICAMENTO DELLE SPRITE
-        
         const spritePromises = [
             new Promise(resolve => window.playerSprite.onload = resolve),
             new Promise(resolve => window.runSprite.onload = resolve),
@@ -313,9 +310,8 @@ const Game = (function() {
             new Promise(resolve => window.macchinaSprite.onload = resolve),
         ];
 
-        // 1. Attendi il caricamento di tutte le sprite
         Promise.all(spritePromises)
-            .then(() => loadLevels()) // 2. Poi carica i livelli JSON
+            .then(() => loadLevels()) 
             .then(success => {
                 if (success) {
                     newBtn.textContent = "Nuova Partita";
@@ -354,8 +350,10 @@ const Game = (function() {
         menuDiv.style.display = 'none';
         gameContainer.style.display = 'block';
 
+        // Tenta di avviare l'audio BGM (necessita di interazione utente per l'autoplay su mobile)
         bgm.loop = true;
-        bgm.play().catch(e => console.log("Errore riproduzione BGM:", e));
+        // Il .catch è essenziale su mobile, in quanto il browser potrebbe bloccare la riproduzione
+        bgm.play().catch(e => console.log("Audio BGM bloccato dal browser (richiede interazione utente):", e));
         
         window.engine.start(); 
     }
