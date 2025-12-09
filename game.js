@@ -35,6 +35,7 @@ const Game = (function() {
                 return true;
             })
             .catch(error => {
+                // Questo errore è ora atteso e gestito dal JSON corretto
                 console.error("Errore CRITICO nel caricamento di un file JSON del livello. Verifica il percorso 'levels/*.json'.", error);
                 return false;
             });
@@ -139,6 +140,7 @@ const Game = (function() {
         if (currentLevel.invisible_traps) {
              for (let trap of currentLevel.invisible_traps) {
                  if (window.rectsOverlap && trap.type === 'fall_death' && rectsOverlap(player, trap)) {
+                     // Nonostante la caduta non uccida, le trappole invisibili lo fanno (morte per trappola)
                      Game.onPlayerFell(); 
                      return; 
                  }
@@ -168,7 +170,7 @@ const Game = (function() {
     function draw() {
         if (!currentLevel || !ctx || !player) return; 
 
-        // 1. Disegna Sfondo (CORREZIONE per Schermo Intero)
+        // 1. Disegna Sfondo (Correzione per Schermo Intero)
         if (window.backgroundSprite && window.backgroundSprite.complete) {
             // Disegna l'immagine di sfondo per coprire TUTTO il canvas (960x540)
             ctx.drawImage(window.backgroundSprite, 0, 0, canvas.width, canvas.height);
@@ -409,6 +411,7 @@ const Game = (function() {
     }
     
     function onPlayerFell() {
+          // Usato per le trappole invisibili di morte
           Game.onPlayerDied();
     }
     
