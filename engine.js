@@ -6,7 +6,11 @@ const Engine = function(update, draw) {
         return null; 
     }
 
+    const MAX_FRAME_TIME = 0.25; // Massima durata di frame da processare (250ms)
+    const STEP = 1 / 120; // Passo fisso per la fisica: 120 aggiornamenti al secondo (circa 8.3ms)
+
     let lastTime = performance.now();
+    let accumulator = 0; // Accumulatore per il tempo non processato
     let running = false;
     this.keys = {}; 
     let gameLoop;
@@ -24,10 +28,27 @@ const Engine = function(update, draw) {
 
     const loop = (currentTime) => {
         if (!running) return;
-        const dt = (currentTime - lastTime) / 1000;
+        
+        // 1. Calcola il delta time e limita l'accumulo in caso di pause/lag estremo
+        let dt = (currentTime - lastTime) / 1000;
         lastTime = currentTime;
-        update(dt, input); 
-        draw(); // Questa chiamata invoca la draw di game.js
+        dt = Math.min(dt, MAX_FRAME_TIME); // Evita la "spiral of death"
+        
+        // Aggiunge il tempo trascorso all'accumulatore
+        accumulator += dt;
+
+        // 2. >>> AGGIORNAMENTO A PASSI FISSI (RISOLUZIONE TUNNELING) <<<
+        // Processa il gioco in passi fissi finché c'è tempo nell'accumulatore
+        while (accumulator >= STEP) {
+            // Chiama la funzione update del gioco con il passo fisso (STEP)
+            update(STEP, input); 
+            accumulator -= STEP;
+        }
+
+        // 3. Disegno
+        // Il disegno viene chiamato solo una volta per frame, indipendentemente dai passi di update
+        draw(); 
+
         gameLoop = requestAnimationFrame(loop);
     };
 
@@ -35,6 +56,7 @@ const Engine = function(update, draw) {
         if (running) return;
         running = true;
         lastTime = performance.now();
+        accumulator = 0; // Azzera l'accumulatore all'avvio
         gameLoop = requestAnimationFrame(loop);
     };
 
