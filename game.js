@@ -1,4 +1,4 @@
-// game.js (Versione completa con caricamento delle sprite in init)
+// game.js (Versione completa con caricamento delle sprite e percorsi corretti)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -16,8 +16,6 @@ const Game = (function() {
     let cameraX = 0;
     
     // VARIABILI GLOBALI PER LE SPRITE (saranno definite in init)
-    // Se queste variabili non sono definite globalmente, i renderer non le vedranno.
-    // L'uso di window.nomeSprite assicura che player.js e game.js le vedano.
 
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
@@ -63,9 +61,15 @@ const Game = (function() {
                  console.error("Dati del livello incompleti: manca playerStart.");
                  return false;
             }
-            player = new window.Player(currentLevel.playerStart.x, currentLevel.playerStart.y);
+            // Assumo che tu voglia chiamare il costruttore Player
+            player = new window.Player(currentLevel.playerStart.x, currentLevel.playerStart.y); 
         } else {
-            player.resetFull(currentLevel.playerStart.x, currentLevel.playerStart.y); // Usiamo resetFull se l'hai implementato
+            // Assumo che tu voglia un reset completo, usa reset() o resetFull() se implementato
+             if (player.resetFull) {
+                 player.resetFull(currentLevel.playerStart.x, currentLevel.playerStart.y);
+             } else {
+                 player.reset(currentLevel.playerStart.x, currentLevel.playerStart.y);
+             }
         }
         
         cameraX = 0;
@@ -189,10 +193,10 @@ const Game = (function() {
             const h = p[3];
             const type = p[4]; 
 
-            if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
-                ctx.drawImage(window.discoBallSprite, x, y, w, h);
-            } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
-                ctx.drawImage(window.djDiscSprite, x, y, w, h);
+            if (type === PLATFORM_TYPE.DISCO && window.discoSprite && window.discoSprite.complete) { // NOME CORRETTO
+                ctx.drawImage(window.discoSprite, x, y, w, h);
+            } else if (type === PLATFORM_TYPE.DJDISC && window.djdiscSprite && window.djdiscSprite.complete) { // NOME CORRETTO
+                ctx.drawImage(window.djdiscSprite, x, y, w, h);
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                 ctx.drawImage(window.paloSprite, x, y, w, h);
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
@@ -289,14 +293,14 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // 🔑 CARICAMENTO DELLE SPRITE con i percorsi richiesti
-        
+        // CARICAMENTO DELLE SPRITE CON I PERCORSI CORRETTI
+
         // Player Sprites
         window.playerSprite = new Image();
         window.playerSprite.src = 'assets/sprites/pie.png'; 
         
         window.runSprite = new Image();
-        window.runSprite.src = 'assets/sprites/run.png'; // PERCORSO SPECIFICO RICHIESTO
+        window.runSprite.src = 'assets/sprites/run.png'; 
         
         // Altre Sprites essenziali per il rendering e l'HUD
         window.heartSprite = new Image();
@@ -305,12 +309,12 @@ const Game = (function() {
         window.drinkEnemySprite = new Image();
         window.drinkEnemySprite.src = 'assets/sprites/drink.png'; 
         
-        // Platform Sprites (assicurati che questi percorsi siano corretti)
-        window.discoBallSprite = new Image();
-        window.discoBallSprite.src = 'assets/sprites/disco_ball.png';
+        // Platform Sprites (CORRETTI SECONDO LA TUA RICHIESTA)
+        window.discoSprite = new Image();
+        window.discoSprite.src = 'assets/sprites/disco.png'; // CORRETTO
         
-        window.djDiscSprite = new Image();
-        window.djDiscSprite.src = 'assets/sprites/dj_disc.png';
+        window.djdiscSprite = new Image();
+        window.djdiscSprite.src = 'assets/sprites/djdisc.png'; // CORRETTO
 
         window.paloSprite = new Image();
         window.paloSprite.src = 'assets/sprites/palo.png';
@@ -325,8 +329,8 @@ const Game = (function() {
             new Promise(resolve => window.runSprite.onload = resolve),
             new Promise(resolve => window.heartSprite.onload = resolve),
             new Promise(resolve => window.drinkEnemySprite.onload = resolve),
-            new Promise(resolve => window.discoBallSprite.onload = resolve),
-            new Promise(resolve => window.djDiscSprite.onload = resolve),
+            new Promise(resolve => window.discoSprite.onload = resolve), // CORRETTO
+            new Promise(resolve => window.djdiscSprite.onload = resolve), // CORRETTO
             new Promise(resolve => window.paloSprite.onload = resolve),
             new Promise(resolve => window.macchinaSprite.onload = resolve),
         ];
