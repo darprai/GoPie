@@ -27,7 +27,7 @@ const Engine = function(update, draw) {
         const dt = (currentTime - lastTime) / 1000;
         lastTime = currentTime;
         update(dt, input); 
-        draw();
+        draw(); // Questa chiamata invoca la draw di game.js
         gameLoop = requestAnimationFrame(loop);
     };
 
