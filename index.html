@@ -25,9 +25,11 @@
         height: 100vh;
         width: 100vw;
         overflow: hidden;
-        background-image: url('assets/sprites/icon-512.png');
+        /* PERCORSO CORRETTO: assets/sprites/icon-512.png */
+        background-image: url('assets/sprites/icon-512.png'); 
         background-size: cover;
         background-position: center;
+        background-attachment: fixed; 
     }
     
     #menu, #ending {
@@ -65,6 +67,7 @@
         height: 100%;
         object-fit: contain; 
         margin: auto;
+        background-color: transparent; 
     }
     #mobile-controls {
         position: absolute;
@@ -144,7 +147,7 @@
   <audio id="bgm_final" src="assets/music/music_final.mp3" preload="auto"></audio>
 
     <script>
-    // Precarica tutte le immagini (assicurati che i percorsi siano corretti)
+    // Precarica tutte le immagini (tutte in assets/sprites)
     window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
     window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
@@ -168,20 +171,18 @@
     // Logica di inizializzazione e binding
     document.addEventListener('DOMContentLoaded', () => {
         
-        // 🔑 LOGICA FINALE: INIZIALIZZAZIONE DELL'ENGINE
-        // Controlla che Engine e Game siano stati caricati e che le funzioni siano esposte
+        // LOGICA FINALE: INIZIALIZZAZIONE DELL'ENGINE
         if (window.Engine && window.Game && typeof window.Game.update === 'function' && typeof window.Game.draw === 'function') {
             
             const engineInstance = new Engine(window.Game.update, window.Game.draw);
             
             if (engineInstance) {
-                // Se l'Engine è creato, lo assegna a Game.js
                 window.Game.setEngine(engineInstance); 
             } else {
-                console.warn("L'Engine non è stato inizializzato (fallito il controllo interno dell'Engine, es. Canvas mancante).");
+                console.warn("L'Engine non è stato inizializzato (Canvas mancante o errore interno).");
             }
         } else {
-            console.error("ERRORE CRITICO: Engine.js o Game.js non sono stati caricati, o le funzioni update/draw non sono esposte. Controlla la console Rete per errori 404!");
+            console.error("ERRORE CRITICO: Engine.js o Game.js non sono stati caricati o le funzioni update/draw non sono esposte. Controlla la console Rete per errori 404!");
         }
         
         // Binding dei pulsanti
@@ -200,7 +201,6 @@
                 controls.style.display = 'block';
 
                 const triggerKey = (key, type) => {
-                    // Controlla l'engine globale assegnato
                     if (!window.engine || !window.engine.isRunning()) return; 
                     window.engine.keys[key] = (type === 'start');
                 };
