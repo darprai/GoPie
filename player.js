@@ -108,6 +108,7 @@ const Player = function(x, y) {
         for (let p of platforms) {
             const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
             
+            // Assicurati che rectsOverlap esista e sia definito globalmente in rects.js
             if (window.rectsOverlap && rectsOverlap(this, pRect)) { 
                 if (this.vx > 0) {
                     this.x = pRect.x - this.w; 
@@ -118,13 +119,20 @@ const Player = function(x, y) {
             }
         }
         
-        // 6. COLLISIONI (Y-axis) - MODIFICATO PER LA STABILITÀ
+        // 6. COLLISIONI (Y-axis) - MODIFICATO PER MAGGIORE STABILITÀ
         this.y = newY;
-        this.onGround = false;
         
-        // Rivediamo la collisione Y: si assume che la rectsOverlap sia la funzione globale
-
-        let fell = true; // Assumiamo che stia cadendo a meno che non si trovi su qualcosa
+        // Passo 6a: Prepara una posizione di fallback 'grounded' per il player
+        // Creiamo un rettangolo appena SOTTO il player per vedere se tocchiamo terra
+        const futureGroundRect = {
+            x: this.x,
+            y: this.y + 1, // 1 pixel sotto la posizione attuale
+            w: this.w,
+            h: this.h 
+        };
+        
+        let wasOnGround = this.onGround;
+        this.onGround = false; // Presumiamo che non siamo a terra fino a prova contraria
 
         for (let p of platforms) {
             const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
@@ -132,26 +140,33 @@ const Player = function(x, y) {
             if (window.rectsOverlap && rectsOverlap(this, pRect)) {
                 
                 if (this.vy > 0) { // **IL PLAYER STA CADENDO**
-                    // Sposta il player sopra la piattaforma
-                    this.y = pRect.y - this.h; 
+                    // La collisione avviene dal basso (il player atterra)
+                    this.y = pRect.y - this.h; // Sposta il player sopra la piattaforma
                     this.onGround = true;
                     this.vy = 0;
-                    fell = false;
                     
                 } else if (this.vy < 0) { // **IL PLAYER STA SALENDO (COLLISIONE DAL BASSO)**
-                    // Sposta il player sotto la piattaforma
-                    this.y = pRect.y + pRect.h;
-                    this.vy = 0;
+                    // La collisione avviene dall'alto (il player colpisce con la testa)
+                    this.y = pRect.y + pRect.h; // Sposta il player sotto la piattaforma
+                    this.vy = 0; // Inverte la direzione (sbatte la testa)
                 }
             }
         }
         
-        // Se dopo aver controllato tutte le piattaforme, il player è ancora a terra
-        if (this.vy === 0) {
-             // Controllo aggiuntivo per assicurarsi che non si muova lateralmente fuori da una piattaforma
-             // Se il player è su una piattaforma, lo consideriamo a terra anche se vy=0
-             // Manteniamo this.onGround = (this.vy === 0 && !fell);
+        // 6b: Controllo di stabilità: Se il player era a terra e VY è 0, 
+        // usiamo un controllo aggiuntivo per vedere se siamo ANCORA a terra.
+        if (this.vy === 0 && !this.onGround) {
+             // Controlla se la posizione futureGroundRect si sovrappone a QUALSIASI piattaforma
+             for (let p of platforms) {
+                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
+                 if (window.rectsOverlap && rectsOverlap(futureGroundRect, pRect)) {
+                     // Siamo a 1 pixel dal suolo, quindi siamo considerati a terra
+                     this.onGround = true;
+                     break; 
+                 }
+             }
         }
+
 
         // 7. Animazione
         if (this.isMoving && this.onGround) { 
@@ -166,7 +181,6 @@ const Player = function(x, y) {
     };
 
     this.draw = function(ctx, camX) {
-        // ... (Il resto della funzione draw rimane invariato)
         const x = Math.round(this.x - camX);
         const y = Math.round(this.y);
         
@@ -201,7 +215,6 @@ const Player = function(x, y) {
             ctx.fillRect(x, y, this.w, this.h);
         }
 
-        // Disegno vita bassa/invincibilità visiva
         if (window.Game && window.Game.getCurLevelIndex() !== 2 && this.lives <= 1 && Math.floor(performance.now() / 100) % 2 === 0) {
             ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
             ctx.fillRect(x, y, this.w, this.h);
