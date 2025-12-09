@@ -57,8 +57,9 @@
         window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
         window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
         window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
-        // Aggiunto per gestire il boss
         window.projectileSprite = new Image(); window.projectileSprite.src = 'assets/sprites/drink.png'; 
+        // L'immagine di sfondo del CANVAS è caricata e gestita in game.js, ma la precarichiamo qui per l'onload
+        window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
     </script>
 
     <script src="rects.js"></script>
@@ -80,7 +81,7 @@
                 
                 if (engineInstance) {
                     window.Game.setEngine(engineInstance);  
-                    window.engine = engineInstance; // Rendi l'engine globale per i controlli touch
+                    window.engine = engineInstance;
                 } else {
                     console.warn("L'Engine non è stato inizializzato.");
                 }
@@ -90,8 +91,6 @@
             
             // Binding dei pulsanti
             document.getElementById('newBtn').addEventListener('click', window.Game.startNew);
-            // document.getElementById('contBtn').addEventListener('click', window.Game.continue); // Rimosso dal DOM
-            // document.getElementById('saveBtn').addEventListener('click', window.Game.save); // Rimosso dal DOM
             document.getElementById('restartBtn').addEventListener('click', window.Ending.restartGame);
 
             // Inizializzazione controlli mobile
@@ -103,16 +102,12 @@
                     controls.style.display = 'block';
                 }
                 
-                // Funzione per simulare la pressione di un tasto
                 const triggerKey = (key, type) => {
                     if (!window.engine) return; 
-                    // Usiamo la funzione setKey o impostiamo direttamente il flag keys[key]
                     window.engine.keys[key] = (type === 'start');
                 };
 
-                // Aggiungi listener per le aree di controllo (ArrowLeft, ArrowRight)
                 const addAreaListeners = (el, pressKey) => {
-                    // Usiamo touchstart/touchend per simulare keydown/keyup
                     el.addEventListener('touchstart', (e) => {
                         e.preventDefault();
                         triggerKey(pressKey, 'start');
@@ -121,7 +116,7 @@
                         e.preventDefault();
                         triggerKey(pressKey, 'end');
                     }, { passive: false });
-                    el.addEventListener('touchcancel', (e) => { // Aggiunto per robustezza
+                    el.addEventListener('touchcancel', (e) => { 
                         triggerKey(pressKey, 'end');
                     }, { passive: false });
                 };
@@ -129,11 +124,9 @@
                 addAreaListeners(document.getElementById('left-ctrl'), 'ArrowLeft');
                 addAreaListeners(document.getElementById('right-ctrl'), 'ArrowRight');
 
-                // Listener per il pulsante Salto (Space/ArrowUp)
                 const jumpBtn = document.getElementById('jump-btn');
                 jumpBtn.style.display = isTouchDevice ? 'block' : 'none'; 
                 
-                // JumpBtn simula il tasto 'Space'
                 addAreaListeners(jumpBtn, 'Space'); 
             }
             setupMobileControls();
