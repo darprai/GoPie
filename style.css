@@ -1,5 +1,5 @@
 :root {
-    --accent: #FF8C00; /* Colore di esempio, non definito nell'input originale */
+    --accent: #FF8C00;
 }
 
 /* --- FIX 1: Verificato che il percorso dello sfondo sia corretto per Menu/Ending --- */
@@ -82,12 +82,15 @@ body {
     background-color: transparent; 
 }
 
-#left-ctrl { left: 0; bottom: 0; width: 30%; height: 50%; }
-#right-ctrl { right: 0; bottom: 0; width: 30%; height: 50%; }
+/* Basso SX: Movimento Sinistra */
+#left-ctrl { left: 0; bottom: 0; width: 33%; height: 50%; } 
+/* Basso DX: Movimento Destra */
+#right-ctrl { right: 0; bottom: 0; width: 33%; height: 50%; }
 
 #jump-btn {
     position: absolute;
-    right: 10%; 
+    /* Posizionato a sinistra (come richiesto) */
+    left: 5%; 
     bottom: 10%;
     width: 60px;
     height: 60px;
