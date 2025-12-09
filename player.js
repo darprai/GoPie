@@ -1,4 +1,4 @@
-// player.js (Versione con caduta illimitata e correzioni grafiche)
+// player.js (Versione con caduta illimitata, correzioni grafiche e Logica Collisione Y migliorata)
 
 const Player = function(x, y) {
     this.x = x;
@@ -9,7 +9,7 @@ const Player = function(x, y) {
     this.vy = 0;
     this.speed = 250; 
     
-    // Fisica Bilanciata
+    // Fisica
     this.jumpForce = -700;   
     this.gravity = 1800;    
     
@@ -98,14 +98,7 @@ const Player = function(x, y) {
         let newX = this.x + this.vx * dt;
         let newY = this.y + this.vy * dt;
 
-        // **MODIFICATO: RIMOZIONE DELLA MORTE PER CADUTA**
-        // Se si commenta/rimuove questo blocco, la caduta è illimitata:
-        /*
-        if (newY > 540 + this.h * 2) { 
-            window.Game.onPlayerFell();
-            return; 
-        }
-        */
+        // **NOTA: La logica di morte per caduta è disabilitata come richiesto.**
 
         // 5. COLLISIONI (X-axis)
         this.x = newX;
@@ -134,13 +127,13 @@ const Player = function(x, y) {
                     const oldY = this.y - this.vy * dt;
                     
                     if (this.vy > 0 && oldY + this.h <= pRect.y) { 
-                        // ATTERRAGGIO
+                        // ATTERRAGGIO (Giocatore arriva dall'alto)
                         this.y = pRect.y - this.h; 
                         this.onGround = true; 
                         this.vy = 0; 
                         
                     } else if (this.vy < 0 && oldY >= pRect.y + pRect.h) { 
-                        // TESTATA
+                        // TESTATA (Giocatore arriva dal basso)
                         this.y = pRect.y + pRect.h; 
                         this.vy = 0; 
                     }
