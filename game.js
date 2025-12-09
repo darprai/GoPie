@@ -8,7 +8,7 @@ const Game = (function() {
     const bgm = document.getElementById('bgm');
     const bgmFinal = document.getElementById('bgm_final');
     
-    // Variabile globale per lo sfondo del canvas (usata per creare un pattern)
+    // Variabile globale per lo sfondo del canvas
     window.backgroundSprite = new Image();
     window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
 
@@ -96,6 +96,7 @@ const Game = (function() {
         // Logica Telecamera Stabilizzata
         const targetX = player.x - canvas.width / 2 + player.w / 2;
         
+        // Clamp: La camera deve stare tra 0 e (lunghezza livello - larghezza canvas)
         cameraX = Math.max(0, Math.min(targetX, currentLevel.length - canvas.width));
         
         if (currentLevel.length <= canvas.width) {
@@ -167,18 +168,16 @@ const Game = (function() {
     function draw() {
         if (!currentLevel || !ctx || !player) return; 
 
-        // Disegna Sfondo Fisso
+        // 1. Disegna Sfondo (CORREZIONE per Schermo Intero)
         if (window.backgroundSprite && window.backgroundSprite.complete) {
-            // Usa createPattern per ripetere lo sfondo
-            const pattern = ctx.createPattern(window.backgroundSprite, 'repeat');
-            ctx.fillStyle = pattern;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Disegna l'immagine di sfondo per coprire TUTTO il canvas (960x540)
+            ctx.drawImage(window.backgroundSprite, 0, 0, canvas.width, canvas.height);
         } else {
-            // Fallback: Sfondo Nero se l'immagine manca
+            // Fallback: Sfondo Nero
             ctx.fillStyle = '#000000'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height); 
         }
-
+        
         renderPlatforms(currentLevel.platforms, cameraX);
         
         player.draw(ctx, cameraX); 
