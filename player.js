@@ -1,4 +1,4 @@
-// player.js (Versione Corretta con Fisica Bilanciata)
+// player.js (Versione Corretta con Fisica Bilanciata e Draw Fix)
 
 const Player = function(x, y) {
     this.x = x;
@@ -9,7 +9,7 @@ const Player = function(x, y) {
     this.vy = 0;
     this.speed = 250; 
     
-    // **MODIFICATO: Fisica Più Lenta e Controllata**
+    // Fisica Bilanciata
     this.jumpForce = -700;   
     this.gravity = 1800;    
     
@@ -22,7 +22,7 @@ const Player = function(x, y) {
     
     this.invincible = false; 
     this.invincibilityTimer = 0;
-    const INVINCIBILITY_DURATION = 1.0; // Ridotta l'invincibilità per non essere invasiva
+    const INVINCIBILITY_DURATION = 1.0; 
 
     this.reset = function(x, y) {
         this.x = x;
@@ -55,7 +55,7 @@ const Player = function(x, y) {
         platforms = platforms || []; 
         const keys = input;
         
-        // GESTIONE INVINCIBILITÀ (identica)
+        // GESTIONE INVINCIBILITÀ
         if (this.invincible) {
             this.invincibilityTimer += dt;
             if (this.invincibilityTimer >= INVINCIBILITY_DURATION) {
@@ -64,7 +64,7 @@ const Player = function(x, y) {
             }
         }
         
-        // 1. INPUT ORIZZONTALE (identica)
+        // 1. INPUT ORIZZONTALE
         this.vx = 0;
         if (keys.ArrowLeft) {
             this.vx = -this.speed;
@@ -78,13 +78,13 @@ const Player = function(x, y) {
             this.isMoving = false;
         }
 
-        // 2. LOGICA DI SALTO (identica)
+        // 2. LOGICA DI SALTO
         if ((keys.Space || keys.ArrowUp) && this.onGround) {
             this.vy = this.jumpForce;
             this.onGround = false; 
         }
 
-        // 3. GRAVITÀ (identica, ma usa il nuovo valore this.gravity)
+        // 3. GRAVITÀ
         if (!this.onGround) {
             this.vy += this.gravity * dt; 
         }
@@ -104,7 +104,7 @@ const Player = function(x, y) {
             return; 
         }
 
-        // 5. COLLISIONI (X-axis) (identica)
+        // 5. COLLISIONI (X-axis)
         this.x = newX;
         if (window.rectsOverlap) {
             for (let p of platforms) {
@@ -120,7 +120,7 @@ const Player = function(x, y) {
             }
         }
         
-        // 6. COLLISIONI (Y-axis) (identica)
+        // 6. COLLISIONI (Y-axis) - Atterraggio
         this.y = newY;
         if (window.rectsOverlap) {
             for (let p of platforms) {
@@ -145,7 +145,7 @@ const Player = function(x, y) {
             }
         }
         
-        // 7. Animazione (identica)
+        // 7. Animazione 
         if (this.isMoving && this.onGround) {  
             this.animationTimer += dt;
             if (this.animationTimer > 0.1) {
@@ -165,7 +165,6 @@ const Player = function(x, y) {
         let frameX = 0;
         let spriteReady = false;
 
-        // ... (Logica di selezione sprite) ...
         if (this.isMoving && window.runSprite && window.runSprite.complete) {
             spriteToUse = window.runSprite;
             frameX = this.animationFrame * 40;
@@ -177,24 +176,20 @@ const Player = function(x, y) {
         }
 
         if (this.invincible && Math.floor(this.invincibilityTimer * 10) % 2 === 0) {
-            // Non disegnare se invincibile e sul frame "off"
+            // Non disegnare se invincibile (effetto lampeggiante)
         } else if (spriteReady) {
             
-            // **PUNTO CRITICO RISOLTO: USIAMO SEMPRE SAVE/RESTORE**
+            // CORREZIONE CRITICA PER IL MIRRORING
             ctx.save();
             
             if (!this.facingRight) {
-                // Specchia il contesto orizzontalmente
                 ctx.scale(-1, 1);
-                // Il disegno deve avvenire a X negativa (o fuori schermo) per apparire specchiato a X positiva
+                // Il disegno specchiato richiede l'uso di coordinate negate
                 ctx.drawImage(spriteToUse, frameX, 0, 40, 40, -(x + this.w), y, this.w, this.h); 
             } else {
-                // Disegno normale
                 ctx.drawImage(spriteToUse, frameX, 0, 40, 40, x, y, this.w, this.h);
             }
             
-            // **RESTORE CRITICO**
-            // Ripristina la matrice di trasformazione al suo stato precedente (normale)
             ctx.restore();
             
         } else {
