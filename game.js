@@ -1,4 +1,4 @@
-// game.js (Versione completa con caricamento delle sprite e percorsi corretti)
+// game.js (Versione completa con caricamento delle sprite, percorsi corretti e piattaforme di fallback NERE)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -61,10 +61,8 @@ const Game = (function() {
                  console.error("Dati del livello incompleti: manca playerStart.");
                  return false;
             }
-            // Assumo che tu voglia chiamare il costruttore Player
             player = new window.Player(currentLevel.playerStart.x, currentLevel.playerStart.y); 
         } else {
-            // Assumo che tu voglia un reset completo, usa reset() o resetFull() se implementato
              if (player.resetFull) {
                  player.resetFull(currentLevel.playerStart.x, currentLevel.playerStart.y);
              } else {
@@ -193,16 +191,17 @@ const Game = (function() {
             const h = p[3];
             const type = p[4]; 
 
-            if (type === PLATFORM_TYPE.DISCO && window.discoSprite && window.discoSprite.complete) { // NOME CORRETTO
+            if (type === PLATFORM_TYPE.DISCO && window.discoSprite && window.discoSprite.complete) {
                 ctx.drawImage(window.discoSprite, x, y, w, h);
-            } else if (type === PLATFORM_TYPE.DJDISC && window.djdiscSprite && window.djdiscSprite.complete) { // NOME CORRETTO
+            } else if (type === PLATFORM_TYPE.DJDISC && window.djdiscSprite && window.djdiscSprite.complete) {
                 ctx.drawImage(window.djdiscSprite, x, y, w, h);
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                 ctx.drawImage(window.paloSprite, x, y, w, h);
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
                 ctx.drawImage(window.macchinaSprite, x, y, w, h);
             } else {
-                ctx.fillStyle = "#333333";
+                // FALLBACK: Piattaforma disegnata in nero
+                ctx.fillStyle = "black"; 
                 ctx.fillRect(x, y, w, h);
             }
         }
@@ -293,8 +292,8 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // CARICAMENTO DELLE SPRITE CON I PERCORSI CORRETTI
-
+        // 🔑 CARICAMENTO DELLE SPRITE
+        
         // Player Sprites
         window.playerSprite = new Image();
         window.playerSprite.src = 'assets/sprites/pie.png'; 
@@ -309,12 +308,12 @@ const Game = (function() {
         window.drinkEnemySprite = new Image();
         window.drinkEnemySprite.src = 'assets/sprites/drink.png'; 
         
-        // Platform Sprites (CORRETTI SECONDO LA TUA RICHIESTA)
+        // Platform Sprites
         window.discoSprite = new Image();
-        window.discoSprite.src = 'assets/sprites/disco.png'; // CORRETTO
+        window.discoSprite.src = 'assets/sprites/disco.png'; 
         
         window.djdiscSprite = new Image();
-        window.djdiscSprite.src = 'assets/sprites/djdisc.png'; // CORRETTO
+        window.djdiscSprite.src = 'assets/sprites/djdisc.png'; 
 
         window.paloSprite = new Image();
         window.paloSprite.src = 'assets/sprites/palo.png';
@@ -329,8 +328,8 @@ const Game = (function() {
             new Promise(resolve => window.runSprite.onload = resolve),
             new Promise(resolve => window.heartSprite.onload = resolve),
             new Promise(resolve => window.drinkEnemySprite.onload = resolve),
-            new Promise(resolve => window.discoSprite.onload = resolve), // CORRETTO
-            new Promise(resolve => window.djdiscSprite.onload = resolve), // CORRETTO
+            new Promise(resolve => window.discoSprite.onload = resolve),
+            new Promise(resolve => window.djdiscSprite.onload = resolve),
             new Promise(resolve => window.paloSprite.onload = resolve),
             new Promise(resolve => window.macchinaSprite.onload = resolve),
         ];
