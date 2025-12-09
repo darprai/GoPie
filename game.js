@@ -1,4 +1,4 @@
-// game.js (Versione definitiva con caricamento sprite corretto e fallback MAGENTA per debug)
+// game.js (Versione definitiva: debugMode rimosso, fallback MAGENTA, logica fixed timestep in Engine.js)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -15,9 +15,7 @@ const Game = (function() {
     let currentLevel;
     let cameraX = 0;
     
-    // Variabile per il debug (aggiunta per l'esempio)
-    window.Game.debugMode = true;
-
+    // Variabile PLATFORM_TYPE
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
     };
@@ -209,13 +207,9 @@ const Game = (function() {
                 // Disegna lo sprite se trovato
                 ctx.drawImage(spriteToUse, x, y, w, h);
             } else {
-                // FALLBACK: Colore Magenta per indicare che lo sprite non è stato caricato
+                // FALLBACK: Colore Magenta per indicare che lo sprite NON è stato caricato.
                 ctx.fillStyle = "magenta"; 
                 ctx.fillRect(x, y, w, h);
-                
-                if (window.Game.debugMode) {
-                     // Non loggare continuamente, solo se il caricamento non è andato a buon fine
-                }
             }
         }
     }
@@ -305,35 +299,9 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // 🔑 CARICAMENTO DELLE SPRITE
+        // 🔑 CARICAMENTO DELLE SPRITE (Controlla i percorsi nel tuo HTML)
         
-        // Player Sprites
-        window.playerSprite = new Image();
-        window.playerSprite.src = 'assets/sprites/pie.png'; 
-        
-        window.runSprite = new Image();
-        window.runSprite.src = 'assets/sprites/run.png'; 
-        
-        // Altre Sprites essenziali per il rendering e l'HUD
-        window.heartSprite = new Image();
-        window.heartSprite.src = 'assets/sprites/heart.png'; 
-        
-        window.drinkEnemySprite = new Image();
-        window.drinkEnemySprite.src = 'assets/sprites/drink.png'; 
-        
-        // Platform Sprites
-        window.discoSprite = new Image();
-        window.discoSprite.src = 'assets/sprites/disco.png'; 
-        
-        window.djdiscSprite = new Image();
-        window.djdiscSprite.src = 'assets/sprites/djdisc.png'; 
-
-        window.paloSprite = new Image();
-        window.paloSprite.src = 'assets/sprites/palo.png';
-
-        window.macchinaSprite = new Image();
-        window.macchinaSprite.src = 'assets/sprites/macchina.png';
-        
+        // Le istanze Image sono definite nell'HTML, qui verifichiamo il caricamento.
         
         // Crea una Promise per attendere il caricamento di tutte le sprite
         const spritePromises = [
@@ -341,8 +309,8 @@ const Game = (function() {
             new Promise(resolve => window.runSprite.onload = resolve),
             new Promise(resolve => window.heartSprite.onload = resolve),
             new Promise(resolve => window.drinkEnemySprite.onload = resolve),
-            new Promise(resolve => window.discoSprite.onload = resolve),
-            new Promise(resolve => window.djdiscSprite.onload = resolve),
+            new Promise(resolve => window.discoBallSprite.onload = resolve), // Nome corretto dall'HTML
+            new Promise(resolve => window.djDiscSprite.onload = resolve), // Nome corretto dall'HTML
             new Promise(resolve => window.paloSprite.onload = resolve),
             new Promise(resolve => window.macchinaSprite.onload = resolve),
         ];
@@ -354,6 +322,7 @@ const Game = (function() {
                 if (success) {
                     newBtn.textContent = "Nuova Partita";
                     newBtn.disabled = false;
+                    hintText.style.display = 'block'; // Mostra il suggerimento se tutto è ok
                 } else {
                     newBtn.textContent = "Errore di Caricamento (vedi console)";
                     loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console Rete!";
@@ -362,8 +331,8 @@ const Game = (function() {
                 }
             })
             .catch(error => {
-                 console.error("Errore nel caricamento delle SPRITE. Verifica i percorsi in game.js:", error);
-                 loadingMessage.textContent = "Errore CRITICO nel caricamento di una o più sprite. Verifica i percorsi!";
+                 console.error("Errore nel caricamento delle SPRITE. Verifica i percorsi in index.html:", error);
+                 loadingMessage.textContent = "Errore CRITICO nel caricamento di una o più sprite. Verifica i percorsi in index.html!";
                  loadingMessage.style.display = 'block'; 
                  newBtn.disabled = true;
             });
