@@ -1,4 +1,4 @@
-// game.js (Versione definitiva: debugMode rimosso, fallback MAGENTA, logica fixed timestep in Engine.js)
+// game.js (Versione definitiva e pulita. Assicurati che il tuo Engine.js abbia la correzione Fixed Timestep.)
 
 const Game = (function() {
     // Variabili e riferimenti agli elementi DOM
@@ -192,11 +192,11 @@ const Game = (function() {
 
             let spriteToUse = null;
 
-            // Tenta di trovare lo sprite basato sul tipo e verifica che sia pronto
-            if (type === PLATFORM_TYPE.DISCO && window.discoSprite && window.discoSprite.complete) {
-                spriteToUse = window.discoSprite;
-            } else if (type === PLATFORM_TYPE.DJDISC && window.djdiscSprite && window.djdiscSprite.complete) {
-                spriteToUse = window.djdiscSprite;
+            // Usa i NOMI DELLE VARIABILI SPRITE CORRETTI DALL'HTML
+            if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
+                spriteToUse = window.discoBallSprite;
+            } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
+                spriteToUse = window.djDiscSprite;
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                 spriteToUse = window.paloSprite;
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
@@ -208,6 +208,7 @@ const Game = (function() {
                 ctx.drawImage(spriteToUse, x, y, w, h);
             } else {
                 // FALLBACK: Colore Magenta per indicare che lo sprite NON è stato caricato.
+                // Se vedi MAGENTA, controlla il percorso in index.html o il nome 'type' nel JSON.
                 ctx.fillStyle = "magenta"; 
                 ctx.fillRect(x, y, w, h);
             }
@@ -299,20 +300,19 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // 🔑 CARICAMENTO DELLE SPRITE (Controlla i percorsi nel tuo HTML)
+        // 🔑 CARICAMENTO DELLE SPRITE (Usiamo i nomi esposti in window.* dal tuo HTML)
         
-        // Le istanze Image sono definite nell'HTML, qui verifichiamo il caricamento.
-        
-        // Crea una Promise per attendere il caricamento di tutte le sprite
+        // Creiamo la lista delle Promises di caricamento usando i nomi delle variabili HTML.
         const spritePromises = [
             new Promise(resolve => window.playerSprite.onload = resolve),
             new Promise(resolve => window.runSprite.onload = resolve),
             new Promise(resolve => window.heartSprite.onload = resolve),
             new Promise(resolve => window.drinkEnemySprite.onload = resolve),
-            new Promise(resolve => window.discoBallSprite.onload = resolve), // Nome corretto dall'HTML
-            new Promise(resolve => window.djDiscSprite.onload = resolve), // Nome corretto dall'HTML
+            new Promise(resolve => window.discoBallSprite.onload = resolve), 
+            new Promise(resolve => window.djDiscSprite.onload = resolve), 
             new Promise(resolve => window.paloSprite.onload = resolve),
             new Promise(resolve => window.macchinaSprite.onload = resolve),
+            // Aggiungere qui altri sprite se necessario
         ];
 
         // 1. Attendi il caricamento di tutte le sprite
@@ -322,7 +322,7 @@ const Game = (function() {
                 if (success) {
                     newBtn.textContent = "Nuova Partita";
                     newBtn.disabled = false;
-                    hintText.style.display = 'block'; // Mostra il suggerimento se tutto è ok
+                    hintText.style.display = 'block'; 
                 } else {
                     newBtn.textContent = "Errore di Caricamento (vedi console)";
                     loadingMessage.textContent = "Errore CRITICO nel caricamento dei livelli. Controlla la console Rete!";
@@ -339,8 +339,9 @@ const Game = (function() {
     }
 
     function startNew() {
+        // Se si verifica l'errore 3 ('startNew' non è definito), è qui che fallisce la chiamata
         if (!levels.length || !window.engine) { 
-            alert("Il gioco non è pronto o l'Engine non è stato inizializzato. Controlla la console.");
+            console.error("Il gioco non è pronto o l'Engine non è stato inizializzato.");
             return;
         }
         
