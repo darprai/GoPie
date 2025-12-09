@@ -1,164 +1,64 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-    
-  <title>Pie Adventure - Full</title>
-
-  <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
-  <link rel="stylesheet" href="style.css">
-    
-  <style>
-    /* Stili CSS integrati */
-    :root {
-      --accent: #FF8C00;
-    }
-    
-    body {
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-        /* PERCORSO CORRETTO: assets/sprites/icon-512.png */
-        background-image: url('assets/sprites/icon-512.png'); 
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed; 
-    }
-    
-    #menu, #ending {
-        height: 100vh;
-        width: 100vw;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 100;
-    }
-    .center {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        width: 100%;
-        text-align: center;
-        background-color: rgba(0, 0, 0, 0.7); 
-    }
-    .buttons{margin:12px}
-    button{margin:6px;padding:10px 18px;border-radius:8px;border:none;background:var(--accent);color:#012;font-weight:700}
-    #game-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;  
-        display: none;
-        margin: 0;
-    }
-    #game {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: contain; 
-        margin: auto;
-        background-color: transparent; 
-    }
-    #mobile-controls {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: none;  
-        pointer-events: none;  
-        z-index: 10;
-    }
-    .ctrl-area {
-        position: absolute;
-        pointer-events: auto;  
-        background-color: transparent;  
-    }
-    /* Aree di movimento */
-    #left-ctrl { left: 0; bottom: 0; width: 50%; height: 50%; } 
-    #right-ctrl { right: 0; bottom: 0; width: 50%; height: 50%; } 
-
-    /* Pulsante Salto */
-    #jump-btn {
-        position: absolute;
-        left: 10%;    
-        right: auto;
-        bottom: 10%;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background-color: #FF0000;
-        color: transparent;
-        border: 4px solid #fff;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        cursor: pointer;
-        user-select: none;
-        pointer-events: auto;
-        z-index: 20;
-        display: none; 
-    }
-    #fullscreenBtn { display: none; }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Pie Adventure - Full</title>
+    <link rel="icon" href="assets/sprites/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="style.css"> 
 </head>
 
 <body>
 
-  <div id="menu" class="center">
-    <h1>Pie Adventure</h1>
-    <div class="buttons">
-      <button id="newBtn" disabled>Nuova Partita (Caricamento...)</button>
-      <button id="contBtn">Continua</button>
-      <button id="saveBtn">Salva</button>
+    <div id="menu" class="center">
+        <h1>Pie Adventure</h1>
+        <div class="buttons">
+            <button id="newBtn" disabled>Nuova Partita (Caricamento...)</button>
+        </div>
+        
+        <p id="loading-message" style="display:none;">Inizializzazione gioco...</p> 
+
+        <p class="hint" id="hint-text" style="display:none;">
+            **Mobile:** Aree touch in basso per Muoviti. **Pulsante Salto Rosso** (sinistra) per saltare.<br>
+            Tastiera: ← → ↑ / Space
+        </p>
     </div>
-    
-    <p id="loading-message" style="display:none;">Inizializzazione gioco...</p> 
 
-    <p class="hint" id="hint-text" style="display:none;">
-      **Touch:** Tasti invisibili in basso per movimento. Usa il **pulsante rosso** per saltare.<br>
-      Tastiera: ← → ↑ / Space
-    </p>
-  </div>
-
-  <div id="game-container">
-    <canvas id="game" width="960" height="540"></canvas>
-    <div id="mobile-controls">
-        <button id="jump-btn">JUMP</button> 
-        <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
-        <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
+    <div id="game-container">
+        <canvas id="game" width="960" height="540"></canvas>
+        <div id="mobile-controls">
+            <button id="jump-btn">JUMP</button> 
+            <div id="left-ctrl" class="ctrl-area" data-key="ArrowLeft"></div>
+            <div id="right-ctrl" class="ctrl-area" data-key="ArrowRight"></div>
+        </div>
     </div>
-  </div>
 
-
-  <div id="ending" class="center" style="display:none">
-    <h1 id="finalTitle"></h1>
-    <p>La foto finale:</p>
-    <button id="restartBtn">Torna al Menu</button>
-  </div>
-    
-  <audio id="bgm" src="assets/music/music_normal.mp3" preload="auto"></audio>
-  <audio id="bgm_final" src="assets/music/music_final.mp3" preload="auto"></audio>
+    <div id="ending" class="center" style="display:none">
+        <h1 id="finalTitle"></h1>
+        <p>La foto finale:</p>
+        <button id="restartBtn">Torna al Menu</button>
+    </div>
+        
+    <audio id="bgm" src="assets/music/music_normal.mp3" preload="auto"></audio>
+    <audio id="bgm_final" src="assets/music/music_final.mp3" preload="auto"></audio>
 
     <script>
-    // Precarica tutte le immagini (tutte in assets/sprites)
-    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
-    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
-    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
-    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
-    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
-    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
-    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
-    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
-    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
+        // Precarica tutte le immagini (tutte in assets/sprites)
+        window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
+        window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
+        window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
+        window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
+        window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
+        window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
+        window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
+        window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
+        window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
+        // Aggiunto per gestire il boss
+        window.projectileSprite = new Image(); window.projectileSprite.src = 'assets/sprites/drink.png'; 
     </script>
 
     <script src="rects.js"></script>
@@ -169,68 +69,79 @@
     <script src="ending.js"></script>
     <script src="game.js"></script>
 
-  <script>
-    // Logica di inizializzazione e binding
-    document.addEventListener('DOMContentLoaded', () => {
-        
-        // LOGICA FINALE: INIZIALIZZAZIONE DELL'ENGINE
-        if (window.Engine && window.Game && typeof window.Game.update === 'function' && typeof window.Game.draw === 'function') {
+    <script>
+        // Logica di inizializzazione e binding
+        document.addEventListener('DOMContentLoaded', () => {
             
-            const engineInstance = new Engine(window.Game.update, window.Game.draw);
-            
-            if (engineInstance) {
-                window.Game.setEngine(engineInstance); 
-            } else {
-                console.warn("L'Engine non è stato inizializzato (Canvas mancante o errore interno).");
-            }
-        } else {
-            console.error("ERRORE CRITICO: Engine.js o Game.js non sono stati caricati o le funzioni update/draw non sono esposte. Controlla la console Rete per errori 404!");
-        }
-        
-        // Binding dei pulsanti
-        document.getElementById('newBtn').addEventListener('click', window.Game.startNew);
-        document.getElementById('contBtn').addEventListener('click', window.Game.continue);
-        document.getElementById('saveBtn').addEventListener('click', window.Game.save);
-        document.getElementById('restartBtn').addEventListener('click', window.Ending.restartGame);
-
-        // Inizializzazione controlli mobile
-        function setupMobileControls() {
-            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
-            if (isTouchDevice) {
-                const controls = document.getElementById('mobile-controls');
-                const jumpBtn = document.getElementById('jump-btn');
+            // LOGICA FINALE: INIZIALIZZAZIONE DELL'ENGINE
+            if (window.Engine && window.Game && typeof window.Game.update === 'function' && typeof window.Game.draw === 'function') {
                 
-                controls.style.display = 'block';
+                const engineInstance = new Engine(window.Game.update, window.Game.draw);
+                
+                if (engineInstance) {
+                    window.Game.setEngine(engineInstance);  
+                    window.engine = engineInstance; // Rendi l'engine globale per i controlli touch
+                } else {
+                    console.warn("L'Engine non è stato inizializzato.");
+                }
+            } else {
+                console.error("ERRORE CRITICO: Engine.js o Game.js non sono stati caricati.");
+            }
+            
+            // Binding dei pulsanti
+            document.getElementById('newBtn').addEventListener('click', window.Game.startNew);
+            // document.getElementById('contBtn').addEventListener('click', window.Game.continue); // Rimosso dal DOM
+            // document.getElementById('saveBtn').addEventListener('click', window.Game.save); // Rimosso dal DOM
+            document.getElementById('restartBtn').addEventListener('click', window.Ending.restartGame);
 
+            // Inizializzazione controlli mobile
+            function setupMobileControls() {
+                const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
+                const controls = document.getElementById('mobile-controls');
+                
+                if (isTouchDevice) {
+                    controls.style.display = 'block';
+                }
+                
+                // Funzione per simulare la pressione di un tasto
                 const triggerKey = (key, type) => {
-                    if (!window.engine || !window.engine.isRunning()) return; 
+                    if (!window.engine) return; 
+                    // Usiamo la funzione setKey o impostiamo direttamente il flag keys[key]
                     window.engine.keys[key] = (type === 'start');
                 };
 
-                const addListeners = (el, pressKey) => {
+                // Aggiungi listener per le aree di controllo (ArrowLeft, ArrowRight)
+                const addAreaListeners = (el, pressKey) => {
+                    // Usiamo touchstart/touchend per simulare keydown/keyup
                     el.addEventListener('touchstart', (e) => {
                         e.preventDefault();
                         triggerKey(pressKey, 'start');
-                    });
+                    }, { passive: false });
                     el.addEventListener('touchend', (e) => {
                         e.preventDefault();
                         triggerKey(pressKey, 'end');
-                    });
+                    }, { passive: false });
+                    el.addEventListener('touchcancel', (e) => { // Aggiunto per robustezza
+                        triggerKey(pressKey, 'end');
+                    }, { passive: false });
                 };
 
-                addListeners(document.getElementById('left-ctrl'), 'ArrowLeft');
-                addListeners(document.getElementById('right-ctrl'), 'ArrowRight');
-                addListeners(jumpBtn, 'Space'); 
+                addAreaListeners(document.getElementById('left-ctrl'), 'ArrowLeft');
+                addAreaListeners(document.getElementById('right-ctrl'), 'ArrowRight');
+
+                // Listener per il pulsante Salto (Space/ArrowUp)
+                const jumpBtn = document.getElementById('jump-btn');
+                jumpBtn.style.display = isTouchDevice ? 'block' : 'none'; 
                 
-                jumpBtn.style.display = 'block'; 
+                // JumpBtn simula il tasto 'Space'
+                addAreaListeners(jumpBtn, 'Space'); 
             }
-        }
-        setupMobileControls();
-        
-        // Avvia il caricamento dei livelli
-        window.Game.init(); 
-    });
-  </script>
+            setupMobileControls();
+            
+            // Avvia il caricamento dei livelli
+            window.Game.init(); 
+        });
+    </script>
 
 </body>
 </html>
