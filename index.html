@@ -85,7 +85,7 @@
 
     <div id="menu">
         <h1>Go Pie Go</h1>
-        <p>Mettiti nei panni di Pie, cattura le Hoes e diventa King!</p>
+        <p>Vesti i panni di Pie, prendi i cuori delle Hoes e diventa King!</p>
         <button id="newBtn" class="menu-button">Caricamento...</button>
         <p id="loading-message" style="display:none; color: red;"></p>
         <p id="hint-text" style="display:none;">Usa ⬅️ ➡️ per muoverti e ⬆️ / Spazio per saltare.</p>
@@ -129,9 +129,7 @@
 <script src="js/engine.js"></script>
 
 <script>
-    // La logica critica per l'avvio: Game.init() deve essere chiamato DOPO che il DOM è pronto.
     document.addEventListener('DOMContentLoaded', function() {
-        // Nasconde il menu all'inizio, mostra solo il container
         document.getElementById('game-container').style.display = 'block';
 
         if (window.Game && window.Game.init) {
@@ -140,7 +138,6 @@
              console.error("ERRORE: Game object non trovato. Controlla l'ordine degli script JS.");
         }
         
-        // Listener per il pulsante di restart sulla schermata finale
         const restartBtn = document.getElementById('restartBtn');
         restartBtn.addEventListener('click', () => {
              document.getElementById('ending-screen').style.display = 'none';
