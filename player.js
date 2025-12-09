@@ -1,4 +1,4 @@
-// player.js (Versione Corretta con Fisica Bilanciata e Draw Fix)
+// player.js (Versione con caduta illimitata e correzioni grafiche)
 
 const Player = function(x, y) {
     this.x = x;
@@ -98,11 +98,14 @@ const Player = function(x, y) {
         let newX = this.x + this.vx * dt;
         let newY = this.y + this.vy * dt;
 
-        // MORTE SE SI CADE SOTTO IL CANVAS (Y > 540)
+        // **MODIFICATO: RIMOZIONE DELLA MORTE PER CADUTA**
+        // Se si commenta/rimuove questo blocco, la caduta è illimitata:
+        /*
         if (newY > 540 + this.h * 2) { 
             window.Game.onPlayerFell();
             return; 
         }
+        */
 
         // 5. COLLISIONI (X-axis)
         this.x = newX;
@@ -184,7 +187,6 @@ const Player = function(x, y) {
             
             if (!this.facingRight) {
                 ctx.scale(-1, 1);
-                // Il disegno specchiato richiede l'uso di coordinate negate
                 ctx.drawImage(spriteToUse, frameX, 0, 40, 40, -(x + this.w), y, this.w, this.h); 
             } else {
                 ctx.drawImage(spriteToUse, frameX, 0, 40, 40, x, y, this.w, this.h);
