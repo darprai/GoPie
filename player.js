@@ -1,4 +1,4 @@
-// player.js (Versione con Anti-Tunnelling e Rigorosa separazione X/Y)
+// player.js (Versione con Y-Stepping anti-tunnelling)
 
 const Player = function(x, y) {
     this.x = x;
@@ -78,40 +78,35 @@ const Player = function(x, y) {
             this.isMoving = false;
         }
 
-        // 2. LOGICA DI SALTO (omessa logica)
+        // 2. LOGICA DI SALTO
         if ((keys.Space || keys.ArrowUp) && this.onGround) {
             this.vy = this.jumpForce;
             this.onGround = false; 
         }
 
-        // 3. GRAVITÀ (omessa logica)
+        // 3. GRAVITÀ
+        // Se non siamo a terra, applichiamo la gravità.
         if (!this.onGround) {
             this.vy += this.gravity * dt; 
         }
 
-        if (this.vy !== 0) {
-            this.onGround = false;
-        }
+        // Reset di onGround
+        this.onGround = false;
 
-        // 4. MOVIMENTO
-        let newX = this.x + this.vx * dt;
-        let newY = this.y + this.vy * dt;
-        
-        const oldY = this.y; 
-        
-        // 5. COLLISIONI (X-axis) - Spostamento e Blocco Laterale
-        this.x = newX;
+
+        // 4. MOVIMENTO e COLLISIONI X (Indipendente dalla Y)
+        const oldX = this.x;
+        this.x += this.vx * dt;
+
         if (window.rectsOverlap) {
             for (let p of platforms) {
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 if (rectsOverlap(this, pRect)) { 
                     
-                    // ************** NUOVA LOGICA X RIGOROSA **************
-                    // Se la base del giocatore era sopra o al limite della cima della piattaforma 
-                    // nel frame precedente, non correggere la X, lascia che la Y gestisca l'atterraggio.
-                    if (oldY + this.h <= pRect.y) continue; 
+                    // Se siamo chiaramente sopra la piattaforma, saltiamo la correzione X
+                    if (this.y + this.h <= pRect.y + 5) continue; 
                     
-                    // Altrimenti, è una collisione laterale:
+                    // Altrimenti, correggiamo l'X
                     if (this.vx > 0) {
                         this.x = pRect.x - this.w; 
                     } else if (this.vx < 0) {
@@ -122,36 +117,51 @@ const Player = function(x, y) {
             }
         }
         
-        // 6. COLLISIONI (Y-axis) - Atterraggio e Testata
-        this.y = newY;
-        if (window.rectsOverlap) {
+        // 5. MOVIMENTO e COLLISIONI Y (Y-Stepping)
+        const totalMovementY = this.vy * dt;
+        let remainingMovement = Math.abs(totalMovementY);
+        const step = Math.sign(totalMovementY); // +1 se cade, -1 se sale
+        
+        // La dimensione dello step è 1 pixel o un po' di più per velocizzare
+        const stepSize = 4; 
+
+        while (remainingMovement > 0) {
+            const move = Math.min(remainingMovement, stepSize);
+            this.y += move * step;
+            remainingMovement -= move;
+
+            let collisionDetected = false;
+
             for (let p of platforms) {
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 
-                // Per il check Y usiamo l'X già corretta
                 if (pRect.w > 0 && pRect.h > 0 && rectsOverlap(this, pRect)) {
-                    
-                    if (this.vy > 0) { 
-                        // **ATTERRAGGIO (dal sopra) - Logica Anti-Tunnelling**
+                    collisionDetected = true;
+
+                    if (step > 0) { 
+                        // **ATTERRAGGIO (Caduta)**
+                        this.y = pRect.y - this.h; // Posiziona esattamente sopra
+                        this.onGround = true;      // Siamo a terra
+                        this.vy = 0;               // Ferma la caduta
                         
-                        // Controlla se la vecchia posizione Y era sopra o al limite della cima.
-                        // Questo copre sia i salti corti che i salti lunghi.
-                        if (oldY + this.h <= pRect.y + 10) { // Tolleranza 10px per frame skip
-                             this.y = pRect.y - this.h; 
-                             this.onGround = true; 
-                             this.vy = 0; 
-                        }
-                        
-                    } else if (this.vy < 0) { 
-                        // **TESTATA (dal sotto)**
-                        this.y = pRect.y + pRect.h; 
-                        this.vy = 0; 
+                    } else if (step < 0) { 
+                        // **TESTATA (Salto)**
+                        this.y = pRect.y + pRect.h; // Posiziona esattamente sotto
+                        this.vy = 0;               // Ferma il salto
                     }
+                    
+                    // Dopo una collisione Y, fermiamo il movimento residuo
+                    remainingMovement = 0; 
+                    break; 
                 }
+            }
+
+            if (collisionDetected) {
+                break; // Usciamo dal loop while dopo la correzione
             }
         }
         
-        // 7. Animazione (omessa logica)
+        // 6. Animazione (omessa logica)
         if (this.isMoving && this.onGround) {  
             this.animationTimer += dt;
             if (this.animationTimer > 0.1) {
