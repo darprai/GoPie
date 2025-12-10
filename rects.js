@@ -1,3 +1,5 @@
+// rects.js
+
 // Funzione standard per controllare l'overlap di due rettangoli (objects con x, y, w, h)
 const rectsOverlap = (r1, r2) => {
     return r1.x < r2.x + r2.w &&
@@ -5,3 +7,8 @@ const rectsOverlap = (r1, r2) => {
            r1.y < r2.y + r2.h &&
            r1.y + r1.h > r2.y;
 };
+
+// ************************************************************
+// AGGIUNTA FONDAMENTALE: Espone la funzione all'oggetto window
+// ************************************************************
+window.rectsOverlap = rectsOverlap;
