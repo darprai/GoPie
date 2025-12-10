@@ -2,8 +2,6 @@
   "length": 6000,
   "playerStart": { "x": 80, "y": 300 },
   
-  // EndZone non necessaria, usiamo il palo come trigger
-  
   "platforms": [
     [0, 500, 200, 40],
     
@@ -24,15 +22,12 @@
     [4800, 200, 100, 20],
     [5000, 300, 100, 20],
     
-    // Piattaforma finale base
     [5200, 500, 800, 40],
     
-    // AGGIUNGI IL PALO: Innesca la cutscene di fine Livello 2
-    // Ho riutilizzato le stesse coordinate di un palo per coerenza
-    [5650, 460, 20, 80, "palo"] // Nuovo Palo
+    [5650, 460, 20, 80, "palo"]
   ],
   "enemies": [
-    // ... (restano invariati) ...
+    
     { "type": "drink", "x": 390, "y": 410, "w": 20, "h": 20 },
     { "type": "drink", "x": 520, "y": 340, "w": 20, "h": 20 },
     { "type": "drink", "x": 650, "y": 270, "w": 20, "h": 20 },
