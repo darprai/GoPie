@@ -107,25 +107,25 @@
 </audio>
 
 <script>
-    // DEVI ASSICURARTI CHE LA TUA CARTELLA ORA SI CHIAMI 'sprites'
-    window.playerSprite = new Image(); window.playerSprite.src = 'sprites/pie.png'; 
-    window.runSprite = new Image(); window.runSprite.src = 'sprites/run.png'; 
-    window.heartSprite = new Image(); window.heartSprite.src = 'sprites/heart.png'; 
-    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'sprites/drink.png'; 
-    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'sprites/disco.png'; 
-    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'sprites/djdisc.png'; 
-    window.paloSprite = new Image(); window.paloSprite.src = 'sprites/palo.png'; 
-    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'sprites/macchina.png'; 
-    window.bossSprite = new Image(); window.bossSprite.src = 'sprites/golruk.png'; 
-    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'sprites/icon-512.png'; 
+    // PERCORSI CORRETTI PER LE SPRITE
+    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png'; 
+    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png'; 
+    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png'; 
+    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png'; 
+    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png'; 
+    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png'; 
+    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png'; 
+    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png'; 
+    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png'; 
+    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
 </script>
 
-<script src="js/rects.js"></script>
-<script src="js/player.js"></script>
-<script src="js/boss_final.js"></script>
-<script src="js/ending.js"></script>
-<script src="js/game.js"></script>
-<script src="js/engine.js"></script>
+<script src="rects.js"></script>
+<script src="player.js"></script>
+<script src="boss_final.js"></script>
+<script src="ending.js"></script>
+<script src="game.js"></script>
+<script src="engine.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -133,7 +133,8 @@
         if (window.Game && window.Game.init) {
             window.Game.init();
         } else {
-             console.error("ERRORE CRITICO: Game object non trovato. Controlla la tua STRUTTURA DI CARTELLE (js/, sprites/, assets/music/).");
+             // Questo errore dovrebbe ora indicare che uno degli script NON è stato trovato nella ROOT.
+             console.error("ERRORE CRITICO: Game object non trovato. Controlla che i file JS siano nella cartella principale (ROOT).");
         }
         
         const restartBtn = document.getElementById('restartBtn');
@@ -146,7 +147,3 @@
              document.getElementById('ending-screen').style.display = 'none';
              document.getElementById('menu').style.display = 'flex';
         });
-    });
-</script>
-</body>
-</html>
