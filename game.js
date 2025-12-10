@@ -1,4 +1,4 @@
-// game.js (Versione Finale con Correzioni Mobile e Percorsi Audio/Sprite)
+// game.js (Versione Finale con Correzioni Logiche e Percorsi Asset/Livelli)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -6,13 +6,13 @@ const Game = (function() {
     const menuDiv = document.getElementById('menu');
     const gameContainer = document.getElementById('game-container');
     
-    // VARIABILI AUDIO AGGIORNATE (Corrispondenti a index.html)
+    // VARIABILI AUDIO AGGIORNATE
     const musicNormal = document.getElementById('music_normal');
     const musicFinal = document.getElementById('music_final');
     
-    // Variabile globale per lo sfondo del canvas (Corretto per 'sprites/')
+    // Variabile globale per lo sfondo del canvas (Corretto per 'assets/sprites/')
     window.backgroundSprite = new Image();
-    window.backgroundSprite.src = 'sprites/icon-512.png'; 
+    window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
 
     let player; 
     let currentLevelIndex = 0;
@@ -26,6 +26,7 @@ const Game = (function() {
 
     function loadLevels() {
         // PERCORSI LIVELLI: Controlla che la cartella 'levels/' esista!
+        // Assumiamo che i livelli siano in 'levels/' non 'assets/levels/'
         const levelPromises = [
             fetch('levels/level1.json').then(res => res.json()),
             fetch('levels/level2.json').then(res => res.json()),
@@ -39,7 +40,6 @@ const Game = (function() {
             })
             .catch(error => {
                 console.error("Errore CRITICO nel caricamento di un file JSON del livello. Verifica il percorso 'levels/*.json'.", error);
-                // Visualizza l'errore a schermo
                 const loadingMessage = document.getElementById('loading-message');
                 loadingMessage.textContent = "ERRORE: Impossibile caricare i livelli (404/Network). Controlla la cartella 'levels/'.";
                 loadingMessage.style.display = 'block'; 
@@ -80,7 +80,6 @@ const Game = (function() {
         
         cameraX = 0;
         
-        // Verifica la dipendenza del Boss (boss_final.js)
         if (currentLevelIndex === 2 && window.BossFinal) {
              window.BossFinal.reset();
              const config = currentLevel.boss;
@@ -103,17 +102,14 @@ const Game = (function() {
             }
         }
         
-        // Logica Telecamera Stabilizzata
         const targetX = player.x - canvas.width / 2 + player.w / 2;
         
-        // Clamp: La camera deve stare tra 0 e (lunghezza livello - larghezza canvas)
         cameraX = Math.max(0, Math.min(targetX, currentLevel.length - canvas.width));
         
         if (currentLevel.length <= canvas.width) {
              cameraX = 0; 
         }
 
-        // Condizione di fine livello
         const endZone = currentLevel.endZone;
         if (player.x + player.w > endZone.x && 
             player.x < endZone.x + endZone.w &&
@@ -206,8 +202,6 @@ const Game = (function() {
 
             let spriteToUse = null;
 
-            // Assicurati che questi nomi di variabile (window.discoBallSprite, ecc.) corrispondano
-            // a quelli definiti nel blocco <script> di index.html
             if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
                 spriteToUse = window.discoBallSprite;
             } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
@@ -301,12 +295,7 @@ const Game = (function() {
         newBtn.disabled = true;
         newBtn.textContent = "Caricamento risorse in corso..."; 
         
-        // I gestori di eventi 'click' e 'touchstart' sono in index.html, 
-        // ma è buona pratica includerli qui se non lo fossero stati.
-        // newBtn.addEventListener('click', startNew);
-        // newBtn.addEventListener('touchstart', startNew);
-
-        // Lista delle immagini da caricare (deve corrispondere a index.html)
+        // Caricamento delle Sprite (i percorsi sono 'assets/sprites/')
         const spritesToLoad = [
             window.playerSprite, window.runSprite, window.heartSprite, 
             window.drinkEnemySprite, window.discoBallSprite, window.djDiscSprite, 
@@ -314,7 +303,6 @@ const Game = (function() {
             window.backgroundSprite
         ];
         
-        // Creazione di Promise per il caricamento delle sole Sprite
         const spritePromises = spritesToLoad.map(sprite => {
             return new Promise((resolve, reject) => {
                 if (sprite.complete) {
@@ -322,7 +310,6 @@ const Game = (function() {
                 } else {
                     sprite.onload = resolve;
                     sprite.onerror = () => {
-                        console.error(`Errore nel caricamento della sprite: ${sprite.src}`);
                         reject(`Errore nel caricamento della sprite: ${sprite.src}`);
                     };
                 }
@@ -336,9 +323,7 @@ const Game = (function() {
                     newBtn.textContent = "Nuova Partita";
                     newBtn.disabled = false;
                     hintText.style.display = 'block'; 
-                } else {
-                    // Il messaggio di errore del livello è gestito in loadLevels()
-                }
+                } 
             })
             .catch(error => {
                  console.error("Errore critico durante il caricamento delle risorse (Sprite/Livelli):", error);
@@ -348,12 +333,10 @@ const Game = (function() {
             });
     }
 
-    // La funzione startNew viene chiamata sia da click che da touchstart
     function startNew(e) {
         if(e) e.preventDefault(); 
         
         if (!levels.length || !window.engine) { 
-            console.error("Il gioco non è pronto o l'Engine non è stato inizializzato.");
             return;
         }
         
@@ -362,17 +345,15 @@ const Game = (function() {
         const playerLoaded = loadLevel(0, false); 
 
         if (!playerLoaded) {
-             console.error("Impossibile avviare il gioco: Il player non è stato inizializzato.");
              return;
         }
 
         menuDiv.style.display = 'none';
         gameContainer.style.display = 'block';
 
-        // Avvio Audio
         if (musicNormal) {
             musicNormal.loop = true;
-            musicNormal.play().catch(e => console.log("Audio BGM bloccato dal browser:", e));
+            musicNormal.play().catch(e => console.log("Audio BGM bloccato:", e));
         }
         
         window.engine.start(); 
@@ -383,7 +364,6 @@ const Game = (function() {
         
         if (currentLevelIndex < levels.length) {
             if (currentLevelIndex === 2) {
-                // Passaggio al boss: Cambia musica
                 if (musicNormal) musicNormal.pause();
                 if (musicFinal) {
                     musicFinal.loop = true;
@@ -394,7 +374,6 @@ const Game = (function() {
             loadLevel(currentLevelIndex, true); 
             
         } else {
-            // Fine Contenuto del Gioco
             window.engine.stop();
             if (musicNormal) musicNormal.pause();
             if (musicFinal) musicFinal.pause();
@@ -416,7 +395,6 @@ const Game = (function() {
             
             loadLevel(currentLevelIndex, true); 
             
-            // Ripristina la musica corretta
             if (currentLevelIndex === 2) {
                 if (musicNormal) musicNormal.pause();
                 if (musicFinal) musicFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
