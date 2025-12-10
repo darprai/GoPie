@@ -1,6 +1,6 @@
 {
   "length": 4000,
-  "playerStart": { "x": 100, "y": 550 },
+  "playerStart": { "x": 80, "y": 300 },
   "endZone": { "x": 3800, "y": 480, "w": 20, "h": 60 },
   "platforms": [
      [0, 500, 300, 40],
