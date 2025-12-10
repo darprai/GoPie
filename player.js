@@ -1,4 +1,4 @@
-// player.js (Versione con Y-Stepping anti-tunnelling)
+// player.js (Versione con Y-Stepping, Nemici e Logica di Morte/Punteggio)
 
 const Player = function(x, y) {
     this.x = x;
@@ -14,7 +14,7 @@ const Player = function(x, y) {
     this.gravity = 1800;    
     
     this.onGround = false;
-    this.score = 0; 
+    this.score = 0; // INIZIALIZZAZIONE PUNTEGGIO
     this.facingRight = true;
     this.isMoving = false;
     this.animationFrame = 0;
@@ -36,26 +36,27 @@ const Player = function(x, y) {
     
     this.resetFull = function(x, y) {
         this.reset(x, y);
-        this.score = 0;
+        this.score = 0; // Reset del punteggio
     };
     
-    this.collectHeart = function() {
-        this.score += 50; 
-    };
-
     this.hit = function() {
         if (this.invincible) {
             return true;
         }
-        window.Game.onPlayerDied();
+        // Chiama la funzione di gestione della morte che deve essere in Game.js
+        if (window.Game && window.Game.onPlayerDied) {
+            window.Game.onPlayerDied();
+        }
         return false;
     };
 
-    this.update = function(dt, input, platforms) {
+    // AGGIUNTA DI "enemies" NELLA FIRMA
+    this.update = function(dt, input, platforms, enemies) {
         platforms = platforms || []; 
+        enemies = enemies || []; 
         const keys = input;
         
-        // GESTIONE INVINCIBILITÀ (omessa logica)
+        // GESTIONE INVINCIBILITÀ
         if (this.invincible) {
             this.invincibilityTimer += dt;
             if (this.invincibilityTimer >= INVINCIBILITY_DURATION) {
@@ -64,7 +65,7 @@ const Player = function(x, y) {
             }
         }
         
-        // 1. INPUT ORIZZONTALE (omessa logica)
+        // 1. INPUT ORIZZONTALE
         this.vx = 0;
         if (keys.ArrowLeft) {
             this.vx = -this.speed;
@@ -85,28 +86,24 @@ const Player = function(x, y) {
         }
 
         // 3. GRAVITÀ
-        // Se non siamo a terra, applichiamo la gravità.
         if (!this.onGround) {
             this.vy += this.gravity * dt; 
         }
 
-        // Reset di onGround
         this.onGround = false;
 
 
-        // 4. MOVIMENTO e COLLISIONI X (Indipendente dalla Y)
-        const oldX = this.x;
+        // 4. MOVIMENTO e COLLISIONI X 
         this.x += this.vx * dt;
 
         if (window.rectsOverlap) {
             for (let p of platforms) {
+                if (!Array.isArray(p) || p.length < 4) continue;
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 if (rectsOverlap(this, pRect)) { 
                     
-                    // Se siamo chiaramente sopra la piattaforma, saltiamo la correzione X
                     if (this.y + this.h <= pRect.y + 5) continue; 
                     
-                    // Altrimenti, correggiamo l'X
                     if (this.vx > 0) {
                         this.x = pRect.x - this.w; 
                     } else if (this.vx < 0) {
@@ -120,9 +117,7 @@ const Player = function(x, y) {
         // 5. MOVIMENTO e COLLISIONI Y (Y-Stepping)
         const totalMovementY = this.vy * dt;
         let remainingMovement = Math.abs(totalMovementY);
-        const step = Math.sign(totalMovementY); // +1 se cade, -1 se sale
-        
-        // La dimensione dello step è 1 pixel o un po' di più per velocizzare
+        const step = Math.sign(totalMovementY); 
         const stepSize = 4; 
 
         while (remainingMovement > 0) {
@@ -133,35 +128,70 @@ const Player = function(x, y) {
             let collisionDetected = false;
 
             for (let p of platforms) {
+                if (!Array.isArray(p) || p.length < 4) continue;
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 
                 if (pRect.w > 0 && pRect.h > 0 && rectsOverlap(this, pRect)) {
                     collisionDetected = true;
 
                     if (step > 0) { 
-                        // **ATTERRAGGIO (Caduta)**
-                        this.y = pRect.y - this.h; // Posiziona esattamente sopra
-                        this.onGround = true;      // Siamo a terra
-                        this.vy = 0;               // Ferma la caduta
+                        // ATTERRAGGIO (Caduta)
+                        this.y = pRect.y - this.h; 
+                        this.onGround = true;      
+                        this.vy = 0;               
                         
                     } else if (step < 0) { 
-                        // **TESTATA (Salto)**
-                        this.y = pRect.y + pRect.h; // Posiziona esattamente sotto
-                        this.vy = 0;               // Ferma il salto
+                        // TESTATA (Salto)
+                        this.y = pRect.y + pRect.h; 
+                        this.vy = 0;               
                     }
                     
-                    // Dopo una collisione Y, fermiamo il movimento residuo
                     remainingMovement = 0; 
                     break; 
                 }
             }
 
             if (collisionDetected) {
-                break; // Usciamo dal loop while dopo la correzione
+                break; 
             }
         }
         
-        // 6. Animazione (omessa logica)
+        // *************************************************************************
+        // NUOVE LOGICHE: Morte per Caduta e Collisioni con Nemici/Collezionabili
+        // *************************************************************************
+        
+        // PUNTO 1: CONTROLLO CADUTA MORTALE
+        const DEATH_Y = 700; // Un limite di morte sicuro sotto la piattaforma più bassa (Y=540)
+        if (this.y > DEATH_Y) {
+            this.hit(); 
+        }
+
+        // PUNTO 2 & 3: GESTIONE NEMICI / COLLEZIONABILI
+        // Iteriamo al contrario per permettere la rimozione se gestita in Game.js
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const e = enemies[i];
+            const eRect = { x: e.x, y: e.y, w: e.w, h: e.h };
+
+            if (window.rectsOverlap(this, eRect)) {
+                
+                if (e.type === "drink") {
+                    // I drink uccidono
+                    this.hit(); 
+                    break; // Morte immediata
+                } else if (e.type === "heart") {
+                    // Cuori danno 50 punti
+                    this.score += 50; 
+                    
+                    // Chiama la funzione per rimuovere l'oggetto (deve essere in Game.js)
+                    if (window.Game && window.Game.removeEnemy) {
+                         window.Game.removeEnemy(i); 
+                    }
+                }
+            }
+        }
+
+
+        // 8. Animazione
         if (this.isMoving && this.onGround) {  
             this.animationTimer += dt;
             if (this.animationTimer > 0.1) {
@@ -174,7 +204,6 @@ const Player = function(x, y) {
     };
 
     this.draw = function(ctx, camX) {
-        // ... (Logica draw omessa per brevità)
         const x = Math.round(this.x - camX);
         const y = Math.round(this.y);
         
@@ -193,7 +222,7 @@ const Player = function(x, y) {
         }
 
         if (this.invincible && Math.floor(this.invincibilityTimer * 10) % 2 === 0) {
-            // Non disegnare se invincibile (effetto lampeggiante)
+            // Non disegnare se invincibile
         } else if (spriteReady) {
             
             ctx.save();
@@ -211,6 +240,11 @@ const Player = function(x, y) {
             ctx.fillStyle = 'blue';
             ctx.fillRect(x, y, this.w, this.h);
         }
+        
+        // PUNTO 3: DRAW DEL PUNTEGGIO in alto a sinistra
+        ctx.fillStyle = 'white';
+        ctx.font = '20px sans-serif';
+        ctx.fillText(`Punti: ${this.score}`, 10, 30); 
     };
 };
 
