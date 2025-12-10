@@ -1,5 +1,3 @@
-// game.js (Versione Finale con Logica Cutscene Palo/Macchina per Level 1 E Level 2)
-
 const Game = (function() {
     const canvas = document.getElementById('game');
     const ctx = canvas ? canvas.getContext('2d') : null;
@@ -42,7 +40,7 @@ const Game = (function() {
     
     // VARIABILI CUTSCENE
     let isCutsceneActive = false;
-    let cutsceneTime = 0;         
+    let cutsceneTime = 0;       
     const CUTSCENE_DURATION = 3.0;
     
     const PLATFORM_TYPE = {
@@ -127,9 +125,11 @@ const Game = (function() {
         if (musicNormal) musicNormal.pause();
         
         if (trigger) {
-            // Posiziona il giocatore vicino al trigger
-            player.x = trigger[0] + trigger[2] / 2; 
+            // Posiziona il giocatore vicino al trigger (al centro orizzontale della piattaforma)
+            // L'offset di -1 è per assicurarsi che il player non sia mai fuori dallo schermo se la camX è bloccata
+            player.x = trigger[0] + trigger[2] / 2 - player.w / 2; 
         }
+        // Blocca il movimento del giocatore durante la cutscene
         player.vy = 0;
         player.vx = 0;
         player.isJumping = false;
@@ -137,7 +137,7 @@ const Game = (function() {
         player.facingRight = true; 
         player.isHit = false; 
 
-        window.engine.start(); 
+        window.engine.start(); // Riattiviamo l'engine solo per il loop di disegno/update della cutscene
     }
     
     function updateCutscene(dt) {
@@ -147,11 +147,11 @@ const Game = (function() {
         let camTargetX = 0;
         
         // Ipotizziamo che la cutscene si svolga nell'area del palo/trigger per entrambi i livelli
-        // Palo Level 1 è a 3750 (dalle tue json)
         if (currentLevelIndex === 0) {
+            // Palo Level 1 è a 3750
             camTargetX = 3750 - canvas.width / 2;
-        // Palo Level 2 è a 5650 (dal level2.json aggiornato)
         } else if (currentLevelIndex === 1) { 
+            // Palo Level 2 è a 5650
             camTargetX = 5650 - canvas.width / 2; 
         }
         
@@ -178,23 +178,31 @@ const Game = (function() {
         
         player.update(dt, input, currentLevel.platforms, currentLevel.enemies);
 
-        // ********* CONTROLLO COLLISIONE CON IL PALO *********
-        let triggerPlatform = null;
+        // ********* CONTROLLO COLLISIONE CON IL PALO (CORRETTO) *********
         
-        // Cerca il PALO sia nel Livello 0 che nel Livello 1 (il Livello 2 è indice 1)
         if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
-            triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
-        }
-        // Il controllo per MACCHINA non serve più se si usa solo PALO come trigger di transizione
-        // ****************************************************************
+            // Cerchiamo l'unica piattaforma di tipo PALO nel livello
+            const paloTrigger = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
 
-        if (triggerPlatform && window.rectsOverlap) {
-            const triggerRect = { x: triggerPlatform[0], y: triggerPlatform[1], w: triggerPlatform[2], h: triggerPlatform[3] };
-            if (window.rectsOverlap(player, triggerRect)) {
-                startCutscene(triggerPlatform); 
-                return; 
+            if (paloTrigger && window.rectsOverlap) {
+                const triggerRect = { 
+                    x: paloTrigger[0], 
+                    y: paloTrigger[1], 
+                    w: paloTrigger[2], 
+                    h: paloTrigger[3] 
+                };
+                
+                // Controlliamo la collisione AABB tra il giocatore e il palo
+                if (window.rectsOverlap(player, triggerRect)) {
+                    // Aggiungiamo un controllo di sicurezza per la posizione
+                    // Se il giocatore è entrato nel palo, attiviamo la cutscene
+                    startCutscene(paloTrigger); 
+                    return; 
+                }
             }
         }
+        // ****************************************************************
+
         
         if (currentLevelIndex === 2) {
             if (window.BossFinal && window.BossFinal.active) {
@@ -334,10 +342,15 @@ const Game = (function() {
         
         // 3. Animazione di Pie che entra
         if (t < 0.5) {
+            // Sposta Pie verso la macchina
             const entryX = macchinaStartX + 10;
+            // Calcola la posizione intermedia, muovendolo dal palo alla macchina
             const targetX = paloWorldX + (entryX - paloWorldX) * (t * 2);
             player.x = targetX;
             player.draw(ctx, camX); 
+        } else if (t < 0.8) {
+             // Nasconde Pie una volta che è "entrato" nella macchina (per evitare glitch)
+             // Non disegniamo il player in questo intervallo
         } 
 
         // Overlay finale (Fade out comune)
@@ -349,56 +362,56 @@ const Game = (function() {
     }
     
     function renderPlatforms(platforms, camX) {
-           if (!ctx) return;
-           for (let p of platforms) {
-               const x = Math.round(p[0] - camX);
-               const y = Math.round(p[1]);
-               const w = p[2];
-               const h = p[3];
-               const type = p[4]; 
-               let spriteToUse = null;
+            if (!ctx) return;
+            for (let p of platforms) {
+                const x = Math.round(p[0] - camX);
+                const y = Math.round(p[1]);
+                const w = p[2];
+                const h = p[3];
+                const type = p[4]; 
+                let spriteToUse = null;
 
-               if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
+                if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
                     spriteToUse = window.discoBallSprite;
-               } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
+                } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
                     spriteToUse = window.djDiscSprite;
-               } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
+                } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                     spriteToUse = window.paloSprite;
-               } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
+                } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
                     spriteToUse = window.macchinaSprite;
-               }
+                }
 
-               if (spriteToUse) {
+                if (spriteToUse) {
                     ctx.drawImage(spriteToUse, x, y, w, h);
-               } else {
+                } else {
                     ctx.fillStyle = "black"; 
                     ctx.fillRect(x, y, w, h);
-               }
-           }
+                }
+            }
     }
     
     function renderEnemies(enemies, camX) {
-           if (!enemies || !ctx) return;
-           for (let e of enemies) {
-               const x = Math.round(e.x - camX);
-               const y = Math.round(e.y);
-               
-               if (e.type === 'drink' && window.drinkEnemySprite && window.drinkEnemySprite.complete) {
+            if (!enemies || !ctx) return;
+            for (let e of enemies) {
+                const x = Math.round(e.x - camX);
+                const y = Math.round(e.y);
+                
+                if (e.type === 'drink' && window.drinkEnemySprite && window.drinkEnemySprite.complete) {
                     ctx.drawImage(window.drinkEnemySprite, x, y, e.w, e.h);
-               } else if (e.type === 'heart' && window.heartSprite && window.heartSprite.complete) {
+                } else if (e.type === 'heart' && window.heartSprite && window.heartSprite.complete) {
                     ctx.drawImage(window.heartSprite, x, y, e.w, e.h);
-               } else {
+                } else {
                     ctx.fillStyle = (e.type === 'drink') ? 'purple' : 'pink';
                     ctx.fillRect(x, y, e.w, e.h);
-               }
-           }
+                }
+            }
     }
 
     function renderHUD() {
-           if (!ctx || !player) return; 
-           ctx.fillStyle = 'white';
-           ctx.font = '24px Arial';
-           ctx.fillText(`PUNTEGGIO: ${player.score}`, 10, 30);
+            if (!ctx || !player) return; 
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText(`PUNTEGGIO: ${player.score}`, 10, 30);
     }
     
     function renderBossHUD() {
@@ -427,39 +440,39 @@ const Game = (function() {
     }
 
     function toggleFullScreen() {
-           const doc = window.document;
-           const docEl = doc.documentElement;
+            const doc = window.document;
+            const docEl = doc.documentElement;
 
-           const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
 
-           if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-               requestFullScreen.call(docEl).catch(err => {
+            if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl).catch(err => {
                     console.warn("Impossibile attivare il fullscreen (richiede interazione utente):", err);
-               });
-           } 
+                });
+            } 
     }
     
     function init() {
-           const newBtn = document.getElementById('newBtn');
-           const loadingMessage = document.getElementById('loading-message');
-           const hintText = document.getElementById('hint-text');
+            const newBtn = document.getElementById('newBtn');
+            const loadingMessage = document.getElementById('loading-message');
+            const hintText = document.getElementById('hint-text');
 
-           loadingMessage.style.display = 'none'; 
-           hintText.style.display = 'none'; 
+            loadingMessage.style.display = 'none'; 
+            hintText.style.display = 'none'; 
 
-           newBtn.disabled = true;
-           newBtn.textContent = "Caricamento risorse in corso..."; 
-           
-           // Elenco completo delle sprite globali definite sopra
-           const spritesToLoad = [
-               window.playerSprite, window.runSprite, window.heartSprite, 
-               window.drinkEnemySprite, window.discoBallSprite, window.djDiscSprite, 
-               window.paloSprite, window.macchinaSprite, window.bossSprite,
-               window.backgroundSprite, window.ragazzaSprite
-           ];
-           
-           const spritePromises = spritesToLoad.map(sprite => {
-               return new Promise((resolve, reject) => {
+            newBtn.disabled = true;
+            newBtn.textContent = "Caricamento risorse in corso..."; 
+            
+            // Elenco completo delle sprite globali definite sopra
+            const spritesToLoad = [
+                window.playerSprite, window.runSprite, window.heartSprite, 
+                window.drinkEnemySprite, window.discoBallSprite, window.djDiscSprite, 
+                window.paloSprite, window.macchinaSprite, window.bossSprite,
+                window.backgroundSprite, window.ragazzaSprite
+            ];
+            
+            const spritePromises = spritesToLoad.map(sprite => {
+                return new Promise((resolve, reject) => {
                     if (sprite.complete) {
                         resolve();
                     } else {
@@ -468,50 +481,50 @@ const Game = (function() {
                             reject(`Errore nel caricamento della sprite: ${sprite.src}`);
                         };
                     }
-               });
-           });
+                });
+            });
 
-           Promise.all(spritePromises)
-               .then(() => loadLevels())
-               .then(success => {
+            Promise.all(spritePromises)
+                .then(() => loadLevels())
+                .then(success => {
                     if (success) {
                         newBtn.textContent = "Nuova Partita";
                         newBtn.disabled = false;
                         hintText.style.display = 'block'; 
                     } 
-               })
-               .catch(error => {
+                })
+                .catch(error => {
                     console.error("Errore critico durante il caricamento delle risorse (Sprite/Livelli):", error);
                     loadingMessage.textContent = `Errore critico di caricamento. Verifica i percorsi: ${error}`;
                     loadingMessage.style.display = 'block'; 
                     newBtn.disabled = true;
-               });
+                });
     }
 
     function startNew(e) {
-           if(e) e.preventDefault(); 
-           
-           if (!levels.length || !window.engine) { 
-               return;
-           }
-           
-           toggleFullScreen(); 
-           
-           const playerLoaded = loadLevel(0, false); 
+            if(e) e.preventDefault(); 
+            
+            if (!levels.length || !window.engine) { 
+                return;
+            }
+            
+            toggleFullScreen(); 
+            
+            const playerLoaded = loadLevel(0, false); 
 
-           if (!playerLoaded) {
-               return;
-           }
+            if (!playerLoaded) {
+                return;
+            }
 
-           menuDiv.style.display = 'none';
-           gameContainer.style.display = 'block';
+            menuDiv.style.display = 'none';
+            gameContainer.style.display = 'block';
 
-           if (musicNormal) {
-               musicNormal.loop = true;
-               musicNormal.play().catch(e => console.log("Audio BGM bloccato:", e));
-           }
-           
-           window.engine.start(); 
+            if (musicNormal) {
+                musicNormal.loop = true;
+                musicNormal.play().catch(e => console.log("Audio BGM bloccato:", e));
+            }
+            
+            window.engine.start(); 
     }
     
     function nextLevel() {
@@ -527,6 +540,7 @@ const Game = (function() {
             } else {
                  // Assicurati che se torni al Livello 1, riparte la musica normale
                  if (musicFinal) musicFinal.pause();
+                 // Riproduce la musica normale anche per il Livello 2 (index 1)
                  if (musicNormal && currentLevelIndex === 1) musicNormal.play().catch(e => console.log("Errore riproduzione BGM Normale:", e));
             }
             
