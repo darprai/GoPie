@@ -21,13 +21,10 @@
     [3200, 450, 100, 20, "djdisc"],
     [3400, 400, 100, 20, "djdisc"],
     
-    // Piattaforma base prima del palo
     [3600, 500, 100, 40],
     
-    // IL PALO: Innesca la cutscene di fine Livello 1
     [3750, 460, 20, 80, "palo"],
     
-    // Piattaforma finale
     [3800, 500, 200, 40]
   ],
   "enemies": [
