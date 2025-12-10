@@ -11,7 +11,7 @@ const Game = (function() {
     const musicFinal = document.getElementById('music_final');
     
     // ************************************************************
-    // DEFINIZIONE GLOBALE DI TUTTE LE SPRITE (Necessario per Promise.all)
+    // DEFINIZIONE GLOBALE DI TUTTE LE SPRITE
     // ************************************************************
     
     // Player & Items
@@ -43,7 +43,8 @@ const Game = (function() {
     // VARIABILI CUTSCENE
     let isCutsceneActive = false;
     let cutsceneTime = 0;       
-    const CUTSCENE_DURATION = 3.0;
+    // Aumentato a 5 secondi per una cutscene più leggibile
+    const CUTSCENE_DURATION = 5.0; 
     
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
@@ -120,6 +121,8 @@ const Game = (function() {
     // ************************************************************
 
     function startCutscene(trigger) { 
+        if (isCutsceneActive) return; // Impedisce riavvii multipli
+        
         isCutsceneActive = true;
         cutsceneTime = 0;
         window.engine.stop(); 
@@ -127,16 +130,16 @@ const Game = (function() {
         if (musicNormal) musicNormal.pause();
         
         if (trigger) {
-            // Posiziona il giocatore in modo che sia visibile all'inizio della cutscene
-            // Lo sposto leggermente a sinistra del palo, in modo che l'animazione di entrata funzioni meglio
-            player.x = trigger[0] - player.w - 5; 
+            // Posiziona il giocatore alla coordinata X del palo meno un piccolo margine
+            player.x = trigger[0] - player.w - 10; 
         }
-        // Blocca il movimento del giocatore
+        // Blocca il movimento del giocatore e imposta lo stato
         player.vy = 0;
         player.vx = 0;
         player.isJumping = false;
         player.isGrounded = true;
         player.facingRight = true; 
+        player.canMove = false; // Forza il blocco durante la cutscene
 
         window.engine.start(); // Riattiviamo l'engine solo per il loop di disegno/update della cutscene
     }
@@ -147,14 +150,9 @@ const Game = (function() {
         // Blocca la telecamera sull'area del trigger per la cutscene
         let camTargetX = 0;
         
-        // Ipotizziamo che la cutscene si svolga nell'area del palo/trigger per entrambi i livelli
-        if (currentLevelIndex === 0) {
-            // Palo Level 1 è a 3750
-            camTargetX = 3750 - canvas.width / 2;
-        } else if (currentLevelIndex === 1) { 
-            // Palo Level 2 è a 5650
-            camTargetX = 5650 - canvas.width / 2; 
-        }
+        // Determina la posizione del Palo per centrare la telecamera
+        const paloWorldX = (currentLevelIndex === 0) ? 3750 : 5650;
+        camTargetX = paloWorldX - canvas.width / 2;
         
         // La telecamera si muove gradualmente verso il target
         cameraX = cameraX + (camTargetX - cameraX) * 0.05;
@@ -162,6 +160,7 @@ const Game = (function() {
 
         if (cutsceneTime >= CUTSCENE_DURATION) {
             isCutsceneActive = false;
+            player.canMove = true; // Sblocca il giocatore (anche se il livello sta cambiando)
             window.engine.stop(); 
             Game.nextLevel();
         }
@@ -197,7 +196,8 @@ const Game = (function() {
                 h: triggerPlatform[3] 
             };
             
-            // Verifichiamo la collisione tra il giocatore e l'area del palo
+            // Verifichiamo la collisione (Player entra nell'area del palo)
+            // Aggiungo un piccolo margine di tolleranza per l'attivazione
             if (window.rectsOverlap(player, triggerRect)) {
                 startCutscene(triggerPlatform); 
                 return; 
@@ -213,6 +213,7 @@ const Game = (function() {
             }
         }
         
+        // Gestione standard della telecamera
         const targetX = player.x - canvas.width / 2 + player.w / 2;
         cameraX = Math.max(0, Math.min(targetX, currentLevel.length - canvas.width));
         
@@ -273,7 +274,7 @@ const Game = (function() {
         
         renderPlatforms(currentLevel.platforms, cameraX);
         
-        // Disegna Player SOLO se NON siamo nella Cutscene
+        // Disegna Player SOLO se NON siamo nella Cutscene (sarà disegnato da drawCutscene)
         if (!isCutsceneActive) {
             player.draw(ctx, cameraX); 
         }
@@ -297,66 +298,81 @@ const Game = (function() {
             drawCutscene(ctx, cameraX); 
         }
         
-        renderHUD(); 
+        renderHUD(); // Lascio la chiamata per coerenza, ma la funzione è vuota.
     }
     
     function drawCutscene(ctx, camX) {
         const t = cutsceneTime / CUTSCENE_DURATION;
         
+        // Costanti di dimensione e posizione
         const ragazzaW = 30, ragazzaH = 50;
         const macchinaW = 100, macchinaH = 50;
+        const groundY = 500; // Altezza del suolo
         
-        // Definiamo le coordinate del Palo e della Macchina in base al livello corrente
-        let paloWorldX;
-        let macchinaStartX;
+        // Coordinate del Palo e della Macchina in base al livello
+        const paloWorldX = (currentLevelIndex === 0) ? 3750 : 5650;
+        const macchinaStartX = paloWorldX + 80; // Posizione iniziale della macchina (leggermente più a destra del palo)
         
-        if (currentLevelIndex === 0) {
-            // Coordinate Level 1
-            paloWorldX = 3750;
-            macchinaStartX = 3850;
-        } else if (currentLevelIndex === 1) { 
-            // Coordinate Level 2 (Palo a 5650)
-            paloWorldX = 5650;
-            macchinaStartX = 5750; 
-        } else {
-            return; 
-        }
+        // Posizioni Y fisse
+        const ragazzaY = groundY - ragazzaH; 
+        const macchinaY = groundY - macchinaH; 
         
-        const ragazzaWorldX = paloWorldX + 20; 
-        const ragazzaY = 500 - ragazzaH; 
-        const macchinaY = 500 - macchinaH; 
+        // Posizioni X di riferimento
+        const girlStandX = paloWorldX + 20; 
+        const pieStartX = paloWorldX - player.w - 10;
+        const carEntryX = macchinaStartX + macchinaW / 2 - player.w / 2; // Centro della Macchina
+        const carEndX = macchinaStartX + canvas.width; // Fuori schermo
         
-        // 1. Disegna Ragazza
-        if (t < 0.8) { 
-            ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
-        }
-
-        // 2. Macchina che parte
+        // Variabili animate
+        let pieWorldX;
+        let ragazzaWorldX;
         let macchinaWorldX;
-        if (t < 0.5) {
-            macchinaWorldX = macchinaStartX; // Fissa
-        } else {
-            const t_drive = (t - 0.5) * 2; 
-            const endMacchinaX = macchinaStartX + 250; 
-            macchinaWorldX = macchinaStartX + (endMacchinaX - macchinaStartX) * t_drive;
-        }
-        ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
         
-        // 3. Animazione di Pie che entra
-        if (t < 0.5) {
-            // Sposta Pie verso la macchina
-            const entryX = macchinaStartX; 
-            // Calcola la posizione intermedia, muovendolo dal punto di partenza (a sinistra del palo) alla macchina
-            const startX = paloWorldX - player.w - 5; 
-            const targetX = startX + (entryX - startX) * (t * 2);
-            player.x = targetX - player.w / 2;
-            player.draw(ctx, camX); 
+        // --- FASE 1: Pie si muove verso la Ragazza (0.0 < t <= 0.2) ---
+        if (t <= 0.2) {
+            const t_phase = t / 0.2; // Transizione da 0 a 1
+            pieWorldX = pieStartX + (girlStandX - pieStartX) * t_phase;
+            ragazzaWorldX = girlStandX;
+            macchinaWorldX = macchinaStartX;
         } 
         
-        // Overlay finale (Fade out comune)
+        // --- FASE 2: Pie e Ragazza salgono in Macchina (0.2 < t <= 0.4) ---
+        else if (t <= 0.4) {
+            const t_phase = (t - 0.2) / 0.2; // Transizione da 0 a 1
+            pieWorldX = girlStandX + (carEntryX - girlStandX) * t_phase;
+            ragazzaWorldX = girlStandX + (carEntryX - girlStandX) * t_phase;
+            macchinaWorldX = macchinaStartX;
+        }
+        
+        // --- FASE 3: La Macchina parte (0.4 < t <= 1.0) ---
+        else {
+            const t_phase = (t - 0.4) / 0.6; // Transizione da 0 a 1 (durata 60% della cutscene)
+            macchinaWorldX = macchinaStartX + (carEndX - macchinaStartX) * t_phase;
+            
+            // Il giocatore e la ragazza si muovono con la macchina
+            pieWorldX = carEntryX + (macchinaWorldX - macchinaStartX);
+            ragazzaWorldX = carEntryX + (macchinaWorldX - macchinaStartX);
+        }
+        
+        // 1. Disegna Macchina (sempre)
+        ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
+        
+        // 2. Disegna Ragazza (fino a quando non va fuori schermo con la macchina)
+        if (ragazzaWorldX - camX < canvas.width) {
+             ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
+        }
+
+        // 3. Disegna Pie (fino a quando non va fuori schermo con la macchina)
+        if (pieWorldX - camX < canvas.width) {
+            // Aggiorna la posizione del giocatore in base alla cutscene
+            player.x = pieWorldX;
+            player.draw(ctx, camX); 
+        }
+        
+        // Overlay finale (Fade out)
         if (t > 0.8) {
             const alpha = (t - 0.8) * 5; 
-            ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+            ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(1, alpha)})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
     }
@@ -408,11 +424,7 @@ const Game = (function() {
     }
 
     function renderHUD() {
-            // Unico posto in cui il punteggio viene disegnato (sul canvas)
-            if (!ctx || !player) return; 
-            ctx.fillStyle = 'white';
-            ctx.font = '24px Arial';
-            ctx.fillText(`PUNTEGGIO: ${player.score}`, 10, 30);
+            // FUNZIONE VUOTA: IL PUNTEGGIO NON VIENE PIÙ DISEGNATO
     }
     
     function renderBossHUD() {
@@ -543,6 +555,7 @@ const Game = (function() {
                  if (musicNormal) musicNormal.play().catch(e => console.log("Errore riproduzione BGM Normale:", e));
             }
             
+            // Carica il livello successivo, mantenendo il punteggio
             loadLevel(currentLevelIndex, true); 
             
         } else {
