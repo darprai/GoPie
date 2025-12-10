@@ -1,4 +1,4 @@
-// game.js (Versione Finale con Logica Cutscene e Caricamento Sprite Corretto)
+// game.js (Versione Finale con Logica Cutscene Palo/Macchina per Level 1 E Level 2)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -19,7 +19,7 @@ const Game = (function() {
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
     window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
     window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
-    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; // Usato come sfondo
+    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
     
     // Piattaforme/Trigger
     window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
@@ -28,8 +28,8 @@ const Game = (function() {
     window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
     
     // Cutscene & Boss
-    window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png'; // NUOVA: Aggiunta la definizione mancante!
-    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png'; // Assumendo 'golruk.png' sia il boss
+    window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
+    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png'; 
     // ************************************************************
 
     let player; 
@@ -145,13 +145,16 @@ const Game = (function() {
         
         // Blocca la telecamera sull'area del trigger per la cutscene
         let camTargetX = 0;
+        
+        // Ipotizziamo che la cutscene si svolga nell'area del palo/trigger per entrambi i livelli
+        // Palo Level 1 è a 3750 (dalle tue json)
         if (currentLevelIndex === 0) {
-             // Palo a 3750
             camTargetX = 3750 - canvas.width / 2;
-        } else if (currentLevelIndex === 1) {
-            // Macchina a 5600
-            camTargetX = 5600 - canvas.width / 2;
+        // Palo Level 2 è a 5650 (dal level2.json aggiornato)
+        } else if (currentLevelIndex === 1) { 
+            camTargetX = 5650 - canvas.width / 2; 
         }
+        
         cameraX = Math.max(0, Math.min(camTargetX, currentLevel.length - canvas.width));
 
         if (cutsceneTime >= CUTSCENE_DURATION) {
@@ -175,16 +178,15 @@ const Game = (function() {
         
         player.update(dt, input, currentLevel.platforms, currentLevel.enemies);
 
-        // ********* CONTROLLO COLLISIONE CON IL PALO/MACCHINA *********
+        // ********* CONTROLLO COLLISIONE CON IL PALO *********
         let triggerPlatform = null;
         
-        if (currentLevelIndex === 0) {
-            // Livello 1: PALO
+        // Cerca il PALO sia nel Livello 0 che nel Livello 1 (il Livello 2 è indice 1)
+        if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
             triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
-        } else if (currentLevelIndex === 1) { 
-            // Livello 2: MACCHINA
-            triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.MACCHINA);
         }
+        // Il controllo per MACCHINA non serve più se si usa solo PALO come trigger di transizione
+        // ****************************************************************
 
         if (triggerPlatform && window.rectsOverlap) {
             const triggerRect = { x: triggerPlatform[0], y: triggerPlatform[1], w: triggerPlatform[2], h: triggerPlatform[3] };
@@ -193,7 +195,6 @@ const Game = (function() {
                 return; 
             }
         }
-        // ****************************************************************
         
         if (currentLevelIndex === 2) {
             if (window.BossFinal && window.BossFinal.active) {
@@ -209,7 +210,7 @@ const Game = (function() {
              cameraX = 0; 
         }
 
-        // Controllo EndZone (Solo Level 3 dovrebbe usare l'EndZone dopo il trigger cutscene)
+        // Controllo EndZone (Solo Level 3 Boss)
         const endZone = currentLevel.endZone;
         if (endZone && currentLevelIndex === 2 && player.x + player.w > endZone.x && 
             player.x < endZone.x + endZone.w &&
@@ -291,67 +292,54 @@ const Game = (function() {
     
     function drawCutscene(ctx, camX) {
         const t = cutsceneTime / CUTSCENE_DURATION;
-        const isLevel1 = (currentLevelIndex === 0);
         
         const ragazzaW = 30, ragazzaH = 50;
         const macchinaW = 100, macchinaH = 50;
         
-        if (isLevel1) {
-            // Livello 1: Pie sale in macchina con Ragazza vicino al Palo
-            
-            const paloWorldX = 3750;
-            const macchinaStartX = 3850;
-            const ragazzaWorldX = 3770;
-            const ragazzaY = 500 - ragazzaH; 
-            const macchinaY = 500 - macchinaH; 
-            
-            // 1. Disegna Ragazza
-            if (t < 0.8) { // La ragazza scompare con la macchina
-                ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
-            }
-
-            // 2. Macchina che parte
-            let macchinaWorldX;
-            if (t < 0.5) {
-                macchinaWorldX = macchinaStartX; // Fissa
-            } else {
-                const t_drive = (t - 0.5) * 2; 
-                macchinaWorldX = macchinaStartX + (4100 - macchinaStartX) * t_drive;
-            }
-            ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
-            
-            // 3. Animazione di Pie che entra
-            if (t < 0.5) {
-                const entryX = macchinaStartX + 10;
-                const targetX = paloWorldX + (entryX - paloWorldX) * (t * 2);
-                player.x = targetX;
-                player.draw(ctx, camX); 
-            } 
-            
+        // Definiamo le coordinate del Palo e della Macchina in base al livello corrente
+        let paloWorldX;
+        let macchinaStartX;
+        
+        if (currentLevelIndex === 0) {
+            // Coordinate Level 1
+            paloWorldX = 3750;
+            macchinaStartX = 3850;
         } else if (currentLevelIndex === 1) {
-            // Livello 2: Macchina ferma, Pie scende per il Boss Level
-            
-            const macchinaWorldX = 5600;
-            const macchinaY = 450; 
-            
-            // Animazione Pie che scende (t da 0.5 a 0.8)
-            if (t < 0.5) {
-                // Pie è dentro/sopra la macchina, non muoviamo la X
-                player.x = macchinaWorldX + macchinaW / 2 - player.w / 2;
-                player.draw(ctx, camX);
-            } else {
-                // Pie "salta" fuori prima che lo schermo diventi nero
-                const jumpHeight = Math.sin((t - 0.5) * Math.PI * 2) * 50; 
-                const playerScreenX = Math.round(player.x - camX);
-                const playerScreenY = Math.round(player.y - jumpHeight); 
-                
-                // Disegna Pie solo se la fase di fade non è troppo avanti
-                if (t < 0.9) {
-                    player.drawCustom(ctx, playerScreenX, playerScreenY); // Usa una funzione di disegno custom se disponibile, altrimenti usa draw()
-                }
-            }
+            // Coordinate Level 2 (Palo a 5650)
+            paloWorldX = 5650;
+            macchinaStartX = 5750; 
+        } else {
+            return; 
         }
         
+        const ragazzaWorldX = paloWorldX + 20; 
+        const ragazzaY = 500 - ragazzaH; 
+        const macchinaY = 500 - macchinaH; 
+        
+        // 1. Disegna Ragazza
+        if (t < 0.8) { 
+            ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
+        }
+
+        // 2. Macchina che parte
+        let macchinaWorldX;
+        if (t < 0.5) {
+            macchinaWorldX = macchinaStartX; // Fissa
+        } else {
+            const t_drive = (t - 0.5) * 2; 
+            const endMacchinaX = macchinaStartX + 250; 
+            macchinaWorldX = macchinaStartX + (endMacchinaX - macchinaStartX) * t_drive;
+        }
+        ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
+        
+        // 3. Animazione di Pie che entra
+        if (t < 0.5) {
+            const entryX = macchinaStartX + 10;
+            const targetX = paloWorldX + (entryX - paloWorldX) * (t * 2);
+            player.x = targetX;
+            player.draw(ctx, camX); 
+        } 
+
         // Overlay finale (Fade out comune)
         if (t > 0.8) {
             const alpha = (t - 0.8) * 5; 
