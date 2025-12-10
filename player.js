@@ -10,7 +10,7 @@ const Player = function(x, y) {
     this.speed = 250; 
     
     // Fisica
-    this.jumpForce = -700;   
+    this.jumpForce = -700;    
     this.gravity = 1800;    
     
     this.onGround = false;
@@ -97,8 +97,9 @@ const Player = function(x, y) {
         // 4. MOVIMENTO
         let newX = this.x + this.vx * dt;
         let newY = this.y + this.vy * dt;
-
-        // **NOTA: La logica di morte per caduta è disabilitata come richiesto.**
+        
+        // Salviamo la vecchia posizione Y per la collisione
+        const oldY = this.y; 
 
         // 5. COLLISIONI (X-axis) - Spostamento e Blocco Laterale
         this.x = newX;
@@ -106,6 +107,9 @@ const Player = function(x, y) {
             for (let p of platforms) {
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 if (rectsOverlap(this, pRect)) { 
+                    // Correggiamo solo se non stiamo atterrando (per evitare compenetrazione Y)
+                    if (this.vy >= 0 && oldY + this.h <= pRect.y) continue; 
+                    
                     if (this.vx > 0) {
                         this.x = pRect.x - this.w; 
                     } else if (this.vx < 0) {
@@ -124,39 +128,22 @@ const Player = function(x, y) {
                 
                 if (pRect.w > 0 && pRect.h > 0 && rectsOverlap(this, pRect)) {
                     
-                    const oldY = this.y - this.vy * dt;
-                    
                     if (this.vy > 0 && oldY + this.h <= pRect.y) { 
-                        // **ATTERRAGGIO (dal sopra) - Caso standard**
+                        // **ATTERRAGGIO (dal sopra) - Logica corretta**
                         this.y = pRect.y - this.h; 
                         this.onGround = true; 
                         this.vy = 0; 
                         
                     } else if (this.vy < 0 && oldY >= pRect.y + pRect.h) { 
-                        // **TESTATA (dal sotto) - Caso standard**
+                        // **TESTATA (dal sotto) - Logica corretta**
                         this.y = pRect.y + pRect.h; 
                         this.vy = 0; 
                         
-                    } else if (this.vy > 0 && this.y + this.h > pRect.y && this.y < pRect.y) {
-                         // **CORREZIONE SPURIA 1: Atterraggio mancato per frame rate alto**
-                         this.y = pRect.y - this.h; 
-                         this.onGround = true; 
-                         this.vy = 0; 
-                         
-                    } else if (this.y + this.h > pRect.y && this.y < pRect.y + pRect.h) {
-                         // **CORREZIONE CRITICA: Gestione dell'intrappolamento/passaggio sotto**
-                         if (this.vy >= 0) { // Se stiamo cadendo o siamo fermi in Y
-                              if (this.y + this.h / 2 < pRect.y + pRect.h / 2) {
-                                  // Siamo più vicini alla cima della piattaforma -> forziamo l'atterraggio
-                                  this.y = pRect.y - this.h;
-                                  this.onGround = true;
-                                  this.vy = 0;
-                              } else {
-                                  // Siamo più vicini al fondo della piattaforma -> spingiamo giù
-                                  this.y = pRect.y + pRect.h;
-                                  this.vy = 0;
-                              }
-                         }
+                    } else if (this.vy > 0 && this.y + this.h > pRect.y) {
+                         // Fallback per atterraggio (se l'oldY è sfuggito)
+                         this.y = pRect.y - this.h;
+                         this.onGround = true;
+                         this.vy = 0;
                     }
                 }
             }
