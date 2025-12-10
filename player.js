@@ -1,4 +1,4 @@
-// player.js (Versione con caduta illimitata, correzioni grafiche e Logica Collisione Y FINALIZZATA)
+// player.js (Versione con Anti-Tunnelling per collisioni Y)
 
 const Player = function(x, y) {
     this.x = x;
@@ -98,17 +98,18 @@ const Player = function(x, y) {
         let newX = this.x + this.vx * dt;
         let newY = this.y + this.vy * dt;
         
-        // Salviamo la vecchia posizione Y per la collisione
         const oldY = this.y; 
-
+        const oldX = this.x; // Salviamo anche la vecchia X per la Y collisione
+        
         // 5. COLLISIONI (X-axis) - Spostamento e Blocco Laterale
         this.x = newX;
         if (window.rectsOverlap) {
             for (let p of platforms) {
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 if (rectsOverlap(this, pRect)) { 
-                    // Correggiamo solo se non stiamo atterrando (per evitare compenetrazione Y)
-                    if (this.vy >= 0 && oldY + this.h <= pRect.y) continue; 
+                    
+                    // Solo correzione orizzontale se non siamo in atterraggio verticale
+                    if (oldY + this.h <= pRect.y) continue; 
                     
                     if (this.vx > 0) {
                         this.x = pRect.x - this.w; 
@@ -120,36 +121,38 @@ const Player = function(x, y) {
             }
         }
         
-        // 6. COLLISIONI (Y-axis) - Atterraggio, Testata e Blocco Sotto
+        // 6. COLLISIONI (Y-axis) - Atterraggio e Testata
         this.y = newY;
         if (window.rectsOverlap) {
             for (let p of platforms) {
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 
-                if (pRect.w > 0 && pRect.h > 0 && rectsOverlap(this, pRect)) {
+                // Per la collisione Y usiamo l'X precedente se l'abbiamo corretta
+                const tempPlayer = { x: oldX, y: newY, w: this.w, h: this.h }; 
+                
+                if (pRect.w > 0 && pRect.h > 0 && rectsOverlap(tempPlayer, pRect)) {
                     
-                    if (this.vy > 0 && oldY + this.h <= pRect.y) { 
-                        // **ATTERRAGGIO (dal sopra) - Logica corretta**
-                        this.y = pRect.y - this.h; 
-                        this.onGround = true; 
-                        this.vy = 0; 
+                    if (this.vy > 0) { 
+                        // **ATTERRAGGIO (dal sopra) - Logica Anti-Tunnelling**
                         
-                    } else if (this.vy < 0 && oldY >= pRect.y + pRect.h) { 
+                        // Solo se la vecchia posizione era sopra o al limite
+                        if (oldY + this.h <= pRect.y || oldY + this.h < pRect.y + pRect.h) { 
+                             this.y = pRect.y - this.h; 
+                             this.onGround = true; 
+                             this.vy = 0; 
+                        }
+                        
+                    } else if (this.vy < 0) { 
                         // **TESTATA (dal sotto) - Logica corretta**
                         this.y = pRect.y + pRect.h; 
                         this.vy = 0; 
-                        
-                    } else if (this.vy > 0 && this.y + this.h > pRect.y) {
-                         // Fallback per atterraggio (se l'oldY è sfuggito)
-                         this.y = pRect.y - this.h;
-                         this.onGround = true;
-                         this.vy = 0;
                     }
                 }
             }
         }
         
         // 7. Animazione 
+        // ... (Logica non cambiata, mantenuta per completezza)
         if (this.isMoving && this.onGround) {  
             this.animationTimer += dt;
             if (this.animationTimer > 0.1) {
@@ -162,6 +165,7 @@ const Player = function(x, y) {
     };
 
     this.draw = function(ctx, camX) {
+        // ... (Logica non cambiata, mantenuta per completezza)
         const x = Math.round(this.x - camX);
         const y = Math.round(this.y);
         
