@@ -1,4 +1,4 @@
-// player.js (Versione con Anti-Tunnelling per collisioni Y)
+// player.js (Versione con Anti-Tunnelling e Rigorosa separazione X/Y)
 
 const Player = function(x, y) {
     this.x = x;
@@ -55,7 +55,7 @@ const Player = function(x, y) {
         platforms = platforms || []; 
         const keys = input;
         
-        // GESTIONE INVINCIBILITÀ
+        // GESTIONE INVINCIBILITÀ (omessa logica)
         if (this.invincible) {
             this.invincibilityTimer += dt;
             if (this.invincibilityTimer >= INVINCIBILITY_DURATION) {
@@ -64,7 +64,7 @@ const Player = function(x, y) {
             }
         }
         
-        // 1. INPUT ORIZZONTALE
+        // 1. INPUT ORIZZONTALE (omessa logica)
         this.vx = 0;
         if (keys.ArrowLeft) {
             this.vx = -this.speed;
@@ -78,18 +78,17 @@ const Player = function(x, y) {
             this.isMoving = false;
         }
 
-        // 2. LOGICA DI SALTO
+        // 2. LOGICA DI SALTO (omessa logica)
         if ((keys.Space || keys.ArrowUp) && this.onGround) {
             this.vy = this.jumpForce;
             this.onGround = false; 
         }
 
-        // 3. GRAVITÀ
+        // 3. GRAVITÀ (omessa logica)
         if (!this.onGround) {
             this.vy += this.gravity * dt; 
         }
 
-        // --- PRE-COLLISIONE: Reset di onGround
         if (this.vy !== 0) {
             this.onGround = false;
         }
@@ -99,7 +98,6 @@ const Player = function(x, y) {
         let newY = this.y + this.vy * dt;
         
         const oldY = this.y; 
-        const oldX = this.x; // Salviamo anche la vecchia X per la Y collisione
         
         // 5. COLLISIONI (X-axis) - Spostamento e Blocco Laterale
         this.x = newX;
@@ -108,9 +106,12 @@ const Player = function(x, y) {
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 if (rectsOverlap(this, pRect)) { 
                     
-                    // Solo correzione orizzontale se non siamo in atterraggio verticale
+                    // ************** NUOVA LOGICA X RIGOROSA **************
+                    // Se la base del giocatore era sopra o al limite della cima della piattaforma 
+                    // nel frame precedente, non correggere la X, lascia che la Y gestisca l'atterraggio.
                     if (oldY + this.h <= pRect.y) continue; 
                     
+                    // Altrimenti, è una collisione laterale:
                     if (this.vx > 0) {
                         this.x = pRect.x - this.w; 
                     } else if (this.vx < 0) {
@@ -127,23 +128,22 @@ const Player = function(x, y) {
             for (let p of platforms) {
                 const pRect = { x: p[0], y: p[1], w: p[2], h: p[3] };
                 
-                // Per la collisione Y usiamo l'X precedente se l'abbiamo corretta
-                const tempPlayer = { x: oldX, y: newY, w: this.w, h: this.h }; 
-                
-                if (pRect.w > 0 && pRect.h > 0 && rectsOverlap(tempPlayer, pRect)) {
+                // Per il check Y usiamo l'X già corretta
+                if (pRect.w > 0 && pRect.h > 0 && rectsOverlap(this, pRect)) {
                     
                     if (this.vy > 0) { 
                         // **ATTERRAGGIO (dal sopra) - Logica Anti-Tunnelling**
                         
-                        // Solo se la vecchia posizione era sopra o al limite
-                        if (oldY + this.h <= pRect.y || oldY + this.h < pRect.y + pRect.h) { 
+                        // Controlla se la vecchia posizione Y era sopra o al limite della cima.
+                        // Questo copre sia i salti corti che i salti lunghi.
+                        if (oldY + this.h <= pRect.y + 10) { // Tolleranza 10px per frame skip
                              this.y = pRect.y - this.h; 
                              this.onGround = true; 
                              this.vy = 0; 
                         }
                         
                     } else if (this.vy < 0) { 
-                        // **TESTATA (dal sotto) - Logica corretta**
+                        // **TESTATA (dal sotto)**
                         this.y = pRect.y + pRect.h; 
                         this.vy = 0; 
                     }
@@ -151,8 +151,7 @@ const Player = function(x, y) {
             }
         }
         
-        // 7. Animazione 
-        // ... (Logica non cambiata, mantenuta per completezza)
+        // 7. Animazione (omessa logica)
         if (this.isMoving && this.onGround) {  
             this.animationTimer += dt;
             if (this.animationTimer > 0.1) {
@@ -165,7 +164,7 @@ const Player = function(x, y) {
     };
 
     this.draw = function(ctx, camX) {
-        // ... (Logica non cambiata, mantenuta per completezza)
+        // ... (Logica draw omessa per brevità)
         const x = Math.round(this.x - camX);
         const y = Math.round(this.y);
         
@@ -187,7 +186,6 @@ const Player = function(x, y) {
             // Non disegnare se invincibile (effetto lampeggiante)
         } else if (spriteReady) {
             
-            // CORREZIONE CRITICA PER IL MIRRORING
             ctx.save();
             
             if (!this.facingRight) {
