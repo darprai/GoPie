@@ -1,3 +1,5 @@
+// game.js (Versione Finale con Logica Cutscene Palo/Macchina per Level 1 E Level 2)
+
 const Game = (function() {
     const canvas = document.getElementById('game');
     const ctx = canvas ? canvas.getContext('2d') : null;
@@ -125,8 +127,9 @@ const Game = (function() {
         if (musicNormal) musicNormal.pause();
         
         if (trigger) {
-            // Posiziona il giocatore al centro orizzontale del trigger, per una transizione fluida
-            player.x = trigger[0] + trigger[2] / 2 - player.w / 2;
+            // Posiziona il giocatore in modo che sia visibile all'inizio della cutscene
+            // Lo sposto leggermente a sinistra del palo, in modo che l'animazione di entrata funzioni meglio
+            player.x = trigger[0] - player.w - 5; 
         }
         // Blocca il movimento del giocatore
         player.vy = 0;
@@ -134,7 +137,6 @@ const Game = (function() {
         player.isJumping = false;
         player.isGrounded = true;
         player.facingRight = true; 
-        player.isHit = false; 
 
         window.engine.start(); // Riattiviamo l'engine solo per il loop di disegno/update della cutscene
     }
@@ -154,7 +156,9 @@ const Game = (function() {
             camTargetX = 5650 - canvas.width / 2; 
         }
         
-        cameraX = Math.max(0, Math.min(camTargetX, currentLevel.length - canvas.width));
+        // La telecamera si muove gradualmente verso il target
+        cameraX = cameraX + (camTargetX - cameraX) * 0.05;
+        cameraX = Math.max(0, Math.min(cameraX, currentLevel.length - canvas.width));
 
         if (cutsceneTime >= CUTSCENE_DURATION) {
             isCutsceneActive = false;
@@ -193,6 +197,7 @@ const Game = (function() {
                 h: triggerPlatform[3] 
             };
             
+            // Verifichiamo la collisione tra il giocatore e l'area del palo
             if (window.rectsOverlap(player, triggerRect)) {
                 startCutscene(triggerPlatform); 
                 return; 
@@ -268,7 +273,7 @@ const Game = (function() {
         
         renderPlatforms(currentLevel.platforms, cameraX);
         
-        // Disegna Player SOLO se NON siamo nella Cutscene (altrimenti viene disegnato in drawCutscene)
+        // Disegna Player SOLO se NON siamo nella Cutscene
         if (!isCutsceneActive) {
             player.draw(ctx, cameraX); 
         }
@@ -309,7 +314,7 @@ const Game = (function() {
             // Coordinate Level 1
             paloWorldX = 3750;
             macchinaStartX = 3850;
-        } else if (currentLevelIndex === 1) {
+        } else if (currentLevelIndex === 1) { 
             // Coordinate Level 2 (Palo a 5650)
             paloWorldX = 5650;
             macchinaStartX = 5750; 
@@ -340,16 +345,14 @@ const Game = (function() {
         // 3. Animazione di Pie che entra
         if (t < 0.5) {
             // Sposta Pie verso la macchina
-            const entryX = macchinaStartX + 10;
-            // Calcola la posizione intermedia, muovendolo dal palo alla macchina
-            const targetX = paloWorldX + (entryX - paloWorldX) * (t * 2);
-            player.x = targetX - player.w / 2; // Ricalcola la posizione centrata in base al targetX
+            const entryX = macchinaStartX; 
+            // Calcola la posizione intermedia, muovendolo dal punto di partenza (a sinistra del palo) alla macchina
+            const startX = paloWorldX - player.w - 5; 
+            const targetX = startX + (entryX - startX) * (t * 2);
+            player.x = targetX - player.w / 2;
             player.draw(ctx, camX); 
-        } else if (t < 0.8) {
-             // Nasconde Pie una volta che è "entrato" nella macchina
-             // NON DISEGNARE IL PLAYER QUI
         } 
-
+        
         // Overlay finale (Fade out comune)
         if (t > 0.8) {
             const alpha = (t - 0.8) * 5; 
@@ -405,7 +408,7 @@ const Game = (function() {
     }
 
     function renderHUD() {
-            // RIMOSSO IL DOPPIO CONTATORE: l'HTML ora gestisce solo il canvas
+            // Unico posto in cui il punteggio viene disegnato (sul canvas)
             if (!ctx || !player) return; 
             ctx.fillStyle = 'white';
             ctx.font = '24px Arial';
@@ -536,10 +539,8 @@ const Game = (function() {
                     musicFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
                 }
             } else {
-                 // Assicurati che se torni al Livello 1, riparte la musica normale
                  if (musicFinal) musicFinal.pause();
-                 // Riproduce la musica normale anche per il Livello 2 (index 1)
-                 if (musicNormal && currentLevelIndex === 1) musicNormal.play().catch(e => console.log("Errore riproduzione BGM Normale:", e));
+                 if (musicNormal) musicNormal.play().catch(e => console.log("Errore riproduzione BGM Normale:", e));
             }
             
             loadLevel(currentLevelIndex, true); 
