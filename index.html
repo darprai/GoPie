@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Go Pie Go</title>
+    
+    <link rel="icon" type="image/x-icon" href="assets/sprites/favicon.ico">
+
     <style>
         body {
             display: flex;
@@ -107,7 +110,6 @@
 </audio>
 
 <script>
-    // PERCORSI CORRETTI PER LE SPRITE
     window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png'; 
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png'; 
     window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png'; 
@@ -130,11 +132,15 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         
+        // Colleghiamo il pulsante di avvio
+        const newBtn = document.getElementById('newBtn');
+        newBtn.addEventListener('click', window.Game ? window.Game.startNew : console.error('Game object non pronto.'));
+        newBtn.addEventListener('touchstart', window.Game ? window.Game.startNew : console.error('Game object non pronto.'));
+        
         if (window.Game && window.Game.init) {
             window.Game.init();
         } else {
-             // Questo errore dovrebbe ora indicare che uno degli script NON è stato trovato nella ROOT.
-             console.error("ERRORE CRITICO: Game object non trovato. Controlla che i file JS siano nella cartella principale (ROOT).");
+             console.error("ERRORE CRITICO: Game object non trovato. Controlla che i file JS siano sciolti nella cartella GoPie/.");
         }
         
         const restartBtn = document.getElementById('restartBtn');
@@ -147,3 +153,7 @@
              document.getElementById('ending-screen').style.display = 'none';
              document.getElementById('menu').style.display = 'flex';
         });
+    });
+</script>
+</body>
+</html>
