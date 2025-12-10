@@ -125,11 +125,10 @@ const Game = (function() {
         if (musicNormal) musicNormal.pause();
         
         if (trigger) {
-            // Posiziona il giocatore vicino al trigger (al centro orizzontale della piattaforma)
-            // L'offset di -1 è per assicurarsi che il player non sia mai fuori dallo schermo se la camX è bloccata
-            player.x = trigger[0] + trigger[2] / 2 - player.w / 2; 
+            // Posiziona il giocatore al centro orizzontale del trigger, per una transizione fluida
+            player.x = trigger[0] + trigger[2] / 2 - player.w / 2;
         }
-        // Blocca il movimento del giocatore durante la cutscene
+        // Blocca il movimento del giocatore
         player.vy = 0;
         player.vx = 0;
         player.isJumping = false;
@@ -180,25 +179,23 @@ const Game = (function() {
 
         // ********* CONTROLLO COLLISIONE CON IL PALO (CORRETTO) *********
         
+        let triggerPlatform = null;
         if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
             // Cerchiamo l'unica piattaforma di tipo PALO nel livello
-            const paloTrigger = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
+            triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
+        }
 
-            if (paloTrigger && window.rectsOverlap) {
-                const triggerRect = { 
-                    x: paloTrigger[0], 
-                    y: paloTrigger[1], 
-                    w: paloTrigger[2], 
-                    h: paloTrigger[3] 
-                };
-                
-                // Controlliamo la collisione AABB tra il giocatore e il palo
-                if (window.rectsOverlap(player, triggerRect)) {
-                    // Aggiungiamo un controllo di sicurezza per la posizione
-                    // Se il giocatore è entrato nel palo, attiviamo la cutscene
-                    startCutscene(paloTrigger); 
-                    return; 
-                }
+        if (triggerPlatform && window.rectsOverlap) {
+            const triggerRect = { 
+                x: triggerPlatform[0], 
+                y: triggerPlatform[1], 
+                w: triggerPlatform[2], 
+                h: triggerPlatform[3] 
+            };
+            
+            if (window.rectsOverlap(player, triggerRect)) {
+                startCutscene(triggerPlatform); 
+                return; 
             }
         }
         // ****************************************************************
@@ -346,11 +343,11 @@ const Game = (function() {
             const entryX = macchinaStartX + 10;
             // Calcola la posizione intermedia, muovendolo dal palo alla macchina
             const targetX = paloWorldX + (entryX - paloWorldX) * (t * 2);
-            player.x = targetX;
+            player.x = targetX - player.w / 2; // Ricalcola la posizione centrata in base al targetX
             player.draw(ctx, camX); 
         } else if (t < 0.8) {
-             // Nasconde Pie una volta che è "entrato" nella macchina (per evitare glitch)
-             // Non disegniamo il player in questo intervallo
+             // Nasconde Pie una volta che è "entrato" nella macchina
+             // NON DISEGNARE IL PLAYER QUI
         } 
 
         // Overlay finale (Fade out comune)
@@ -408,6 +405,7 @@ const Game = (function() {
     }
 
     function renderHUD() {
+            // RIMOSSO IL DOPPIO CONTATORE: l'HTML ora gestisce solo il canvas
             if (!ctx || !player) return; 
             ctx.fillStyle = 'white';
             ctx.font = '24px Arial';
