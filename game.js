@@ -42,10 +42,12 @@ const Game = (function() {
     
     // VARIABILI CUTSCENE
     let isCutsceneActive = false;
-    let cutsceneTime = 0;       
+    let cutsceneTime = 0;     
     const CUTSCENE_DURATION = 5.0; 
     // Aggiungo una variabile per tenere traccia delle coordinate del palo/trigger per la cutscene
     let cutsceneTriggerPosition = { x: 0, y: 0, w: 0, h: 0 };
+    // VARIABILE AGGIUNTA: Livello Y del terreno per la cutscene
+    let cutsceneGroundY = 500;
     
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
@@ -130,7 +132,7 @@ const Game = (function() {
         
         if (musicNormal) musicNormal.pause();
         
-        // Salviamo le coordinate del trigger per usarle nell'animazione
+        // Salviamo le coordinate del trigger
         cutsceneTriggerPosition = { 
             x: trigger[0], 
             y: trigger[1], 
@@ -138,8 +140,19 @@ const Game = (function() {
             h: trigger[3] 
         };
         
-        // Posiziona Pie vicino al palo (l'animazione partirà da qui)
+        // CALCOLO DINAMICO DEL LIVELLO DEL TERRENO
+        // Troviamo il livello Y della piattaforma su cui il player è atterrato per coerenza
+        // Nel livello 1, il terreno subito dopo il palo è Y=500, a X=3720
+        const groundPlatform = currentLevel.platforms.find(p => p[0] === 3720);
+        if (groundPlatform) {
+            cutsceneGroundY = groundPlatform[1];
+        } else {
+             cutsceneGroundY = 500; // Fallback
+        }
+        
+        // Posiziona Pie vicino al palo 
         player.x = cutsceneTriggerPosition.x - player.w - 10; 
+        player.y = cutsceneGroundY - player.h; // Allinea Pie al terreno
         
         // Blocca il movimento del giocatore e imposta lo stato
         player.vy = 0;
@@ -188,6 +201,7 @@ const Game = (function() {
         
         let triggerPlatform = null;
         if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
+            // Cerca il palo solo se non siamo al livello boss
             triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
         }
 
@@ -199,12 +213,14 @@ const Game = (function() {
                 h: triggerPlatform[3] 
             };
             
-            // Verifichiamo la collisione. Usiamo un'area più ampia per assicurare il contatto.
+            // Verifichiamo la collisione. 
             if (
                 player.x < triggerRect.x + triggerRect.w &&
                 player.x + player.w > triggerRect.x &&
                 player.y + player.h > triggerRect.y
             ) {
+                // Blocca il player prima di entrare nel palo per l'animazione
+                player.x = triggerRect.x - player.w + 10;
                 startCutscene(triggerPlatform); 
                 return; 
             }
@@ -248,8 +264,8 @@ const Game = (function() {
         if (!window.BossFinal || !window.BossFinal.active || !window.rectsOverlap || !player) return;
         
         if (window.BossFinal.thrown >= currentLevel.boss.projectiles) {
-             Game.endGameWin();
-             return;
+              Game.endGameWin();
+              return;
         }
         
         window.BossFinal.projectiles = window.BossFinal.projectiles.filter(p => {
@@ -303,8 +319,8 @@ const Game = (function() {
     
     function drawCutscene(ctx, camX) {
         if (!window.ragazzaSprite.complete || !window.macchinaSprite.complete) {
-             console.log("Sprite cutscene non caricate!");
-             return; // Non disegnare se le sprite chiave non sono caricate
+              console.log("Sprite cutscene non caricate!");
+              return; // Non disegnare se le sprite chiave non sono caricate
         }
         
         const t = cutsceneTime / CUTSCENE_DURATION;
@@ -312,12 +328,13 @@ const Game = (function() {
         // Costanti di dimensione e posizione
         const ragazzaW = 30, ragazzaH = 50;
         const macchinaW = 100, macchinaH = 50;
-        const groundY = 500; // Altezza del suolo (usata anche nel Player)
+        // UTILIZZA cutsceneGroundY CALCOLATA IN startCutscene
+        const groundY = cutsceneGroundY; 
         
         // Posizioni X basate sul trigger
         const paloWorldX = cutsceneTriggerPosition.x;
-        const ragazzaStandX = paloWorldX + cutsceneTriggerPosition.w - ragazzaW; // Vicino al palo
-        const macchinaStartX = paloWorldX + cutsceneTriggerPosition.w + 40; // Leggermente a destra del palo
+        const ragazzaStandX = paloWorldX + cutsceneTriggerPosition.w + 10; // A destra del palo
+        const macchinaStartX = ragazzaStandX + ragazzaW + 10; // Leggermente a destra della ragazza
         
         // Posizioni Y fisse
         const ragazzaY = groundY - ragazzaH; 
@@ -336,7 +353,7 @@ const Game = (function() {
         // --- FASE 1: Pie si muove verso la Ragazza (0.0 < t <= 0.2) ---
         if (t <= 0.2) {
             const t_phase = t / 0.2; 
-            pieWorldX = pieStartX + (ragazzaStandX - pieStartX) * t_phase;
+            pieWorldX = pieStartX + (ragazzaStandX - pieStartX - player.w - 10) * t_phase; // Pie si ferma davanti alla ragazza
             ragazzaWorldX = ragazzaStandX;
             macchinaWorldX = macchinaStartX;
         } 
@@ -345,9 +362,15 @@ const Game = (function() {
         else if (t <= 0.4) {
             const t_phase = (t - 0.2) / 0.2; 
             // Pie e Ragazza si muovono insieme verso l'area di entrata della macchina
-            pieWorldX = ragazzaStandX + (carEntryX - ragazzaStandX) * t_phase;
+            pieWorldX = (ragazzaStandX - player.w - 10) + (carEntryX - (ragazzaStandX - player.w - 10)) * t_phase;
             ragazzaWorldX = ragazzaStandX + (carEntryX - ragazzaStandX) * t_phase;
             macchinaWorldX = macchinaStartX;
+            
+            // Simula la scomparsa dei personaggi quando entrano
+            if (t_phase > 0.8) {
+                pieWorldX = carEntryX + 1000;
+                ragazzaWorldX = carEntryX + 1000;
+            }
         }
         
         // --- FASE 3: La Macchina parte (0.4 < t <= 1.0) ---
@@ -355,7 +378,7 @@ const Game = (function() {
             const t_phase = (t - 0.4) / 0.6; 
             macchinaWorldX = macchinaStartX + (carEndX - macchinaStartX) * t_phase;
             
-            // Pie e Ragazza viaggiano con la macchina (mantengono la posizione relativa)
+            // Pie e Ragazza viaggiano con la macchina (si mantengono "nascosti" all'interno)
             pieWorldX = carEntryX + (macchinaWorldX - macchinaStartX);
             ragazzaWorldX = carEntryX + (macchinaWorldX - macchinaStartX);
         }
@@ -363,15 +386,16 @@ const Game = (function() {
         // 1. Disegna Macchina
         ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
         
-        // 2. Disegna Ragazza
-        if (ragazzaWorldX - camX < canvas.width) {
-             ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
+        // 2. Disegna Ragazza (solo se visibile)
+        if (t <= 0.4) {
+            ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
         }
-
-        // 3. Disegna Pie
-        if (pieWorldX - camX < canvas.width) {
+        
+        // 3. Disegna Pie (solo se visibile)
+        if (t <= 0.4) {
             // Aggiorna la posizione di Pie e disegnalo
             player.x = pieWorldX;
+            player.y = groundY - player.h; // Mantienilo allineato al terreno
             player.draw(ctx, camX); 
         }
         
@@ -400,7 +424,8 @@ const Game = (function() {
                 } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                     spriteToUse = window.paloSprite;
                 } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
-                    spriteToUse = window.macchinaSprite;
+                    // La macchina non viene disegnata in questo ciclo, solo nella cutscene
+                    continue; 
                 }
 
                 if (spriteToUse) {
