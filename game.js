@@ -197,7 +197,7 @@ const Game = (function() {
         
         player.update(dt, input, currentLevel.platforms, currentLevel.enemies);
 
-        // ********* CONTROLLO COLLISIONE CON IL PALO *********
+        // ********* CONTROLLO COLLISIONE CON IL PALO (Trigger Cutscene) *********
         
         let triggerPlatform = null;
         if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
@@ -205,7 +205,7 @@ const Game = (function() {
             triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
         }
 
-        if (triggerPlatform && window.rectsOverlap) {
+        if (triggerPlatform) {
             const triggerRect = { 
                 x: triggerPlatform[0], 
                 y: triggerPlatform[1], 
@@ -213,16 +213,36 @@ const Game = (function() {
                 h: triggerPlatform[3] 
             };
             
-            // Verifichiamo la collisione. 
-            if (
-                player.x < triggerRect.x + triggerRect.w &&
-                player.x + player.w > triggerRect.x &&
-                player.y + player.h > triggerRect.y
-            ) {
-                // Blocca il player prima di entrare nel palo per l'animazione
-                player.x = triggerRect.x - player.w + 10;
+            // Troviamo l'altezza del terreno per la verifica verticale (deve essere definita in startCutscene, ma la ricalcoliamo per sicurezza)
+            const groundPlatform = currentLevel.platforms.find(p => p[0] === 3720);
+            const groundY = (groundPlatform ? groundPlatform[1] : 500);
+            
+            // Tassiamo una tolleranza minima di 5 pixel per il contatto
+            const TOLERANCE = 5; 
+            
+            // CONDIZIONE DI CONTATTO LATERALE E VERTICALE:
+            // 1. Il lato destro di Pie è vicino al lato sinistro del palo.
+            const horizontalContact = player.x + player.w >= triggerRect.x - TOLERANCE && player.x + player.w <= triggerRect.x + TOLERANCE;
+            
+            // 2. Pie è allineato verticalmente al livello del terreno (non sta saltando in alto o cadendo profondo).
+            const verticalAlignment = player.y + player.h >= groundY - TOLERANCE && player.y + player.h <= groundY + TOLERANCE;
+
+            if (horizontalContact && verticalAlignment) {
+                
+                // Blocca il player esattamente dove deve stare per l'animazione
+                player.x = triggerRect.x - player.w - 10; // Posiziona Pie un po' prima del palo
+                
+                // Blocca il movimento e avvia la cutscene
+                player.canMove = false;
                 startCutscene(triggerPlatform); 
                 return; 
+            }
+            
+            // ASSICURIAMOCI CHE IL PALO FUNZIONI ANCHE DA OSTACOLO
+            // Se il player è in collisione AABB generica e sta tentando di muoversi a destra:
+            if (window.rectsOverlap && window.rectsOverlap(player, triggerRect) && player.vx > 0) {
+                 // Blocca l'avanzamento per evitare che lo superi
+                 player.x = triggerRect.x - player.w;
             }
         }
         // ****************************************************************
