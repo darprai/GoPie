@@ -15,11 +15,11 @@ const Game = (function() {
     // ************************************************************
     
     // Player & Items
-    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png'; 
+    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
     window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
     window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
-    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
+    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png';
     
     // Piattaforme/Trigger
     window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
@@ -29,21 +29,21 @@ const Game = (function() {
     
     // Cutscene & Boss
     window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
-    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png'; 
+    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
     // ************************************************************
 
-    let player; 
+    let player;
     let currentLevelIndex = 0;
     let levels = [];
     let currentLevel;
     let cameraX = 0;
     
-    let isTransitioning = false; 
+    let isTransitioning = false;
     
     // VARIABILI CUTSCENE
     let isCutsceneActive = false;
-    let cutsceneTime = 0;     
-    const CUTSCENE_DURATION = 5.0; 
+    let cutsceneTime = 0;
+    const CUTSCENE_DURATION = 5.0;
     // Aggiungo una variabile per tenere traccia delle coordinate del palo/trigger per la cutscene
     let cutsceneTriggerPosition = { x: 0, y: 0, w: 0, h: 0 };
     // VARIABILE AGGIUNTA: Livello Y del terreno per la cutscene
@@ -57,7 +57,7 @@ const Game = (function() {
         const levelPromises = [
             fetch('levels/level1.json').then(res => res.json()),
             fetch('levels/level2.json').then(res => res.json()),
-            fetch('levels/level3.json').then(res => res.json()) 
+            fetch('levels/level3.json').then(res => res.json())
         ];
 
         return Promise.all(levelPromises)
@@ -69,7 +69,7 @@ const Game = (function() {
                 console.error("Errore CRITICO nel caricamento di un file JSON del livello.", error);
                 const loadingMessage = document.getElementById('loading-message');
                 loadingMessage.textContent = "ERRORE: Impossibile caricare i livelli (404/Network). Controlla la cartella 'levels/'.";
-                loadingMessage.style.display = 'block'; 
+                loadingMessage.style.display = 'block';
                 document.getElementById('newBtn').disabled = true;
                 return false;
             });
@@ -96,24 +96,24 @@ const Game = (function() {
         const startX = currentLevel.playerStart.x;
         const startY = currentLevel.playerStart.y;
         
-        if (!player) { 
-            player = new window.Player(startX, startY); 
+        if (!player) {
+            player = new window.Player(startX, startY);
         } else {
             const currentScore = player.score;
             if (preserveScore) {
-                player.reset(startX, startY); 
+                player.reset(startX, startY);
                 player.score = currentScore;
             } else {
-                player.resetFull(startX, startY); 
+                player.resetFull(startX, startY);
             }
         }
         
         cameraX = 0;
         
         if (currentLevelIndex === 2 && window.BossFinal) {
-             window.BossFinal.reset();
-             const config = currentLevel.boss;
-             window.BossFinal.start(config.x, config.y, config); 
+            window.BossFinal.reset();
+            const config = currentLevel.boss;
+            window.BossFinal.start(config.x, config.y, config);
         }
         
         return !!player;
@@ -123,46 +123,46 @@ const Game = (function() {
     // GESTIONE CUTSCENE (INIZIO E AGGIORNAMENTO)
     // ************************************************************
 
-    function startCutscene(trigger) { 
+    function startCutscene(trigger) {
         if (isCutsceneActive || isTransitioning) return;
         
         isCutsceneActive = true;
         cutsceneTime = 0;
-        window.engine.stop(); 
+        window.engine.stop();
         
         if (musicNormal) musicNormal.pause();
         
         // Salviamo le coordinate del trigger
-        cutsceneTriggerPosition = { 
-            x: trigger[0], 
-            y: trigger[1], 
-            w: trigger[2], 
-            h: trigger[3] 
+        cutsceneTriggerPosition = {
+            x: trigger[0],
+            y: trigger[1],
+            w: trigger[2],
+            h: trigger[3]
         };
         
         // CALCOLO DINAMICO DEL LIVELLO DEL TERRENO
-        // Troviamo il livello Y della piattaforma su cui il player è atterrato per coerenza
-        // Nel livello 1, il terreno subito dopo il palo è Y=500, a X=3720
-        const groundPlatform = currentLevel.platforms.find(p => p[0] === 3720);
+        // Cerchiamo la piattaforma che funge da "terreno" al punto 3720x540
+        // (Assumendo che questa piattaforma esista nel livello 1)
+        const groundPlatform = currentLevel.platforms.find(p => p[0] === 3720 && p[1] === 540); 
         if (groundPlatform) {
-            cutsceneGroundY = groundPlatform[1];
+            cutsceneGroundY = groundPlatform[1]; // Y=540
         } else {
-             cutsceneGroundY = 500; // Fallback
+            cutsceneGroundY = 540; // Fallback se non è trovata
         }
         
-        // Posiziona Pie vicino al palo 
-        player.x = cutsceneTriggerPosition.x - player.w - 10; 
-        player.y = cutsceneGroundY - player.h; // Allinea Pie al terreno
+        // Posiziona Pie vicino al palo (posizione iniziale)
+        player.x = cutsceneTriggerPosition.x - player.w - 10;
+        player.y = cutsceneGroundY - player.h; // Allinea Pie al terreno (Y=540 - 48 = 492)
         
         // Blocca il movimento del giocatore e imposta lo stato
         player.vy = 0;
         player.vx = 0;
         player.isJumping = false;
-        player.isGrounded = true;
-        player.facingRight = true; 
-        player.canMove = false; 
-
-        window.engine.start(); 
+        player.isGrounded = true; // Necessario per draw()
+        player.facingRight = true;
+        player.canMove = false; // Player non può muoversi
+        
+        window.engine.start(); // Il loop deve continuare per animare la cutscene
     }
     
     function updateCutscene(dt) {
@@ -178,7 +178,8 @@ const Game = (function() {
         if (cutsceneTime >= CUTSCENE_DURATION) {
             isCutsceneActive = false;
             player.canMove = true;
-            window.engine.stop(); 
+            // Interrompi e riavvia il motore di gioco per ripristinare il dt e la logica normale
+            window.engine.stop();
             Game.nextLevel(); // Transizione al livello 2
         }
     }
@@ -188,61 +189,67 @@ const Game = (function() {
     // ************************************************************
 
     function update(dt, input) {
-        if (!currentLevel || !player || !window.engine || isTransitioning) return; 
+        if (!currentLevel || !player || !window.engine || isTransitioning) return;
 
         if (isCutsceneActive) {
-            updateCutscene(dt); 
+            updateCutscene(dt);
             return;
-        } 
+        }
         
         player.update(dt, input, currentLevel.platforms, currentLevel.enemies);
 
         // ********* CONTROLLO COLLISIONE CON IL PALO (Trigger Cutscene) *********
         
         let triggerPlatform = null;
-        if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
-            // Cerca il palo solo se non siamo al livello boss
+        if (currentLevelIndex === 0) { // Solo Level 1 ha la cutscene (si avvia PALO)
             triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
+        } else if (currentLevelIndex === 1) { // Il Level 2 potrebbe avere un'altra cutscene con MACCHINA
+            triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.MACCHINA);
         }
 
         if (triggerPlatform) {
-            const triggerRect = { 
-                x: triggerPlatform[0], 
-                y: triggerPlatform[1], 
-                w: triggerPlatform[2], 
-                h: triggerPlatform[3] 
+            const triggerRect = {
+                x: triggerPlatform[0],
+                y: triggerPlatform[1],
+                w: triggerPlatform[2],
+                h: triggerPlatform[3]
             };
             
-            // Troviamo l'altezza del terreno per la verifica verticale (deve essere definita in startCutscene, ma la ricalcoliamo per sicurezza)
-            const groundPlatform = currentLevel.platforms.find(p => p[0] === 3720);
-            const groundY = (groundPlatform ? groundPlatform[1] : 500);
+            // Assumo che il terreno sia Y=540 in Level 1 per l'allineamento verticale
+            // Altrimenti dovrai trovare dinamicamente la piattaforma sotto il trigger.
+            // Visto che l'hai definita nel Level 1 (3720, 540), usiamo 540 come riferimento.
+            const groundY = 540; 
             
             // Tassiamo una tolleranza minima di 5 pixel per il contatto
-            const TOLERANCE = 5; 
+            const TOLERANCE = 5;
             
             // CONDIZIONE DI CONTATTO LATERALE E VERTICALE:
-            // 1. Il lato destro di Pie è vicino al lato sinistro del palo.
+            // 1. Il lato destro di Pie è vicino al lato sinistro del palo/trigger.
+            // 2. Pie è allineato verticalmente al livello del terreno (non sta saltando in alto o cadendo profondo).
+            
+            const playerBottomY = player.y + player.h;
+            
             const horizontalContact = player.x + player.w >= triggerRect.x - TOLERANCE && player.x + player.w <= triggerRect.x + TOLERANCE;
             
-            // 2. Pie è allineato verticalmente al livello del terreno (non sta saltando in alto o cadendo profondo).
-            const verticalAlignment = player.y + player.h >= groundY - TOLERANCE && player.y + player.h <= groundY + TOLERANCE;
+            // Verifichiamo che Pie sia "a terra" o molto vicino al livello del terreno (Y=540)
+            const verticalAlignment = playerBottomY >= groundY - TOLERANCE && playerBottomY <= groundY + TOLERANCE; 
 
             if (horizontalContact && verticalAlignment) {
                 
-                // Blocca il player esattamente dove deve stare per l'animazione
-                player.x = triggerRect.x - player.w - 10; // Posiziona Pie un po' prima del palo
+                // Blocca il player esattamente dove deve stare per l'animazione (riposizionamento esatto)
+                player.x = triggerRect.x - player.w - 10; 
+                player.y = groundY - player.h; // Allinea perfettamente al terreno
                 
                 // Blocca il movimento e avvia la cutscene
                 player.canMove = false;
-                startCutscene(triggerPlatform); 
-                return; 
+                startCutscene(triggerPlatform);
+                return;
             }
             
             // ASSICURIAMOCI CHE IL PALO FUNZIONI ANCHE DA OSTACOLO
-            // Se il player è in collisione AABB generica e sta tentando di muoversi a destra:
             if (window.rectsOverlap && window.rectsOverlap(player, triggerRect) && player.vx > 0) {
-                 // Blocca l'avanzamento per evitare che lo superi
                  player.x = triggerRect.x - player.w;
+                 player.vx = 0;
             }
         }
         // ****************************************************************
@@ -251,7 +258,7 @@ const Game = (function() {
         if (currentLevelIndex === 2) {
             if (window.BossFinal && window.BossFinal.active) {
                 window.BossFinal.update(dt, player, cameraX);
-                handleBossCollisions(); 
+                handleBossCollisions();
             }
         }
         
@@ -260,16 +267,12 @@ const Game = (function() {
         cameraX = Math.max(0, Math.min(targetX, currentLevel.length - canvas.width));
         
         if (currentLevel.length <= canvas.width) {
-             cameraX = 0; 
+             cameraX = 0;
         }
 
         // Controllo EndZone (Solo Level 3 Boss)
         const endZone = currentLevel.endZone;
-        if (endZone && currentLevelIndex === 2 && player.x + player.w > endZone.x && 
-            player.x < endZone.x + endZone.w &&
-            player.y + player.h > endZone.y && 
-            player.y < endZone.y + endZone.h) {
-            
+        if (endZone && currentLevelIndex === 2 && window.rectsOverlap(player, endZone)) {
             Game.endGameWin();
         }
     }
@@ -284,18 +287,18 @@ const Game = (function() {
         if (!window.BossFinal || !window.BossFinal.active || !window.rectsOverlap || !player) return;
         
         if (window.BossFinal.thrown >= currentLevel.boss.projectiles) {
-              Game.endGameWin();
-              return;
+             Game.endGameWin();
+             return;
         }
         
         window.BossFinal.projectiles = window.BossFinal.projectiles.filter(p => {
             if (window.rectsOverlap(player, p)) {
-                if (player.hit()) { 
-                    player.x = Math.max(0, player.x - 50); 
+                if (player.hit()) {
+                    player.x = Math.max(0, player.x - 50);
                 }
-                return false; 
+                return false;
             }
-            return true; 
+            return true;
         });
     }
 
@@ -304,21 +307,21 @@ const Game = (function() {
     // ************************************************************
 
     function draw() {
-        if (!currentLevel || !ctx || !player) return; 
+        if (!currentLevel || !ctx || !player) return;
 
         // 1. Disegna Sfondo
         if (window.backgroundSprite && window.backgroundSprite.complete) {
             ctx.drawImage(window.backgroundSprite, 0, 0, canvas.width, canvas.height);
         } else {
-            ctx.fillStyle = '#000000'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height); 
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         
         renderPlatforms(currentLevel.platforms, cameraX);
         
         // Disegna Player SOLO se NON siamo nella Cutscene (sarà disegnato da drawCutscene se attiva)
         if (!isCutsceneActive) {
-            player.draw(ctx, cameraX); 
+            player.draw(ctx, cameraX);
         }
         
         renderEnemies(currentLevel.enemies, cameraX);
@@ -326,68 +329,71 @@ const Game = (function() {
         // Boss e HUD Boss
         if (currentLevelIndex === 2 && window.BossFinal && window.BossFinal.active) {
             window.BossFinal.render(ctx, cameraX);
-            renderBossHUD(); 
+            renderBossHUD();
         }
         
         // Disegna la Cutscene sopra gli oggetti di gioco
         if (isCutsceneActive) {
-            drawCutscene(ctx, cameraX); 
+            drawCutscene(ctx, cameraX);
         }
         
-        renderHUD(); 
+        renderHUD();
     }
     
     function drawCutscene(ctx, camX) {
         if (!window.ragazzaSprite.complete || !window.macchinaSprite.complete) {
-              console.log("Sprite cutscene non caricate!");
-              return; // Non disegnare se le sprite chiave non sono caricate
+              return; 
         }
         
         const t = cutsceneTime / CUTSCENE_DURATION;
         
-        // Costanti di dimensione e posizione
+        // Costanti di dimensione e posizione (riprese dal Player e da Platform)
         const ragazzaW = 30, ragazzaH = 50;
         const macchinaW = 100, macchinaH = 50;
-        // UTILIZZA cutsceneGroundY CALCOLATA IN startCutscene
-        const groundY = cutsceneGroundY; 
+        const groundY = cutsceneGroundY; // Y=540
         
-        // Posizioni X basate sul trigger
+        // Posizioni X basate sul trigger (Palo)
         const paloWorldX = cutsceneTriggerPosition.x;
         const ragazzaStandX = paloWorldX + cutsceneTriggerPosition.w + 10; // A destra del palo
         const macchinaStartX = ragazzaStandX + ragazzaW + 10; // Leggermente a destra della ragazza
         
         // Posizioni Y fisse
-        const ragazzaY = groundY - ragazzaH; 
-        const macchinaY = groundY - macchinaH; 
+        const ragazzaY = groundY - ragazzaH; // 540 - 50 = 490
+        const macchinaY = groundY - macchinaH; // 540 - 50 = 490
         
         // Punti di riferimento per l'animazione
         const pieStartX = paloWorldX - player.w - 10;
-        const carEntryX = macchinaStartX + macchinaW / 2 - player.w / 2; 
-        const carEndX = macchinaStartX + canvas.width; 
+        const pieStopX = ragazzaStandX - player.w - 5; // Pie si ferma poco prima della Ragazza
+        const carEntryX = macchinaStartX + macchinaW / 2 - player.w / 2; // Centro Macchina
+        const carEndX = macchinaStartX + canvas.width;
         
         // Variabili animate
-        let pieWorldX = 0;
-        let ragazzaWorldX = 0;
+        let pieWorldX = pieStartX;
+        let ragazzaWorldX = ragazzaStandX;
         let macchinaWorldX = macchinaStartX;
         
         // --- FASE 1: Pie si muove verso la Ragazza (0.0 < t <= 0.2) ---
         if (t <= 0.2) {
-            const t_phase = t / 0.2; 
-            pieWorldX = pieStartX + (ragazzaStandX - pieStartX - player.w - 10) * t_phase; // Pie si ferma davanti alla ragazza
-            ragazzaWorldX = ragazzaStandX;
-            macchinaWorldX = macchinaStartX;
+            const t_phase = t / 0.2;
+            pieWorldX = pieStartX + (pieStopX - pieStartX) * t_phase;
+            player.facingRight = true; // Assicuriamoci che stia guardando a destra
         } 
         
         // --- FASE 2: Pie e Ragazza salgono in Macchina (0.2 < t <= 0.4) ---
         else if (t <= 0.4) {
-            const t_phase = (t - 0.2) / 0.2; 
-            // Pie e Ragazza si muovono insieme verso l'area di entrata della macchina
-            pieWorldX = (ragazzaStandX - player.w - 10) + (carEntryX - (ragazzaStandX - player.w - 10)) * t_phase;
-            ragazzaWorldX = ragazzaStandX + (carEntryX - ragazzaStandX) * t_phase;
-            macchinaWorldX = macchinaStartX;
+            const t_phase = (t - 0.2) / 0.2;
             
-            // Simula la scomparsa dei personaggi quando entrano
+            // Pie si muove verso la macchina
+            const pieMoveToCarX = pieStopX + (carEntryX - pieStopX) * t_phase;
+            pieWorldX = pieMoveToCarX;
+
+            // Ragazza si muove verso la macchina
+            const ragazzaMoveToCarX = ragazzaStandX + (carEntryX - ragazzaStandX) * t_phase;
+            ragazzaWorldX = ragazzaMoveToCarX;
+
+            // Simula la scomparsa dei personaggi quando entrano (quando t_phase > 0.8)
             if (t_phase > 0.8) {
+                // Li spostiamo fuori schermo in modo che vengano ignorati dal draw
                 pieWorldX = carEntryX + 1000;
                 ragazzaWorldX = carEntryX + 1000;
             }
@@ -395,10 +401,11 @@ const Game = (function() {
         
         // --- FASE 3: La Macchina parte (0.4 < t <= 1.0) ---
         else {
-            const t_phase = (t - 0.4) / 0.6; 
+            const t_phase = (t - 0.4) / 0.6;
+            // La macchina si sposta fuori dallo schermo
             macchinaWorldX = macchinaStartX + (carEndX - macchinaStartX) * t_phase;
             
-            // Pie e Ragazza viaggiano con la macchina (si mantengono "nascosti" all'interno)
+            // Pie e Ragazza viaggiano con la macchina (mantengono le coordinate iniziali + offset)
             pieWorldX = carEntryX + (macchinaWorldX - macchinaStartX);
             ragazzaWorldX = carEntryX + (macchinaWorldX - macchinaStartX);
         }
@@ -407,190 +414,191 @@ const Game = (function() {
         ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
         
         // 2. Disegna Ragazza (solo se visibile)
-        if (t <= 0.4) {
+        if (ragazzaWorldX < canvas.width + camX) { // Controllo visibilità
             ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
         }
         
         // 3. Disegna Pie (solo se visibile)
-        if (t <= 0.4) {
-            // Aggiorna la posizione di Pie e disegnalo
+        if (pieWorldX < canvas.width + camX) { // Controllo visibilità
+            // Aggiorna la posizione di Pie e disegnalo usando la sua draw()
             player.x = pieWorldX;
-            player.y = groundY - player.h; // Mantienilo allineato al terreno
-            player.draw(ctx, camX); 
+            player.y = groundY - player.h;
+            player.isMoving = (t <= 0.2); // Anima il movimento solo in FASE 1
+            player.draw(ctx, camX);
         }
         
         // Overlay finale (Fade out)
         if (t > 0.8) {
-            const alpha = (t - 0.8) * 5; 
+            const alpha = (t - 0.8) * 5;
             ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(1, alpha)})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
     }
     
     function renderPlatforms(platforms, camX) {
-            if (!ctx) return;
-            for (let p of platforms) {
-                const x = Math.round(p[0] - camX);
-                const y = Math.round(p[1]);
-                const w = p[2];
-                const h = p[3];
-                const type = p[4]; 
-                let spriteToUse = null;
+        if (!ctx) return;
+        for (let p of platforms) {
+            const x = Math.round(p[0] - camX);
+            const y = Math.round(p[1]);
+            const w = p[2];
+            const h = p[3];
+            const type = p[4];
+            let spriteToUse = null;
 
-                if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
-                    spriteToUse = window.discoBallSprite;
-                } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
-                    spriteToUse = window.djDiscSprite;
-                } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
-                    spriteToUse = window.paloSprite;
-                } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
-                    // La macchina non viene disegnata in questo ciclo, solo nella cutscene
-                    continue; 
-                }
-
-                if (spriteToUse) {
-                    ctx.drawImage(spriteToUse, x, y, w, h);
-                } else {
-                    ctx.fillStyle = "black"; 
-                    ctx.fillRect(x, y, w, h);
-                }
+            if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
+                spriteToUse = window.discoBallSprite;
+            } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
+                spriteToUse = window.djDiscSprite;
+            } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
+                spriteToUse = window.paloSprite;
+            } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
+                // La macchina non viene disegnata qui, solo nella cutscene
+                continue;
             }
+
+            if (spriteToUse) {
+                ctx.drawImage(spriteToUse, x, y, w, h);
+            } else {
+                ctx.fillStyle = "black";
+                ctx.fillRect(x, y, w, h);
+            }
+        }
     }
     
     function renderEnemies(enemies, camX) {
-            if (!enemies || !ctx) return;
-            for (let e of enemies) {
-                const x = Math.round(e.x - camX);
-                const y = Math.round(e.y);
-                
-                if (e.type === 'drink' && window.drinkEnemySprite && window.drinkEnemySprite.complete) {
-                    ctx.drawImage(window.drinkEnemySprite, x, y, e.w, e.h);
-                } else if (e.type === 'heart' && window.heartSprite && window.heartSprite.complete) {
-                    ctx.drawImage(window.heartSprite, x, y, e.w, e.h);
-                } else {
-                    ctx.fillStyle = (e.type === 'drink') ? 'purple' : 'pink';
-                    ctx.fillRect(x, y, e.w, e.h);
-                }
+        if (!enemies || !ctx) return;
+        for (let e of enemies) {
+            const x = Math.round(e.x - camX);
+            const y = Math.round(e.y);
+            
+            if (e.type === 'drink' && window.drinkEnemySprite && window.drinkEnemySprite.complete) {
+                ctx.drawImage(window.drinkEnemySprite, x, y, e.w, e.h);
+            } else if (e.type === 'heart' && window.heartSprite && window.heartSprite.complete) {
+                ctx.drawImage(window.heartSprite, x, y, e.w, e.h);
+            } else {
+                ctx.fillStyle = (e.type === 'drink') ? 'purple' : 'pink';
+                ctx.fillRect(x, y, e.w, e.h);
             }
+        }
     }
 
     function renderHUD() {
-            // FUNZIONE VUOTA: IL PUNTEGGIO NON VIENE PIÙ DISEGNATO
+        // La funzione draw() del player gestisce il punteggio
     }
     
     function renderBossHUD() {
         if (!window.BossFinal || !currentLevel.boss || !ctx) return;
-          
+        
         const thrown = window.BossFinal.thrown;
         const max = currentLevel.boss.projectiles;
         const progress = thrown / max;
-          
+        
         const barW = canvas.width / 3;
         const barH = 15;
         const x = canvas.width - barW - 20;
         const y = 30;
-          
+        
         ctx.fillStyle = 'gray';
         ctx.fillRect(x, y, barW, barH);
-          
+        
         ctx.fillStyle = 'yellow';
         ctx.fillRect(x, y, barW * progress, barH);
-          
+        
         ctx.fillStyle = 'white';
         ctx.font = '14px Arial';
         ctx.textAlign = 'right';
         ctx.fillText(`BOSS: ${thrown} / ${max}`, canvas.width - 20, y - 5);
-        ctx.textAlign = 'left'; 
+        ctx.textAlign = 'left';
     }
 
     function toggleFullScreen() {
-            const doc = window.document;
-            const docEl = doc.documentElement;
+        const doc = window.document;
+        const docEl = doc.documentElement;
 
-            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+        const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
 
-            if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-                requestFullScreen.call(docEl).catch(err => {
-                    console.warn("Impossibile attivare il fullscreen (richiede interazione utente):", err);
-                });
-            } 
+        if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+            requestFullScreen.call(docEl).catch(err => {
+                console.warn("Impossibile attivare il fullscreen (richiede interazione utente):", err);
+            });
+        }
     }
     
     function init() {
-            const newBtn = document.getElementById('newBtn');
-            const loadingMessage = document.getElementById('loading-message');
-            const hintText = document.getElementById('hint-text');
+        const newBtn = document.getElementById('newBtn');
+        const loadingMessage = document.getElementById('loading-message');
+        const hintText = document.getElementById('hint-text');
 
-            loadingMessage.style.display = 'none'; 
-            hintText.style.display = 'none'; 
+        loadingMessage.style.display = 'none';
+        hintText.style.display = 'none';
 
-            newBtn.disabled = true;
-            newBtn.textContent = "Caricamento risorse in corso..."; 
-            
-            // Elenco completo delle sprite globali definite sopra
-            const spritesToLoad = [
-                window.playerSprite, window.runSprite, window.heartSprite, 
-                window.drinkEnemySprite, window.discoBallSprite, window.djDiscSprite, 
-                window.paloSprite, window.macchinaSprite, window.bossSprite,
-                window.backgroundSprite, window.ragazzaSprite
-            ];
-            
-            const spritePromises = spritesToLoad.map(sprite => {
-                return new Promise((resolve, reject) => {
-                    if (sprite.complete) {
+        newBtn.disabled = true;
+        newBtn.textContent = "Caricamento risorse in corso...";
+        
+        // Elenco completo delle sprite globali definite sopra
+        const spritesToLoad = [
+            window.playerSprite, window.runSprite, window.heartSprite,
+            window.drinkEnemySprite, window.discoBallSprite, window.djDiscSprite,
+            window.paloSprite, window.macchinaSprite, window.bossSprite,
+            window.backgroundSprite, window.ragazzaSprite
+        ];
+        
+        const spritePromises = spritesToLoad.map(sprite => {
+            return new Promise((resolve, reject) => {
+                if (sprite.complete) {
+                    resolve();
+                } else {
+                    sprite.onload = resolve;
+                    sprite.onerror = () => {
+                        // Se una sprite fallisce, la ignoriamo e andiamo avanti (ma lo logghiamo)
+                        console.warn(`Attenzione: Impossibile caricare la sprite: ${sprite.src}. Continuo...`);
                         resolve();
-                    } else {
-                        sprite.onload = resolve;
-                        sprite.onerror = () => {
-                            // Se una sprite fallisce, la ignoriamo e andiamo avanti (ma lo logghiamo)
-                            console.warn(`Attenzione: Impossibile caricare la sprite: ${sprite.src}. Continuo...`);
-                            resolve(); 
-                        };
-                    }
-                });
+                    };
+                }
             });
+        });
 
-            Promise.all(spritePromises)
-                .then(() => loadLevels())
-                .then(success => {
-                    if (success) {
-                        newBtn.textContent = "Nuova Partita";
-                        newBtn.disabled = false;
-                        hintText.style.display = 'block'; 
-                    } 
-                })
-                .catch(error => {
-                    console.error("Errore critico durante il caricamento delle risorse (Livelli):", error);
-                    loadingMessage.textContent = `Errore critico di caricamento. Verifica i file di livello: ${error}`;
-                    loadingMessage.style.display = 'block'; 
-                    newBtn.disabled = true;
-                });
+        Promise.all(spritePromises)
+            .then(() => loadLevels())
+            .then(success => {
+                if (success) {
+                    newBtn.textContent = "Nuova Partita";
+                    newBtn.disabled = false;
+                    hintText.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error("Errore critico durante il caricamento delle risorse (Livelli):", error);
+                loadingMessage.textContent = `Errore critico di caricamento. Verifica i file di livello: ${error}`;
+                loadingMessage.style.display = 'block';
+                newBtn.disabled = true;
+            });
     }
 
     function startNew(e) {
-            if(e) e.preventDefault(); 
-            
-            if (!levels.length || !window.engine) { 
-                return;
-            }
-            
-            toggleFullScreen(); 
-            
-            const playerLoaded = loadLevel(0, false); 
+        if(e) e.preventDefault();
+        
+        if (!levels.length || !window.engine) {
+            return;
+        }
+        
+        toggleFullScreen();
+        
+        const playerLoaded = loadLevel(0, false);
+        
+        if (!playerLoaded) {
+            return;
+        }
 
-            if (!playerLoaded) {
-                return;
-            }
+        menuDiv.style.display = 'none';
+        gameContainer.style.display = 'block';
 
-            menuDiv.style.display = 'none';
-            gameContainer.style.display = 'block';
-
-            if (musicNormal) {
-                musicNormal.loop = true;
-                musicNormal.play().catch(e => console.log("Audio BGM bloccato:", e));
-            }
-            
-            window.engine.start(); 
+        if (musicNormal) {
+            musicNormal.loop = true;
+            musicNormal.play().catch(e => console.log("Audio BGM bloccato:", e));
+        }
+        
+        window.engine.start();
     }
     
     function nextLevel() {
@@ -609,12 +617,12 @@ const Game = (function() {
                     musicFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
                 }
             } else {
-                 // Passaggio a Livello Normale
-                 if (musicFinal) musicFinal.pause();
-                 if (musicNormal) musicNormal.play().catch(e => console.log("Errore riproduzione BGM Normale:", e));
+                // Passaggio a Livello Normale
+                if (musicFinal) musicFinal.pause();
+                if (musicNormal) musicNormal.play().catch(e => console.log("Errore riproduzione BGM Normale:", e));
             }
             
-            loadLevel(currentLevelIndex, true); 
+            loadLevel(currentLevelIndex, true);
             isTransitioning = false;
             
             if (window.engine) window.engine.start(); // Riattiva il loop di gioco
@@ -633,14 +641,14 @@ const Game = (function() {
         if (window.engine) window.engine.stop();
         if (musicNormal) musicNormal.pause();
         if (musicFinal) musicFinal.pause();
-        if (player) window.Ending.showWinScreen("Pie diventa King!", player.score); 
+        if (player) window.Ending.showWinScreen("Pie diventa King!", player.score);
     }
 
     function onPlayerDied() {
         if (isTransitioning) return;
-        isTransitioning = true; 
+        isTransitioning = true;
         
-        if (window.engine) window.engine.stop(); 
+        if (window.engine) window.engine.stop();
         
         setTimeout(() => {
             
@@ -648,7 +656,7 @@ const Game = (function() {
                  currentLevel.enemies = JSON.parse(JSON.stringify(currentLevel.originalEnemies));
             }
             
-            loadLevel(currentLevelIndex, true); 
+            loadLevel(currentLevelIndex, true);
             
             if (currentLevelIndex === 2) {
                 if (musicNormal) musicNormal.pause();
@@ -663,11 +671,11 @@ const Game = (function() {
 
             if (window.engine) window.engine.start();
             isTransitioning = false;
-        }, 500); 
+        }, 500);
     }
     
     function setEngine(engine) {
-        window.engine = engine; 
+        window.engine = engine;
     }
     
     return {
@@ -675,14 +683,14 @@ const Game = (function() {
         nextLevel: nextLevel,
         endGameWin: endGameWin,
         onPlayerDied: onPlayerDied,
-        init: init, 
-        update: update, 
-        draw: draw, 
-        setEngine: setEngine, 
+        init: init,
+        update: update,
+        draw: draw,
+        setEngine: setEngine,
         getCurLevelIndex: () => currentLevelIndex,
-        removeEnemy: removeEnemy, 
-        player: () => player, 
-        isCutsceneActive: () => isCutsceneActive 
+        removeEnemy: removeEnemy,
+        player: () => player,
+        isCutsceneActive: () => isCutsceneActive
     };
 })();
 
