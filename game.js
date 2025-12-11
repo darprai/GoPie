@@ -180,7 +180,7 @@ const Game = (function() {
             player.canMove = true;
             // Interrompi e riavvia il motore di gioco per ripristinare il dt e la logica normale
             window.engine.stop();
-            Game.nextLevel(); // Transizione al livello 2
+            Game.nextLevel(); // Transizione al livello successivo
         }
     }
 
@@ -201,10 +201,10 @@ const Game = (function() {
         // ********* CONTROLLO COLLISIONE CON IL PALO (Trigger Cutscene) *********
         
         let triggerPlatform = null;
-        if (currentLevelIndex === 0) { // Cerca il palo in Level 1
+        
+        // CORREZIONE APPLICATA QUI: Usa PALO come trigger sia in Level 1 (index 0) che in Level 2 (index 1)
+        if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
             triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
-        } else if (currentLevelIndex === 1) { // Cerca la macchina in Level 2
-            triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.MACCHINA);
         }
 
         if (triggerPlatform) {
@@ -443,12 +443,14 @@ const Game = (function() {
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                 spriteToUse = window.paloSprite;
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
+                // La macchina è disegnata nella cutscene e non come piattaforma fissa
                 continue;
             }
 
             if (spriteToUse) {
                 ctx.drawImage(spriteToUse, x, y, w, h);
             } else {
+                // Disegna rettangoli di fallback per le piattaforme normali o non riconosciute
                 ctx.fillStyle = "black";
                 ctx.fillRect(x, y, w, h);
             }
