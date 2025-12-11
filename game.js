@@ -1,4 +1,4 @@
-// game.js (Versione Finale con Logica Cutscene Palo/Macchina per Level 1 E Level 2)
+// game.js (Versione Finale con Logica Cutscene Facile)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -47,7 +47,7 @@ const Game = (function() {
     // Aggiungo una variabile per tenere traccia delle coordinate del palo/trigger per la cutscene
     let cutsceneTriggerPosition = { x: 0, y: 0, w: 0, h: 0 };
     // VARIABILE AGGIUNTA: Livello Y del terreno per la cutscene
-    let cutsceneGroundY = 500;
+    let cutsceneGroundY = 540; // Impostato a 540, il valore tipico per il terreno in L1
     
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
@@ -141,8 +141,7 @@ const Game = (function() {
         };
         
         // CALCOLO DINAMICO DEL LIVELLO DEL TERRENO
-        // Cerchiamo la piattaforma che funge da "terreno" al punto 3720x540
-        // (Assumendo che questa piattaforma esista nel livello 1)
+        // Cerchiamo la piattaforma che funge da "terreno" (es. L1 3720x540)
         const groundPlatform = currentLevel.platforms.find(p => p[0] === 3720 && p[1] === 540); 
         if (groundPlatform) {
             cutsceneGroundY = groundPlatform[1]; // Y=540
@@ -152,15 +151,15 @@ const Game = (function() {
         
         // Posiziona Pie vicino al palo (posizione iniziale)
         player.x = cutsceneTriggerPosition.x - player.w - 10;
-        player.y = cutsceneGroundY - player.h; // Allinea Pie al terreno (Y=540 - 48 = 492)
+        player.y = cutsceneGroundY - player.h; // Allinea Pie al terreno
         
         // Blocca il movimento del giocatore e imposta lo stato
         player.vy = 0;
         player.vx = 0;
         player.isJumping = false;
-        player.isGrounded = true; // Necessario per draw()
+        player.isGrounded = true;
         player.facingRight = true;
-        player.canMove = false; // Player non può muoversi
+        player.canMove = false;
         
         window.engine.start(); // Il loop deve continuare per animare la cutscene
     }
@@ -201,9 +200,9 @@ const Game = (function() {
         // ********* CONTROLLO COLLISIONE CON IL PALO (Trigger Cutscene) *********
         
         let triggerPlatform = null;
-        if (currentLevelIndex === 0) { // Solo Level 1 ha la cutscene (si avvia PALO)
+        if (currentLevelIndex === 0) { // Cerca il palo in Level 1
             triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
-        } else if (currentLevelIndex === 1) { // Il Level 2 potrebbe avere un'altra cutscene con MACCHINA
+        } else if (currentLevelIndex === 1) { // Cerca la macchina in Level 2
             triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.MACCHINA);
         }
 
@@ -215,38 +214,16 @@ const Game = (function() {
                 h: triggerPlatform[3]
             };
             
-            // Assumo che il terreno sia Y=540 in Level 1 per l'allineamento verticale
-            // Altrimenti dovrai trovare dinamicamente la piattaforma sotto il trigger.
-            // Visto che l'hai definita nel Level 1 (3720, 540), usiamo 540 come riferimento.
-            const groundY = 540; 
-            
-            // Tassiamo una tolleranza minima di 5 pixel per il contatto
-            const TOLERANCE = 5;
-            
-            // CONDIZIONE DI CONTATTO LATERALE E VERTICALE:
-            // 1. Il lato destro di Pie è vicino al lato sinistro del palo/trigger.
-            // 2. Pie è allineato verticalmente al livello del terreno (non sta saltando in alto o cadendo profondo).
-            
-            const playerBottomY = player.y + player.h;
-            
-            const horizontalContact = player.x + player.w >= triggerRect.x - TOLERANCE && player.x + player.w <= triggerRect.x + TOLERANCE;
-            
-            // Verifichiamo che Pie sia "a terra" o molto vicino al livello del terreno (Y=540)
-            const verticalAlignment = playerBottomY >= groundY - TOLERANCE && playerBottomY <= groundY + TOLERANCE; 
-
-            if (horizontalContact && verticalAlignment) {
+            // --- LOGICA MODIFICATA: ATTIVAZIONE FACILITATA TRAMITE AABB ---
+            if (window.rectsOverlap && window.rectsOverlap(player, triggerRect)) {
                 
-                // Blocca il player esattamente dove deve stare per l'animazione (riposizionamento esatto)
-                player.x = triggerRect.x - player.w - 10; 
-                player.y = groundY - player.h; // Allinea perfettamente al terreno
-                
-                // Blocca il movimento e avvia la cutscene
+                // Blocca il player e avvia la cutscene
                 player.canMove = false;
                 startCutscene(triggerPlatform);
-                return;
+                return; // Importante per non processare altri update
             }
             
-            // ASSICURIAMOCI CHE IL PALO FUNZIONI ANCHE DA OSTACOLO
+            // ASSICURIAMOCI CHE IL PALO FUNZIONI ANCHE DA OSTACOLO (solo se non è in cutscene)
             if (window.rectsOverlap && window.rectsOverlap(player, triggerRect) && player.vx > 0) {
                  player.x = triggerRect.x - player.w;
                  player.vx = 0;
@@ -350,7 +327,7 @@ const Game = (function() {
         // Costanti di dimensione e posizione (riprese dal Player e da Platform)
         const ragazzaW = 30, ragazzaH = 50;
         const macchinaW = 100, macchinaH = 50;
-        const groundY = cutsceneGroundY; // Y=540
+        const groundY = cutsceneGroundY; 
         
         // Posizioni X basate sul trigger (Palo)
         const paloWorldX = cutsceneTriggerPosition.x;
@@ -358,8 +335,8 @@ const Game = (function() {
         const macchinaStartX = ragazzaStandX + ragazzaW + 10; // Leggermente a destra della ragazza
         
         // Posizioni Y fisse
-        const ragazzaY = groundY - ragazzaH; // 540 - 50 = 490
-        const macchinaY = groundY - macchinaH; // 540 - 50 = 490
+        const ragazzaY = groundY - ragazzaH; 
+        const macchinaY = groundY - macchinaH; 
         
         // Punti di riferimento per l'animazione
         const pieStartX = paloWorldX - player.w - 10;
@@ -376,12 +353,14 @@ const Game = (function() {
         if (t <= 0.2) {
             const t_phase = t / 0.2;
             pieWorldX = pieStartX + (pieStopX - pieStartX) * t_phase;
-            player.facingRight = true; // Assicuriamoci che stia guardando a destra
+            player.facingRight = true; 
+            player.isMoving = true;
         } 
         
         // --- FASE 2: Pie e Ragazza salgono in Macchina (0.2 < t <= 0.4) ---
         else if (t <= 0.4) {
             const t_phase = (t - 0.2) / 0.2;
+            player.isMoving = false; // Pie fermo
             
             // Pie si muove verso la macchina
             const pieMoveToCarX = pieStopX + (carEntryX - pieStopX) * t_phase;
@@ -393,7 +372,6 @@ const Game = (function() {
 
             // Simula la scomparsa dei personaggi quando entrano (quando t_phase > 0.8)
             if (t_phase > 0.8) {
-                // Li spostiamo fuori schermo in modo che vengano ignorati dal draw
                 pieWorldX = carEntryX + 1000;
                 ragazzaWorldX = carEntryX + 1000;
             }
@@ -402,6 +380,8 @@ const Game = (function() {
         // --- FASE 3: La Macchina parte (0.4 < t <= 1.0) ---
         else {
             const t_phase = (t - 0.4) / 0.6;
+            player.isMoving = false;
+            
             // La macchina si sposta fuori dallo schermo
             macchinaWorldX = macchinaStartX + (carEndX - macchinaStartX) * t_phase;
             
@@ -414,16 +394,15 @@ const Game = (function() {
         ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
         
         // 2. Disegna Ragazza (solo se visibile)
-        if (ragazzaWorldX < canvas.width + camX) { // Controllo visibilità
+        if (ragazzaWorldX < canvas.width + camX) { 
             ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
         }
         
         // 3. Disegna Pie (solo se visibile)
-        if (pieWorldX < canvas.width + camX) { // Controllo visibilità
+        if (pieWorldX < canvas.width + camX) { 
             // Aggiorna la posizione di Pie e disegnalo usando la sua draw()
             player.x = pieWorldX;
             player.y = groundY - player.h;
-            player.isMoving = (t <= 0.2); // Anima il movimento solo in FASE 1
             player.draw(ctx, camX);
         }
         
@@ -452,7 +431,6 @@ const Game = (function() {
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                 spriteToUse = window.paloSprite;
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
-                // La macchina non viene disegnata qui, solo nella cutscene
                 continue;
             }
 
@@ -550,7 +528,6 @@ const Game = (function() {
                 } else {
                     sprite.onload = resolve;
                     sprite.onerror = () => {
-                        // Se una sprite fallisce, la ignoriamo e andiamo avanti (ma lo logghiamo)
                         console.warn(`Attenzione: Impossibile caricare la sprite: ${sprite.src}. Continuo...`);
                         resolve();
                     };
@@ -602,7 +579,6 @@ const Game = (function() {
     }
     
     function nextLevel() {
-        // Aggiungo un controllo per evitare doppie chiamate durante la transizione
         if (isTransitioning) return;
         isTransitioning = true;
         
@@ -610,14 +586,12 @@ const Game = (function() {
         
         if (currentLevelIndex < levels.length) {
             if (currentLevelIndex === 2) {
-                // Passaggio a Livello Boss
                 if (musicNormal) musicNormal.pause();
                 if (musicFinal) {
                     musicFinal.loop = true;
                     musicFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
                 }
             } else {
-                // Passaggio a Livello Normale
                 if (musicFinal) musicFinal.pause();
                 if (musicNormal) musicNormal.play().catch(e => console.log("Errore riproduzione BGM Normale:", e));
             }
@@ -625,10 +599,9 @@ const Game = (function() {
             loadLevel(currentLevelIndex, true);
             isTransitioning = false;
             
-            if (window.engine) window.engine.start(); // Riattiva il loop di gioco
+            if (window.engine) window.engine.start();
             
         } else {
-            // Fine del gioco
             window.engine.stop();
             if (musicNormal) musicNormal.pause();
             if (musicFinal) musicFinal.pause();
