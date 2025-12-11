@@ -3,7 +3,7 @@
   "playerStart": {"x": 80, "y": 480},
   "endZone": { "x": 900, "y": 480, "w": 20, "h": 40 }, 
   "platforms": [
-    [0, 520, 960, 50, "disco"]
+    [0, 520, 960, 50]
   ],
   "enemies": [], 
   "invisible_traps": [],
