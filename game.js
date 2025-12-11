@@ -1,4 +1,4 @@
-// game.js (Versione Finale con Logica Cutscene Facile)
+// game.js (Versione Finale con Logica Cutscene Facile e Area Espansa)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -141,8 +141,9 @@ const Game = (function() {
         };
         
         // CALCOLO DINAMICO DEL LIVELLO DEL TERRENO
-        // Cerchiamo la piattaforma che funge da "terreno" (es. L1 3720x540)
-        const groundPlatform = currentLevel.platforms.find(p => p[0] === 3720 && p[1] === 540); 
+        // Cerchiamo la piattaforma che funge da "terreno" (Y=540)
+        // **LOGICA AGGIORNATA**
+        const groundPlatform = currentLevel.platforms.find(p => p[1] === 540); 
         if (groundPlatform) {
             cutsceneGroundY = groundPlatform[1]; // Y=540
         } else {
@@ -207,14 +208,23 @@ const Game = (function() {
         }
 
         if (triggerPlatform) {
-            const triggerRect = {
-                x: triggerPlatform[0],
-                y: triggerPlatform[1],
-                w: triggerPlatform[2],
-                h: triggerPlatform[3]
-            };
+            const originalX = triggerPlatform[0];
+            const originalY = triggerPlatform[1];
+            const originalW = triggerPlatform[2];
+            const originalH = triggerPlatform[3];
+
+            // **AUMENTO LA ZONA DI ATTIVAZIONE (Rende il tocco ovunque)**
+            const TOLERANCE = 15; // Tolleranza in pixel
             
-            // --- LOGICA MODIFICATA: ATTIVAZIONE FACILITATA TRAMITE AABB ---
+            const triggerRect = {
+                // Allarghiamo il rettangolo per includere l'aria attorno al palo/macchina
+                x: originalX - TOLERANCE,
+                y: originalY - TOLERANCE,
+                w: originalW + 2 * TOLERANCE,
+                h: originalH + 2 * TOLERANCE
+            };
+
+            // 1. ATTIVAZIONE CUTSCENE
             if (window.rectsOverlap && window.rectsOverlap(player, triggerRect)) {
                 
                 // Blocca il player e avvia la cutscene
@@ -223,9 +233,11 @@ const Game = (function() {
                 return; // Importante per non processare altri update
             }
             
-            // ASSICURIAMOCI CHE IL PALO FUNZIONI ANCHE DA OSTACOLO (solo se non è in cutscene)
-            if (window.rectsOverlap && window.rectsOverlap(player, triggerRect) && player.vx > 0) {
-                 player.x = triggerRect.x - player.w;
+            // 2. OSTACOLO RIGIDO (usa il rettangolo originale per la fisica)
+            // Impedisce al player di attraversare il palo
+            const rigidRect = { x: originalX, y: originalY, w: originalW, h: originalH };
+            if (window.rectsOverlap && window.rectsOverlap(player, rigidRect) && player.vx > 0) {
+                 player.x = rigidRect.x - player.w;
                  player.vx = 0;
             }
         }
