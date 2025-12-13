@@ -15,26 +15,12 @@ const Game = (function() {
     
     // ************************************************************
     // DEFINIZIONE GLOBALE DI TUTTE LE SPRITE
+    // (Sono definite in index.html, qui sono solo variabili globali)
     // ************************************************************
     
     // Player & Items
-    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png';
-    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
-    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
-    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
-    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png';
-    window.winSprite = new Image(); window.winSprite.src = 'assets/sprites/win.png'; // NUOVA SPRITE
-    
-    // Piattaforme/Trigger
-    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
-    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
-    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
-    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
-    
-    // Cutscene & Boss
-    window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png';
-    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
-    // ************************************************************
+    // Rimuovo la definizione delle sorgenti qui, perché è già in index.html
+    // Ma lascio il commento per ricordare che devono essere caricate!
 
     let player;
     let currentLevelIndex = 0;
@@ -43,7 +29,7 @@ const Game = (function() {
     let cameraX = 0;
     
     let isTransitioning = false;
-    let engine = null; // Riferimento all'Engine
+    let engine = null; // Riferimento all'Engine LOCALE
     
     // VARIABILI CUTSCENE
     let isCutsceneActive = false;
@@ -57,6 +43,14 @@ const Game = (function() {
     };
 
     function loadLevels() {
+        // Aggiungo un piccolo controllo per mostrare il messaggio di caricamento
+        const loadingMessage = document.getElementById('loading-message');
+        const newBtn = document.getElementById('newBtn');
+        
+        loadingMessage.style.display = 'block';
+        loadingMessage.textContent = 'Caricamento livelli...';
+        newBtn.disabled = true;
+
         const levelPromises = [
             fetch('levels/level1.json').then(res => res.json()),
             fetch('levels/level2.json').then(res => res.json()),
@@ -66,14 +60,15 @@ const Game = (function() {
         return Promise.all(levelPromises)
             .then(loadedLevels => {
                 levels = loadedLevels;
+                loadingMessage.style.display = 'none';
                 return true;
             })
             .catch(error => {
                 console.error("Errore CRITICO nel caricamento di un file JSON del livello.", error);
-                const loadingMessage = document.getElementById('loading-message');
                 loadingMessage.textContent = "ERRORE: Impossibile caricare i livelli (404/Network). Controlla la cartella 'levels/'.";
                 loadingMessage.style.display = 'block';
-                document.getElementById('newBtn').disabled = true;
+                newBtn.textContent = 'ERRORE CARICAMENTO';
+                newBtn.disabled = true;
                 return false;
             });
     }
@@ -113,6 +108,7 @@ const Game = (function() {
         
         cameraX = 0;
         
+        // Logica Audio
         if (currentLevelIndex === 2 && window.BossFinal) {
             window.BossFinal.reset();
             const config = currentLevel.boss;
@@ -121,7 +117,11 @@ const Game = (function() {
              if (musicFinal) musicFinal.play();
         } else {
              if (musicFinal) musicFinal.pause();
-             if (musicNormal) musicNormal.play();
+             // Solo riproduci se è la prima volta (per evitare l'errore Promise)
+             if (musicNormal) {
+                 musicNormal.currentTime = 0;
+                 musicNormal.play().catch(e => console.warn("Riproduzione audio fallita (utente non ha interagito):", e));
+             }
         }
         
         return !!player;
@@ -137,12 +137,15 @@ const Game = (function() {
         isTransitioning = true;
         
         // Simula la transizione (es. fade out/in, qui usiamo un semplice ritardo)
+        // L'engine si ferma (update, draw) e si riavvia dopo
+        if (engine) engine.stop(); 
+        
         setTimeout(() => {
             currentLevelIndex++;
             if (currentLevelIndex < levels.length) {
                 loadLevel(currentLevelIndex, true); // Mantieni il punteggio
                 isTransitioning = false;
-                if (engine) engine.start(); // Usa il riferimento Engine locale
+                if (engine) engine.start(); 
             }
         }, 1000); // 1 secondo di transizione
     }
@@ -206,7 +209,7 @@ const Game = (function() {
         
         isCutsceneActive = true;
         cutsceneTime = 0;
-        if (engine) engine.stop();
+        if (engine) engine.stop(); // Ferma il loop principale, poi lo riavvia per la cutscene
         
         if (musicNormal) musicNormal.pause();
         
@@ -237,7 +240,8 @@ const Game = (function() {
         player.facingRight = true;
         player.canMove = false;
         
-        if (engine) engine.start(); // Il loop deve continuare per animare la cutscene
+        // Ri-avvia il loop del motore solo per il Draw/Update della Cutscene
+        if (engine) engine.start();
     }
     
     function updateCutscene(dt) {
@@ -253,8 +257,7 @@ const Game = (function() {
         if (cutsceneTime >= CUTSCENE_DURATION) {
             isCutsceneActive = false;
             player.canMove = true;
-            // Interrompi e riavvia il motore di gioco per ripristinare il dt e la logica normale
-            if (engine) engine.stop();
+            // L'engine rimane attivo (lo si ferma solo nella transizione nextLevel)
             Game.nextLevel(); // Transizione al livello successivo
         }
     }
@@ -264,14 +267,15 @@ const Game = (function() {
     // ************************************************************
 
     function update(dt, input) {
-        if (!currentLevel || !player || !engine || isTransitioning) return;
+        // Ora il controllo dell'engine è ridondante perché update viene chiamato DA engine
+        if (!currentLevel || !player || isTransitioning) return; 
 
         if (isCutsceneActive) {
             updateCutscene(dt);
             return;
         }
         
-        player.update(dt, input, currentLevel.platforms, currentLevel.enemies);
+        player.update(dt, input, currentLevel.platforms, currentLevel.enemies, removeEnemy); // Passiamo removeEnemy
 
         // ********* CONTROLLO COLLISIONE CON IL PALO (Trigger Cutscene) *********
         
@@ -299,9 +303,11 @@ const Game = (function() {
 
             // 1. ATTIVAZIONE CUTSCENE
             if (window.rectsOverlap && window.rectsOverlap(player, triggerRect)) {
-                
-                player.canMove = false;
-                startCutscene(triggerPlatform);
+                // Controllo per evitare un loop infinito di avvio cutscene
+                if (!isCutsceneActive) {
+                    player.canMove = false;
+                    startCutscene(triggerPlatform);
+                }
                 return;
             }
             
@@ -333,8 +339,10 @@ const Game = (function() {
         // Controllo EndZone (Solo Level 3 Boss)
         const endZone = currentLevel.endZone;
         if (endZone && currentLevelIndex === 2 && window.rectsOverlap(player, endZone)) {
-            // Qui abbiamo bisogno della logica di vittoria del Boss, NON di endgamewin diretto
-            // Il boss ha già la sua logica di vittoria interna
+            // Logica EndZone (solo se il boss è stato sconfitto)
+             if (window.BossFinal && !window.BossFinal.active) {
+                 Game.onGameWin();
+             }
         }
         
         // Verifica se il player esce dalla mappa (Game Over)
@@ -344,18 +352,21 @@ const Game = (function() {
     }
     
     function removeEnemy(index) {
-        if (currentLevel && currentLevel.enemies) {
+        if (currentLevel && currentLevel.enemies && index >= 0 && index < currentLevel.enemies.length) {
             currentLevel.enemies.splice(index, 1);
         }
     }
 
     function handleBossCollisions() {
-        if (!window.BossFinal || !window.rectsOverlap || !player) return;
+        if (!window.BossFinal || !window.rectsOverlap || !player || !window.BossFinal.projectiles) return;
         
         // LOGICA DI VITTORIA (Se il boss ha finito di sparare)
         if (window.BossFinal.thrown >= currentLevel.boss.projectiles) {
-              Game.onGameWin(); // Chiamiamo onGameWin per la vittoria finale
-              return;
+             // Il boss viene disattivato in BossFinal.update, qui si innesca la vittoria
+             if (!window.BossFinal.active) {
+                Game.onGameWin(); 
+             }
+             return;
         }
         
         // LOGICA DI SCONFITTA/MORTE (Collisione Proiettile)
@@ -364,9 +375,7 @@ const Game = (function() {
         if (Array.isArray(window.BossFinal.projectiles)) {
             window.BossFinal.projectiles = window.BossFinal.projectiles.filter(p => {
                 if (window.rectsOverlap(player, p)) {
-                    // Il giocatore è stato colpito
                     playerHit = true;
-                    // Rimuoviamo il proiettile
                     return false; 
                 }
                 return true;
@@ -374,7 +383,6 @@ const Game = (function() {
         }
         
         if (playerHit) {
-            // Chiamiamo la funzione di morte (gestisce la transizione e il riavvio del livello)
             Game.onPlayerDied();
         }
     }
@@ -419,7 +427,7 @@ const Game = (function() {
     
     function drawCutscene(ctx, camX) {
         if (!window.ragazzaSprite.complete || !window.macchinaSprite.complete) {
-             return; 
+              return; 
         }
         
         const t = cutsceneTime / CUTSCENE_DURATION;
@@ -472,8 +480,8 @@ const Game = (function() {
 
             // Simula la scomparsa dei personaggi quando entrano (quando t_phase > 0.8)
             if (t_phase > 0.8) {
-                pieWorldX = carEntryX + 1000;
-                ragazzaWorldX = carEntryX + 1000;
+                 pieWorldX = carEntryX + 1000;
+                 ragazzaWorldX = carEntryX + 1000;
             }
         }
         
@@ -494,12 +502,12 @@ const Game = (function() {
         ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
         
         // 2. Disegna Ragazza (solo se visibile)
-        if (ragazzaWorldX < canvas.width + camX) {  
-            ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
+        if (ragazzaWorldX - camX < canvas.width && ragazzaWorldX - camX > -ragazzaW) {  
+             ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
         }
         
         // 3. Disegna Pie (solo se visibile)
-        if (pieWorldX < canvas.width + camX) {  
+        if (pieWorldX - camX < canvas.width && pieWorldX - camX > -player.w) {  
             // Aggiorna la posizione di Pie e disegnalo usando la sua draw()
             player.x = pieWorldX;
             player.y = groundY - player.h;
@@ -525,11 +533,11 @@ const Game = (function() {
             let spriteToUse = null;
 
             if (type === PLATFORM_TYPE.DISCO && window.discoBallSprite && window.discoBallSprite.complete) {
-                spriteToUse = window.discoBallSprite;
+                 spriteToUse = window.discoBallSprite;
             } else if (type === PLATFORM_TYPE.DJDISC && window.djDiscSprite && window.djDiscSprite.complete) {
-                spriteToUse = window.djDiscSprite;
+                 spriteToUse = window.djDiscSprite;
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
-                spriteToUse = window.paloSprite;
+                 spriteToUse = window.paloSprite;
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
                 // La macchina è disegnata nella cutscene e non come piattaforma fissa
                 continue;
@@ -552,18 +560,28 @@ const Game = (function() {
             const y = Math.round(e.y);
             
             if (e.type === 'drink' && window.drinkEnemySprite && window.drinkEnemySprite.complete) {
-                ctx.drawImage(window.drinkEnemySprite, x, y, e.w, e.h);
+                 ctx.drawImage(window.drinkEnemySprite, x, y, e.w, e.h);
             } else if (e.type === 'heart' && window.heartSprite && window.heartSprite.complete) {
-                ctx.drawImage(window.heartSprite, x, y, e.w, e.h);
+                 ctx.drawImage(window.heartSprite, x, y, e.w, e.h);
             } else {
-                ctx.fillStyle = (e.type === 'drink') ? 'purple' : 'pink';
-                ctx.fillRect(x, y, e.w, e.h);
+                 ctx.fillStyle = (e.type === 'drink') ? 'purple' : 'pink';
+                 ctx.fillRect(x, y, e.w, e.h);
             }
         }
     }
 
     function renderHUD() {
-        // Il punteggio è disegnato dal player.draw()
+        if (!player || !ctx) return;
+        // Punteggio (Score)
+        ctx.fillStyle = 'white';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Punti: ${player.score}`, 10, 25);
+
+        // Vite (Lives)
+        ctx.textAlign = 'right';
+        ctx.fillText(`Vite: ${player.lives}`, canvas.width - 10, 25);
+
     }
     
     function renderBossHUD() {
@@ -576,7 +594,7 @@ const Game = (function() {
         const barW = canvas.width / 3;
         const barH = 15;
         const x = canvas.width - barW - 20;
-        const y = 30;
+        const y = 50; // Spostata leggermente sotto l'HUD standard
         
         ctx.fillStyle = 'gray';
         ctx.fillRect(x, y, barW, barH);
@@ -607,7 +625,6 @@ const Game = (function() {
                 keyToMap = 'ArrowRight';
                 break;
             case 'jump':
-                // Usiamo 'Space' come tasto unificato per il salto
                 keyToMap = 'Space'; 
                 break;
             default:
@@ -627,28 +644,42 @@ const Game = (function() {
                  newBtn.textContent = 'Inizia Partita';
                  newBtn.disabled = false;
              } else {
-                 newBtn.textContent = 'ERRORE CARICAMENTO';
-                 newBtn.disabled = true;
+                 // I messaggi di errore sono gestiti da loadLevels
              }
          });
     }
 
     // Avvia una nuova partita
     function startNew() {
-         if (levels.length > 0 && engine) { // Aggiunto controllo 'engine'
+         // L'errore veniva generato qui se engine era null. 
+         // Dobbiamo assicurarci che Game.setEngine sia stato chiamato da engine.js
+         if (levels.length > 0 && engine) { 
              menuDiv.style.display = 'none';
              endingScreen.style.display = 'none';
              loadLevel(0, false); // Ricarica il livello 0 e resetta TUTTO
-             engine.start(); // Usa il riferimento Engine locale
+             
+             // Assicurati che l'Engine non stia già girando (e riavvialo)
+             engine.stop(); 
+             engine.start(); 
          } else {
              console.error("Livelli non caricati o Engine non inizializzato. Impossibile iniziare.");
+             const loadingMessage = document.getElementById('loading-message');
+             loadingMessage.style.display = 'block';
+             loadingMessage.textContent = 'ERRORE: Engine non collegato. Ricarica la pagina.';
          }
     }
     
-    // *** NUOVA FUNZIONE: Viene chiamata da engine.js per stabilire la comunicazione ***
+    // *** FUNZIONE CRITICA: Viene chiamata da engine.js per stabilire la comunicazione ***
     function setEngine(engineAPI) {
         engine = engineAPI;
         console.log("Engine API collegato a Game.");
+        
+        // Mostra suggerimenti input mobile se l'Engine è stato collegato (e il gioco è mobile)
+        if (engine && ('ontouchstart' in window || navigator.maxTouchPoints)) {
+             document.getElementById('hint-text').style.display = 'none'; // Nascondi suggerimento tastiera
+        } else {
+             document.getElementById('hint-text').style.display = 'block'; // Mostra suggerimento tastiera
+        }
     }
 
     // API pubbliche
@@ -668,8 +699,5 @@ const Game = (function() {
     };
 })();
 
-// Espone l'oggetto Game globalmente per l'HTML
-window.Game = Game;
-
-// Espone l'oggetto Game globalmente per l'HTML
+// Espone l'oggetto Game globalmente
 window.Game = Game;
