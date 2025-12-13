@@ -1,4 +1,4 @@
-// game.js (VERSIONE COMPLETA E CORRETTA)
+// game.js (VERSIONE COMPLETA E CORRETTA - FIX BUG CUTSCENE)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -15,13 +15,8 @@ const Game = (function() {
     
     // ************************************************************
     // DEFINIZIONE GLOBALE DI TUTTE LE SPRITE
-    // (Sono definite in index.html, qui sono solo variabili globali)
     // ************************************************************
     
-    // Player & Items
-    // Rimuovo la definizione delle sorgenti qui, perché è già in index.html
-    // Ma lascio il commento per ricordare che devono essere caricate!
-
     let player;
     let currentLevelIndex = 0;
     let levels = [];
@@ -61,6 +56,7 @@ const Game = (function() {
             .then(loadedLevels => {
                 levels = loadedLevels;
                 loadingMessage.style.display = 'none';
+                newBtn.disabled = false; // Rimuovi qui il disabled se ha successo
                 return true;
             })
             .catch(error => {
@@ -120,7 +116,9 @@ const Game = (function() {
              // Solo riproduci se è la prima volta (per evitare l'errore Promise)
              if (musicNormal) {
                  musicNormal.currentTime = 0;
-                 musicNormal.play().catch(e => console.warn("Riproduzione audio fallita (utente non ha interagito):", e));
+                 // Esegui play solo dopo interazione utente (gestito dalla funzione startGame in index.html)
+                 // Se non parte, è ok, verrà riprodotto al primo click.
+                 musicNormal.play().catch(e => { /*console.warn("Riproduzione audio fallita:", e);*/ });
              }
         }
         
@@ -341,7 +339,7 @@ const Game = (function() {
         if (endZone && currentLevelIndex === 2 && window.rectsOverlap(player, endZone)) {
             // Logica EndZone (solo se il boss è stato sconfitto)
              if (window.BossFinal && !window.BossFinal.active) {
-                 Game.onGameWin();
+                Game.onGameWin();
              }
         }
         
@@ -426,7 +424,9 @@ const Game = (function() {
     }
     
     function drawCutscene(ctx, camX) {
-        if (!window.ragazzaSprite.complete || !window.macchinaSprite.complete) {
+        // FIX: Controlla che le variabili globali esistano prima di accedere a .complete
+        if (!window.ragazzaSprite || !window.ragazzaSprite.complete || 
+            !window.macchinaSprite || !window.macchinaSprite.complete) {
               return; 
         }
         
@@ -637,36 +637,36 @@ const Game = (function() {
     
     // Inizializza il gioco caricando i livelli e mostra il menu
     function init() {
-         menuDiv.style.display = 'flex';
-         loadLevels().then(success => {
-             const newBtn = document.getElementById('newBtn');
-             if (success) {
-                 newBtn.textContent = 'Inizia Partita';
-                 newBtn.disabled = false;
-             } else {
-                 // I messaggi di errore sono gestiti da loadLevels
-             }
-         });
+           menuDiv.style.display = 'flex';
+           loadLevels().then(success => {
+               const newBtn = document.getElementById('newBtn');
+               if (success) {
+                   newBtn.textContent = 'Inizia Partita';
+                   newBtn.disabled = false;
+               } else {
+                   // I messaggi di errore sono gestiti da loadLevels
+               }
+           });
     }
 
     // Avvia una nuova partita
     function startNew() {
-         // L'errore veniva generato qui se engine era null. 
-         // Dobbiamo assicurarci che Game.setEngine sia stato chiamato da engine.js
-         if (levels.length > 0 && engine) { 
-             menuDiv.style.display = 'none';
-             endingScreen.style.display = 'none';
-             loadLevel(0, false); // Ricarica il livello 0 e resetta TUTTO
-             
-             // Assicurati che l'Engine non stia già girando (e riavvialo)
-             engine.stop(); 
-             engine.start(); 
-         } else {
-             console.error("Livelli non caricati o Engine non inizializzato. Impossibile iniziare.");
-             const loadingMessage = document.getElementById('loading-message');
-             loadingMessage.style.display = 'block';
-             loadingMessage.textContent = 'ERRORE: Engine non collegato. Ricarica la pagina.';
-         }
+           // L'errore veniva generato qui se engine era null. 
+           // Dobbiamo assicurarci che Game.setEngine sia stato chiamato da engine.js
+           if (levels.length > 0 && engine) { 
+               menuDiv.style.display = 'none';
+               endingScreen.style.display = 'none';
+               loadLevel(0, false); // Ricarica il livello 0 e resetta TUTTO
+               
+               // Assicurati che l'Engine non stia già girando (e riavvialo)
+               engine.stop(); 
+               engine.start(); 
+           } else {
+               console.error("Livelli non caricati o Engine non inizializzato. Impossibile iniziare.");
+               const loadingMessage = document.getElementById('loading-message');
+               loadingMessage.style.display = 'block';
+               loadingMessage.textContent = 'ERRORE: Engine non collegato. Ricarica la pagina.';
+           }
     }
     
     // *** FUNZIONE CRITICA: Viene chiamata da engine.js per stabilire la comunicazione ***
