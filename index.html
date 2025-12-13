@@ -19,17 +19,17 @@
         
         /* BASE STYLES */
         body {
-            /* 🛠️ CORREZIONE: Imposta il colore di sfondo fisso blu scuro */
+            /* 🛠️ SFONDO: COLORE FISSO BLU SCURO */
             background-color: #000033; 
             
-            /* 🛠️ SFONDO SFUOCATO: Usa l'icona come base e applica il filtro */
+            /* L'immagine di sfondo è mantenuta, ma ORA NON HA EFFETTI DI SFOCATURA */
             background-image: url('assets/sprites/icon-512.png'); 
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             
-            filter: blur(5px);
-            -webkit-filter: blur(5px); /* Supporto per Safari */
+            /* ❌ RIMOSSO: filter: blur(5px); */
+            /* ❌ RIMOSSO: -webkit-filter: blur(5px); */
             
             display: flex;
             justify-content: center;
@@ -43,7 +43,7 @@
         }
         
         #game-container {
-            /* 🛠️ Annulla la sfocatura per il contenuto del gioco */
+            /* NON PIÙ NECESSARIO ANNULLARE LA SFOCATURA, MA MANTENIAMO PER SICUREZZA */
             filter: none;
             -webkit-filter: none;
             
