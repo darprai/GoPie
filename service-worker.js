@@ -1,16 +1,17 @@
-const cacheName = "pie-3lvl-cache-v3"; // Versione aggiornata
+const cacheName = "pie-3lvl-cache-v3"; 
 
 const assets = [
   // Files base
+  "./",                // <--- IMPORTANTE: Cacha la root del sito
   "index.html",
-  "style.css",
+  // "style.css",      // <--- ATTENZIONE: Toglilo se il CSS è dentro index.html!
   "rects.js", 
   "engine.js",
   "projectile.js", 
   "player.js", 
   "boss_final.js",
   "game.js",
-  "ending.js",
+  // "ending.js",      // <--- Controlla: nel tuo index.html non c'era <script src="ending.js">. Se non lo usi, toglilo!
   "manifest.json",
 
   // Assets grafici
@@ -27,7 +28,7 @@ const assets = [
   "assets/sprites/palo.png",
   "assets/sprites/ragazza.png",
   "assets/sprites/macchina.png",
-  "assets/sprites/icon-512.png", // Inserito per backup della BG
+  "assets/sprites/win.png",  // <--- AGGIUNTO: Fondamentale per la schermata finale!
 
   // Musica
   "assets/music/music_normal.mp3",
@@ -39,13 +40,17 @@ const assets = [
   "levels/level3.json"
 ];
 
-// 1. Installazione e Cache di tutti gli asset
+// 1. Installazione
 self.addEventListener("install", e => {
-  console.log('[Service Worker] Installato. Cached assets:', cacheName);
-  e.waitUntil(caches.open(cacheName).then(c => c.addAll(assets)));
+  console.log('[Service Worker] Installazione v3...');
+  e.waitUntil(
+    caches.open(cacheName)
+    .then(c => c.addAll(assets))
+    .catch(err => console.error("[SW ERROR] Un file della lista non esiste!", err)) // Ti aiuta a trovare errori
+  );
 });
 
-// 2. Attivazione e pulizia delle vecchie cache
+// 2. Attivazione e pulizia
 self.addEventListener('activate', event => {
     console.log('[Service Worker] Attivato. Pulizia vecchie cache.');
     const cacheWhitelist = [cacheName];
@@ -54,7 +59,7 @@ self.addEventListener('activate', event => {
             return Promise.all(
                 cacheNames.map(cacheName => {
                     if (cacheWhitelist.indexOf(cacheName) === -1) {
-                        return caches.delete(cacheName); // Elimina le cache obsolete
+                        return caches.delete(cacheName);
                     }
                 })
             );
@@ -62,8 +67,7 @@ self.addEventListener('activate', event => {
     );
 });
 
-
-// 3. Intercetta e Rispondi dalla Cache (strategia cache-first)
+// 3. Fetch
 self.addEventListener("fetch", e => {
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
