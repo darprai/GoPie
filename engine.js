@@ -5,11 +5,10 @@ const Engine = (function() {
     let running = false;
     let input = {}; // Gestisce sia input da tastiera che da touch
     
-    // Non è necessario un riferimento esplicito a window.Game qui.
-    
     function loop(time) {
         if (!running) return;
 
+        // Calcola il delta time (dt) in secondi, limitato a 0.05 per stabilità
         const dt = Math.min(0.05, (time - lastTime) / 1000); 
         lastTime = time;
 
@@ -46,7 +45,7 @@ const Engine = (function() {
     function handleKeyUp(e) {
         // Mappatura Tasti per il gioco
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'Space') {
-            input[e.key] = false;
+             input[e.key] = false;
         }
     }
 
@@ -54,26 +53,28 @@ const Engine = (function() {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     
-    // --- IL CODICE QUI SOTTO È STATO RILOCALIZZATO/MODIFICATO ---
     
     // API pubbliche dell'Engine
     const EngineAPI = {
         start: start,
         stop: stop,
         getInput: () => input,
+        // Permette a Game.js (e ai controller touch) di iniettare lo stato input
         setInputState: (key, isPressed) => {
              input[key] = isPressed;
         }
     };
     
-    // Aggiungi il collegamento a Game solo DOPO che Game è definito globalmente
-    // Per un'integrazione pulita, dobbiamo assicurarci che Engine venga esposto globalmente
-    // e che Game si colleghi ad esso quando Game viene eseguito (alla fine di game.js).
-    
-    // Espone l'Engine globalmente, ma senza auto-collegamento per evitare timing issues
+    // Espone l'Engine globalmente
     window.Engine = EngineAPI;
 
-    // Ritorna l'API (non è strettamente necessario se usiamo window.Engine, ma è una buona pratica)
+    // 🚀 BLOCCO DI COLLEGAMENTO ESSENZIALE
+    // Chiama Game.setEngine() per stabilire la comunicazione bidirezionale.
+    // Questo viene eseguito immediatamente dopo la definizione di window.Engine.
+    if (window.Game && window.Game.setEngine) {
+        window.Game.setEngine(EngineAPI);
+    }
+
     return EngineAPI;
 
 })();
