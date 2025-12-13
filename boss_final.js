@@ -1,14 +1,17 @@
+// boss_final.js (AGGIORNATO: Boss 3x più grande, Proiettili più lenti)
+
 // La dipendenza rectsOverlap è definita in rects.js
 // La dipendenza Projectile è definita in projectile.js
 
 const BossFinal = (() => {
   let active = false;
-  let x = 0, y = 0, w = 60, h = 80;
+  // Triplichiamo le dimensioni predefinite per Golruk (60 -> 180, 80 -> 240)
+  let x = 0, y = 0, w = 180, h = 240; 
   let projectiles = [];
   let thrown = 0;
   let maxProjectiles = 50;
   let projectileSpeed = 7;
-  let cooldown = 1500; // MODIFICA QUI: Aumentato il cooldown da 700 a 1500 ms
+  let cooldown = 1500; 
   let lastShot = 0;
 
   function reset() {
@@ -22,11 +25,12 @@ const BossFinal = (() => {
     active = true;
     x = startX;
     y = startY;
-    w = config.w || 60; 
-    h = config.h || 80;
+    // Usa le nuove dimensioni se non specificate nel JSON
+    w = config.w || 180;  
+    h = config.h || 240;
     maxProjectiles = config.projectiles || 50;
     projectileSpeed = config.projectileSpeed || 7;
-    cooldown = config.cooldown || 1500; // Aggiornato anche qui in caso di override
+    cooldown = config.cooldown || 1500; 
     thrown = 0; 
   }
 
@@ -40,18 +44,29 @@ const BossFinal = (() => {
 
     const angle = Math.atan2(targetY - bossCenterY, targetX - bossCenterX);
     
+    // Manteniamo un piccolo offset casuale per la mira
     const randomAngleOffset = (Math.random() - 0.5) * 0.4; 
     const finalAngle = angle + randomAngleOffset;
 
-    const speedMultiplier = 50; // MODIFICA QUI: Ridotto da 100 a 50 per rallentare il proiettile
-    const vx = Math.cos(finalAngle) * projectileSpeed * speedMultiplier; 
-    const vy = Math.sin(finalAngle) * projectileSpeed * speedMultiplier;
+    // ************************************************************
+    // MODIFICHE CHIAVE PER LA VELOCITÀ
+    // ************************************************************
+    // 1. Rimuovi o riduci drasticamente il 'speedMultiplier' per un movimento lento.
+    // Il valore 1.5 è un buon punto di partenza per una velocità molto lenta (1.5 * 7 = 10.5)
+    const speedMultiplier = 1.5; 
+    const finalSpeed = projectileSpeed * speedMultiplier; 
 
-    projectiles.push(new Projectile(bossCenterX - 8, bossCenterY - 8, vx, vy));
+    const vx = Math.cos(finalAngle) * finalSpeed; 
+    const vy = Math.sin(finalAngle) * finalSpeed;
+    // ************************************************************
+
+    // NOTA: La dimensione del proiettile è definita in Projectile
+    projectiles.push(new Projectile(bossCenterX - 10, bossCenterY - 10, vx, vy)); 
     thrown++;
     lastShot = performance.now();
   }
-
+  
+  // (La funzione update rimane invariata)
   function update(dt, player, camX) {
     if (!active) return;
 
@@ -64,6 +79,7 @@ const BossFinal = (() => {
     projectiles = projectiles.filter(p => p.x > camX - 100 && p.x < camX + 1060 && p.y < 600);
   }
 
+  // (La funzione render rimane invariata, utilizza le nuove w/h)
   function render(ctx, camX) {
     if (!active) return;
 
