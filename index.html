@@ -120,6 +120,7 @@
             bottom: 0;
             right: 0; 
             height: 100%; 
+            /* L'area di movimento occupa tutta l'altezza, ma esclude il jumpBtn a sinistra */
             width: calc(100% - 120px); 
             z-index: 101; 
             display: none; /* Inizialmente nascosto */
@@ -127,8 +128,12 @@
         
         #jumpBtn {
             position: absolute;
-            bottom: 20px;
+            /* 🚀 Nuovo Posizionamento: 75% in verticale (metà tra centro e fondo) */
+            top: 75%; 
             left: 20px; 
+            /* Centra il cerchio sul 75% */
+            transform: translateY(-50%); 
+            
             width: 80px;
             height: 80px;
             border-radius: 50%;
@@ -254,35 +259,34 @@
             
             const isMobile = window.innerWidth < 960;
 
+            // Avvia l'audio tramite Promessa (cruciale su mobile e PC con restrizioni)
+            const musicNormal = document.getElementById('music_normal');
+            if (musicNormal) {
+                musicNormal.currentTime = 0;
+                musicNormal.play().then(() => {
+                    console.log("Audio avviato con successo.");
+                }).catch(error => {
+                    console.warn("Riproduzione audio bloccata o errore:", error);
+                    // Procede con l'avvio del gioco anche se l'audio è bloccato
+                });
+            }
+
             if (isMobile) {
-                // 1. Tenta Audio e Fullscreen su Mobile dopo l'interazione
-                
                 // Richiede Fullscreen (solo se non è già attivo)
                 if (document.fullscreenElement === null) {
                     enterFullscreen(gameContainer); 
                 }
-
-                // Avvia l'audio tramite Promessa (cruciale su mobile)
-                const musicNormal = document.getElementById('music_normal');
-                if (musicNormal) {
-                    musicNormal.currentTime = 0;
-                    musicNormal.play().then(() => {
-                        finalizeStart(true); // Audio OK
-                    }).catch(error => {
-                        console.warn("Riproduzione audio bloccata dal browser o errore:", error);
-                        finalizeStart(true); // Se l'audio fallisce, procedi comunque 
-                    });
-                } else {
-                    finalizeStart(true);
-                }
+                // Continua con l'avvio del gioco
+                finalizeStart(true); 
             } else {
-                // Avvio standard per PC (non tocca Fullscreen/Audio)
+                // Avvio standard per PC
                 finalizeStart(false); 
             }
         };
 
         // Pulsante di AVVIO (Menu Iniziale)
         newBtn.addEventListener('click', startGame);
+        // Usiamo touchstart con { passive: false } per garantire l'interazione utente (Fullscreen/Audio)
         newBtn.addEventListener('touchstart', startGame, { passive: false });
         
         // Pulsante di RIAVVIO (Schermata Finale)
@@ -295,6 +299,13 @@
             // Nascondi i controlli touch al rientro nel menu (su mobile)
             document.getElementById('touch-move').style.display = 'none';
             document.getElementById('jumpBtn').style.display = 'none';
+
+            // Ferma l'audio
+            const musicNormal = document.getElementById('music_normal');
+            if (musicNormal) {
+                musicNormal.pause();
+                musicNormal.currentTime = 0;
+            }
         };
         restartBtn.addEventListener('click', handleRestart);
         restartBtn.addEventListener('touchstart', handleRestart);
