@@ -90,16 +90,16 @@
         }
 
         .menu-button, #restartBtn {
-             padding: 15px 30px;
-             font-size: 24px;
-             margin-top: 20px;
-             cursor: pointer;
-             background-color: #00ffcc;
-             border: none;
-             border-radius: 5px;
-             color: black;
-             font-weight: bold;
-             transition: background-color 0.2s;
+            padding: 15px 30px;
+            font-size: 24px;
+            margin-top: 20px;
+            cursor: pointer;
+            background-color: #00ffcc;
+            border: none;
+            border-radius: 5px;
+            color: black;
+            font-weight: bold;
+            transition: background-color 0.2s;
         }
 
         /* CONTROLLI MOBILE */
@@ -171,7 +171,9 @@
 </div>
 
 <script>
-    // Caricamento Sprite
+    // **************************************************
+    // Caricamento Sprite (INCLUSO ragazzaSprite)
+    // **************************************************
     window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png'; 
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
     window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
@@ -179,6 +181,10 @@
     window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
     window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
     window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
+    
+    // RIGA AGGIUNTA PER IL FUNZIONAMENTO DELLA CUTSCENE
+    window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png'; 
+    
     window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
     window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
     window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
@@ -224,6 +230,7 @@
             if (e) e.preventDefault();
             
             // Richiede Fullscreen (su mobile è cruciale per l'interazione)
+            // Usa window.innerWidth < 960 per indicare che siamo probabilmente su un dispositivo più piccolo
             if (document.fullscreenElement === null && window.innerWidth < 960) {
                  enterFullscreen(gameContainer); 
             }
@@ -243,8 +250,9 @@
         const handleRestart = (e) => {
              if (e) e.preventDefault();
              document.getElementById('ending-screen').style.display = 'none';
-             // Ri-mostra il menu per ricominciare (se Game.startNew non resetta l'UI)
+             // Ri-mostra il menu per ricominciare
              document.getElementById('menu').style.display = 'flex';
+             // L'utente dovrà cliccare di nuovo 'Inizia Partita'
         };
         restartBtn.addEventListener('click', handleRestart);
         restartBtn.addEventListener('touchstart', handleRestart);
@@ -294,16 +302,16 @@
         
         // --- GESTIONE INPUT TOUCH per Salto (jumpBtn) ---
         jumpBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); 
-            if (window.Game && window.Game.handleTouchInput) {
-                window.Game.handleTouchInput('jump', true);
-            }
+             e.preventDefault(); 
+             if (window.Game && window.Game.handleTouchInput) {
+                 window.Game.handleTouchInput('jump', true);
+             }
         });
         jumpBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (window.Game && window.Game.handleTouchInput) {
-                window.Game.handleTouchInput('jump', false);
-            }
+             e.preventDefault();
+             if (window.Game && window.Game.handleTouchInput) {
+                 window.Game.handleTouchInput('jump', false);
+             }
         });
     });
 </script>
