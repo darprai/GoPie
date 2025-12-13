@@ -1,4 +1,5 @@
 {
+  "name": "Level 3 - Boss Battle",
   "length": 960, 
   "playerStart": {"x": 80, "y": 480},
   "endZone": { "x": 900, "y": 480, "w": 20, "h": 40 }, 
@@ -8,12 +9,12 @@
   "enemies": [], 
   "invisible_traps": [],
   "boss": {
-    "x": 850, 
-    "y": 400, 
-    "w": 60,
-    "h": 80,
+    "x": 750,                     
+    "y": 280,                     
+    "w": 180,                     
+    "h": 240,                     
     "projectiles": 50, 
-    "cooldown": 500, 
-    "projectileSpeed": 300 
+    "cooldown": 1500,             
+    "projectileSpeed": 10         
   }
 }
