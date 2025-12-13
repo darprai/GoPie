@@ -1,13 +1,16 @@
+// Projectile (AGGIORNATO: Proiettile 3x più grande)
+
 const Projectile = function(x, y, vx, vy) {
     this.x = x;
     this.y = y;
-    this.w = 20;
+    // Dimensioni del proiettile aumentate per visibilità
+    this.w = 20; 
     this.h = 20;
     this.vx = vx;
     this.vy = vy;
 
     this.update = function(dt) {
-        // La velocità è scalata dal fattore delta tempo (dt)
+        // Movimento uniforme
         this.x += this.vx * dt;
         this.y += this.vy * dt;
     };
@@ -19,7 +22,7 @@ const Projectile = function(x, y, vx, vy) {
         if (window.drinkEnemySprite && window.drinkEnemySprite.complete) {
             ctx.drawImage(window.drinkEnemySprite, drawX, drawY, this.w, this.h);
         } else {
-            // Fallback: Disegna un cerchio rosso
+            // Fallback
             ctx.fillStyle = 'red';
             ctx.beginPath();
             ctx.arc(drawX + this.w / 2, drawY + this.h / 2, this.w / 2, 0, Math.PI * 2);
