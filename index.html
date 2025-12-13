@@ -22,7 +22,7 @@
             /* 🛠️ SFONDO: COLORE FISSO BLU SCURO */
             background-color: #000033; 
             
-            /* L'immagine di sfondo è mantenuta, ma ORA NON HA EFFETTI DI SFOCATURA */
+            /* L'immagine di sfondo è mantenuta (per desktop), ma ORA NON HA EFFETTI DI SFOCATURA */
             background-image: url('assets/sprites/icon-512.png'); 
             background-size: cover;
             background-position: center;
@@ -40,6 +40,13 @@
             font-family: Arial, sans-serif;
             overflow: hidden; 
             touch-action: manipulation; 
+        }
+
+        /* 🎨 MODIFICA RICHIESTA: Rimuove l'immagine di sfondo su dispositivi piccoli */
+        @media (max-width: 959px) {
+            body {
+                background-image: none !important; /* Forza la rimozione dell'immagine */
+            }
         }
         
         #game-container {
