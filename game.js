@@ -1,4 +1,4 @@
-// game.js (VERSIONE ULTRA-SNELLA - Corretto per PWA/Audio)
+// game.js (VERSIONE CORRETTA PER AUDIO CENTRALIZZATO)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -11,9 +11,7 @@ const Game = (function() {
     const endingScore = document.getElementById('ending-score');
     const winImage = document.getElementById('win-image');
     
-    // VARIABILI AUDIO
-    const musicNormal = document.getElementById('music_normal');
-    const musicFinal = document.getElementById('music_final');
+    // VARIABILI AUDIO - Rimosse, useremo window.changeMusicForLevel()
     
     // ************************************************************
     // DEFINIZIONE GLOBALE DI TUTTE LE SPRITE
@@ -104,21 +102,25 @@ const Game = (function() {
         
         cameraX = 0;
         
-        // Logica Audio (CORRETTA: musicNormal.play() è stato spostato in index.html > startGame)
-        if (currentLevelIndex === 2 && window.BossFinal) {
-            window.BossFinal.reset();
-            const config = currentLevel.boss;
-            window.BossFinal.start(config.x, config.y, config);
-             if (musicNormal) musicNormal.pause();
-             if (musicFinal) musicFinal.play().catch(e => {});
-        } else {
-             if (musicFinal) musicFinal.pause();
-             if (musicNormal) {
-                 musicNormal.currentTime = 0;
-                 // NON CHIAMIAMO .play() QUI! Viene chiamato in index.html (startGame) dopo l'interazione utente
-             }
-        }
-        
+        // ********************************************************
+        // LOGICA AUDIO CENTRALIZZATA: Level 1 e 2 usano music_normal, Level 3 music_final
+        // ********************************************************
+        if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
+            // Level 1 e 2: musica_normal.mp3 (music_level1)
+            if (window.changeMusicForLevel) {
+                 window.changeMusicForLevel(1); // Questo fermerà music_final e avvierà music_level1
+            }
+            if (currentLevelIndex === 2 && window.BossFinal) {
+                window.BossFinal.reset();
+                const config = currentLevel.boss;
+                window.BossFinal.start(config.x, config.y, config);
+                
+                // Level 3 (Boss): musica_final.mp3
+                if (window.changeMusicForLevel) {
+                    window.changeMusicForLevel(3); // Avvia music_final e ferma music_level1/music_level2
+                }
+            }
+
         return !!player;
     }
     
@@ -148,9 +150,16 @@ const Game = (function() {
     
     function onGameWin() {
         if (engine) engine.stop();
-        if (musicNormal) musicNormal.pause();
-        if (musicFinal) musicFinal.pause();
-
+        
+        // Ferma tutta la musica
+        if (window.changeMusicForLevel) {
+            window.changeMusicForLevel(0); // Chiama il caso default/stop nell'HTML se vuoi solo silenzio, altrimenti usa il metodo brutale sotto:
+        }
+        
+        // Metodo brutale di stop (già presente nell'HTML/restart)
+        const allAudio = [document.getElementById('music_level1'), document.getElementById('music_level2'), document.getElementById('music_final')];
+        allAudio.forEach(track => { if (track) track.pause(); });
+        
         menuDiv.style.display = 'none';
         endingScreen.style.display = 'flex';
         
@@ -188,7 +197,11 @@ const Game = (function() {
         cutsceneTime = 0;
         if (engine) engine.stop();  
         
-        if (musicNormal) musicNormal.pause();
+        // FERMA LA MUSICA durante la cutscene (anche se music_normal/level1 è la stessa)
+        if (window.changeMusicForLevel) {
+             const allAudio = [document.getElementById('music_level1'), document.getElementById('music_level2'), document.getElementById('music_final')];
+             allAudio.forEach(track => { if (track) track.pause(); });
+        }
         
         cutsceneTriggerPosition = {
             x: trigger[0], y: trigger[1], w: trigger[2], h: trigger[3]
