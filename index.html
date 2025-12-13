@@ -28,6 +28,9 @@
             background-position: center;
             background-repeat: no-repeat;
             
+            /* ❌ RIMOSSO: filter: blur(5px); */
+            /* ❌ RIMOSSO: -webkit-filter: blur(5px); */
+            
             display: flex;
             justify-content: center;
             align-items: center;
@@ -40,6 +43,7 @@
         }
         
         #game-container {
+            /* NON PIÙ NECESSARIO ANNULLARE LA SFOCATURA, MA MANTENIAMO PER SICUREZZA */
             filter: none;
             -webkit-filter: none;
             
@@ -111,6 +115,7 @@
         }
 
         /* CONTROLLI MOBILE */
+        /* Li impostiamo a display: none; di default e li mostriamo solo in JS */
         #touch-move {
             position: absolute;
             bottom: 0;
@@ -118,7 +123,7 @@
             height: 100%; 
             width: calc(100% - 120px); 
             z-index: 101; 
-            display: none; 
+            display: none;  /* 🛠️ CORREZIONE: Nascosto di default */
         }
         
         #jumpBtn {
@@ -137,7 +142,7 @@
             box-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
             user-select: none;
             z-index: 102; 
-            display: none; 
+            display: none;  /* 🛠️ CORREZIONE: Nascosto di default */
         }
         #jumpBtn:active {
             background-color: #cc0000;
@@ -145,9 +150,7 @@
         }
         
         @media screen and (max-width: 960px) {
-            #touch-move, #jumpBtn {
-                /* I controlli touch sono nascosti per default e mostrati dalla funzione JS */
-            }
+            /* ❌ RIMOZIONE: Rimuoviamo la visualizzazione forzata qui */
         }
     </style>
 </head>
@@ -234,51 +237,57 @@
         const startGame = (e) => {
             if (e) e.preventDefault();
             
-            // Nascondi il menu subito per evitare ulteriori interazioni
-            document.getElementById('menu').style.display = 'none'; 
-
-            // 1. TENTA DI AVVIARE L'AUDIO (Cruciale che avvenga nel gesto utente)
-            const musicNormal = document.getElementById('music_normal');
-            if (musicNormal) {
-                musicNormal.currentTime = 0;
-                // Usa .then per essere certi che il gioco parta anche se l'audio fallisce
-                musicNormal.play().then(() => {
-                    console.log("Audio avviato con successo.");
-                    // Chiamata a startNew() solo dopo che l'audio ha tentato l'avvio
-                    finalizeStart(); 
-                }).catch(error => {
-                    console.warn("Riproduzione audio bloccata dal browser o errore:", error);
-                    // Se l'audio fallisce, procedi comunque per non bloccare il gioco
-                    finalizeStart(); 
-                });
-            } else {
-                // Nessun audio, avvia direttamente
-                finalizeStart();
-            }
-
-            function finalizeStart() {
-                // 2. TENTA FULLSCREEN (Deve essere chiamato dal gesto utente per funzionare)
-                if (document.fullscreenElement === null && window.innerWidth < 960) {
+            // 1. TENTA DI AVVIARE L'AUDIO E FULLSCREEN SOLO SUL MOBILE
+            if (window.innerWidth < 960) {
+                // Richiede Fullscreen (solo se non è già attivo)
+                if (document.fullscreenElement === null) {
                     enterFullscreen(gameContainer); 
                 }
+
+                // Avvia l'audio tramite Promessa (cruciale su mobile)
+                const musicNormal = document.getElementById('music_normal');
+                if (musicNormal) {
+                    musicNormal.currentTime = 0;
+                    musicNormal.play().then(() => {
+                        console.log("Audio avviato con successo.");
+                        // Chiamata a finalizeStart() dopo che l'audio ha tentato l'avvio
+                        finalizeStart(true); // Flag: è mobile
+                    }).catch(error => {
+                        console.warn("Riproduzione audio bloccata dal browser o errore:", error);
+                        // Se l'audio fallisce, procedi comunque per non bloccare il gioco
+                        finalizeStart(true); // Flag: è mobile
+                    });
+                } else {
+                    finalizeStart(true);
+                }
+            } else {
+                // Avvio standard per PC (senza audio o fullscreen forzati)
+                finalizeStart(false); // Flag: non è mobile
+            }
+            
+            // Funzione che finalizza l'avvio del gioco
+            function finalizeStart(isMobile) {
+                // Nascondi il menu subito
+                document.getElementById('menu').style.display = 'none'; 
                 
-                // 3. AVVIA LA LOGICA DI GIOCO
                 if (window.Game && window.Game.startNew) {
                     window.Game.startNew(); 
-                    // 4. MOSTRA I CONTROLLI TOUCH DOPO L'AVVIO DEL GIOCO
-                    if(window.innerWidth < 960) {
-                         document.getElementById('touch-move').style.display = 'block';
-                         document.getElementById('jumpBtn').style.display = 'block';
-                    }
+                    
+                    // Mostra i controlli touch SOLO se è mobile
+                    if (isMobile) {
+                        document.getElementById('touch-move').style.display = 'block';
+                        document.getElementById('jumpBtn').style.display = 'block';
+                    }
                 } else {
                     console.error('Game object non pronto o startNew non definito.');
                 }
-            }
+            }
         };
 
         // Pulsante di AVVIO (Menu Iniziale)
         newBtn.addEventListener('click', startGame);
-        newBtn.addEventListener('touchstart', startGame);
+        // Aggiungiamo passive: false qui per prevenire problemi di tap-delay
+        newBtn.addEventListener('touchstart', startGame, { passive: false });
         
         // Pulsante di RIAVVIO (Schermata Finale)
         const handleRestart = (e) => {
@@ -286,6 +295,9 @@
             document.getElementById('ending-screen').style.display = 'none';
             // Ri-mostra il menu per ricominciare
             document.getElementById('menu').style.display = 'flex';
+            // Nascondi i controlli touch al rientro nel menu
+            document.getElementById('touch-move').style.display = 'none';
+            document.getElementById('jumpBtn').style.display = 'none';
         };
         restartBtn.addEventListener('click', handleRestart);
         restartBtn.addEventListener('touchstart', handleRestart);
@@ -325,16 +337,9 @@
             }
         };
         
-        touchMove.addEventListener('touchstart', (e) => {
-            // Impedisce lo scorrimento del browser
-            if (e.touches.length > 0) handleMovementTouch(e);
-        }, { passive: false });
-        
-        touchMove.addEventListener('touchmove', (e) => {
-            // Gestisce il movimento mentre si tiene premuto
-            if (e.touches.length > 0) handleMovementTouch(e);
-        }, { passive: false });
-        
+        // Aggiunti { passive: false } per migliorare la reattività su mobile
+        touchMove.addEventListener('touchstart', handleMovementTouch, { passive: false });
+        touchMove.addEventListener('touchmove', handleMovementTouch, { passive: false });
         touchMove.addEventListener('touchend', handleMovementTouch);
         touchMove.addEventListener('touchcancel', handleMovementTouch); 
         
