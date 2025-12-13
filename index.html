@@ -380,12 +380,15 @@
             if (!window.Game || !window.Game.handleTouchInput) return;
 
             const isEnd = (e.type === 'touchend' || e.type === 'touchcancel');
+            
+            // La logica di rilascio ferma entrambi i movimenti.
             if (isEnd) {
                 window.Game.handleTouchInput('left', false);
                 window.Game.handleTouchInput('right', false);
                 return;
             }
 
+            // In caso di touchstart/touchmove:
             const touch = e.touches[0];
             if (!touch) return;
             
@@ -398,7 +401,9 @@
                 window.Game.handleTouchInput('left', true);
                 window.Game.handleTouchInput('right', false);
             } else {
-                // Destra
+                // Destra: Questa è la zona che si attiva quando si preme a destra nell'area di movimento.
+                // Se si tocca qui, il movimento DEVE essere a destra (e non a sinistra). 
+                // La logica attuale lo garantisce.
                 window.Game.handleTouchInput('right', true);
                 window.Game.handleTouchInput('left', false);
             }
@@ -406,6 +411,7 @@
         
         touchMove.addEventListener('touchstart', handleMovementTouch, { passive: false });
         touchMove.addEventListener('touchmove', handleMovementTouch, { passive: false });
+        // Utilizziamo touchend/touchcancel solo per fermare il movimento
         touchMove.addEventListener('touchend', handleMovementTouch);
         touchMove.addEventListener('touchcancel', handleMovementTouch); 
         
@@ -413,6 +419,7 @@
         jumpBtn.addEventListener('touchstart', (e) => {
             e.preventDefault(); 
             if (window.Game && window.Game.handleTouchInput) {
+                // Se il Salto è attivo, si invia il comando 'jump' = true
                 window.Game.handleTouchInput('jump', true);
             }
         }, { passive: false });
@@ -420,6 +427,7 @@
         jumpBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
             if (window.Game && window.Game.handleTouchInput) {
+                // Quando si rilascia il tasto, si invia il comando 'jump' = false
                 window.Game.handleTouchInput('jump', false);
             }
         });
