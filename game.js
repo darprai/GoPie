@@ -1,10 +1,10 @@
-// game.js (VERSIONE ULTRA-SNELLA - Con Boss HUD, Riavvio Immediato)
+// game.js (VERSIONE ULTRA-SNELLA - Corretto per PWA/Audio)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
     const ctx = canvas ? canvas.getContext('2d') : null;
     
-    // VARIABILI DOM MANTENUTE per stabilità, ma non usate attivamente (eccetto il menu principale)
+    // VARIABILI DOM MANTENUTE
     const menuDiv = document.getElementById('menu');
     const endingScreen = document.getElementById('ending-screen');
     const endingTitle = document.getElementById('ending-title');
@@ -26,7 +26,7 @@ const Game = (function() {
     let cameraX = 0;
     
     let isTransitioning = false;
-    let engine = null; // Riferimento all'Engine LOCALE
+    let engine = null; 
     
     // VARIABILI CUTSCENE
     let isCutsceneActive = false;
@@ -74,7 +74,7 @@ const Game = (function() {
             });
     }
 
-    function loadLevel(index) { // Rimosso preserveScore, ora è sempre false se riavvii l'intero livello
+    function loadLevel(index) { 
         if (!levels[index]) {
             console.error(`Livello ${index} non trovato.`);
             return false;
@@ -104,18 +104,18 @@ const Game = (function() {
         
         cameraX = 0;
         
-        // Logica Audio
+        // Logica Audio (CORRETTA: musicNormal.play() è stato spostato in index.html > startGame)
         if (currentLevelIndex === 2 && window.BossFinal) {
             window.BossFinal.reset();
             const config = currentLevel.boss;
             window.BossFinal.start(config.x, config.y, config);
              if (musicNormal) musicNormal.pause();
-             if (musicFinal) musicFinal.play();
+             if (musicFinal) musicFinal.play().catch(e => {});
         } else {
              if (musicFinal) musicFinal.pause();
              if (musicNormal) {
                  musicNormal.currentTime = 0;
-                 musicNormal.play().catch(e => { /* Ignora errore di mancata interazione utente */ });
+                 // NON CHIAMIAMO .play() QUI! Viene chiamato in index.html (startGame) dopo l'interazione utente
              }
         }
         
@@ -124,21 +124,21 @@ const Game = (function() {
     
     function nextLevel() {
         if (currentLevelIndex === 2) {
-            onGameWin(); // Passa alla schermata finale (vittoria)
+            onGameWin(); 
             return;
         }
 
         isTransitioning = true;
-        if (engine) engine.stop(); 
+        if (engine) engine.stop();  
         
         setTimeout(() => {
             currentLevelIndex++;
             if (currentLevelIndex < levels.length) {
-                loadLevel(currentLevelIndex); // Carica il prossimo livello (resetta il player)
+                loadLevel(currentLevelIndex); 
                 isTransitioning = false;
-                if (engine) engine.start(); 
+                if (engine) engine.start();  
             }
-        }, 1000); // 1 secondo di transizione
+        }, 1000); 
     }
 
 
@@ -154,7 +154,6 @@ const Game = (function() {
         menuDiv.style.display = 'none';
         endingScreen.style.display = 'flex';
         
-        // L'HUD di Game Over/Win viene mantenuto, ma senza i contatori (solo messaggio)
         endingTitle.textContent = "Pie diventa King!";
         winImage.style.display = 'block'; 
         endingScore.textContent = `Partita completata. Clicca per ricominciare.`; 
@@ -167,15 +166,13 @@ const Game = (function() {
         isTransitioning = true;
         
         setTimeout(() => {
-            loadLevel(currentLevelIndex); // Ricarica lo stesso livello (reset completo del player)
+            loadLevel(currentLevelIndex); 
             isTransitioning = false;
-            if (engine) engine.start(); 
-        }, 1000); // 1 secondo di ritardo per il respawn
+            if (engine) engine.start();  
+        }, 1000); 
     }
     
     function onGameOver() {
-        // La funzione onPlayerDied gestisce direttamente il riavvio senza usare onGameOver,
-        // ma la mantengo per chiarezza nel caso si volesse re-introdurre un menu di Game Over.
         onPlayerDied();
     }
 
@@ -189,7 +186,7 @@ const Game = (function() {
         
         isCutsceneActive = true;
         cutsceneTime = 0;
-        if (engine) engine.stop(); 
+        if (engine) engine.stop();  
         
         if (musicNormal) musicNormal.pause();
         
@@ -202,7 +199,7 @@ const Game = (function() {
         
         // Posiziona Pie
         player.x = cutsceneTriggerPosition.x - player.w - 10;
-        player.y = cutsceneGroundY - player.h; 
+        player.y = cutsceneGroundY - player.h;  
         
         player.vy = 0; player.vx = 0;
         player.onGround = true;
@@ -222,7 +219,7 @@ const Game = (function() {
         if (cutsceneTime >= CUTSCENE_DURATION) {
             isCutsceneActive = false;
             player.canMove = true;
-            Game.nextLevel(); // Transizione al livello successivo
+            Game.nextLevel(); 
         }
     }
 
@@ -238,7 +235,6 @@ const Game = (function() {
             return;
         }
         
-        // Nota: player.update riceve removeEnemy, ma i punteggi vengono semplicemente ignorati
         player.update(dt, input, currentLevel.platforms, currentLevel.enemies, removeEnemy); 
 
         // ********* CONTROLLO COLLISIONE CON IL PALO (Trigger Cutscene) *********
@@ -321,7 +317,6 @@ const Game = (function() {
         
         // LOGICA DI VITTORIA (Boss sconfitto)
         if (window.BossFinal.thrown >= currentLevel.boss.projectiles) {
-             // Il boss deve essere fermo e non più attivo
              if (!window.BossFinal.active) { 
                  Game.onGameWin(); 
              }
@@ -343,18 +338,18 @@ const Game = (function() {
         }
         
         if (playerHit) {
-            Game.onPlayerDied(); // Riavvia il livello corrente
+            Game.onPlayerDied(); 
         }
     }
 
     // ************************************************************
-    // FUNZIONI RENDER HUD (REINTRODOTTE)
+    // FUNZIONI RENDER HUD
     // ************************************************************
     function renderBossHUD() {
         if (!ctx || currentLevelIndex !== 2 || !window.BossFinal || !window.BossFinal.active) return;
 
-        const total = currentLevel.boss.projectiles; // Proiettili totali da lanciare
-        const thrown = window.BossFinal.thrown; // Proiettili lanciati
+        const total = currentLevel.boss.projectiles; 
+        const thrown = window.BossFinal.thrown; 
         const remaining = total - thrown;
 
         const w = 300;
@@ -366,10 +361,9 @@ const Game = (function() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(x, y, w, h);
 
-        // Barra di progresso (Proiettili rimanenti)
-        // La barra si riempie man mano che i proiettili (il "danno" al boss) vengono lanciati.
+        // Barra di progresso
         const progressWidth = (remaining / total) * w;
-        ctx.fillStyle = remaining > 0 ? '#ff4d4d' : '#4dff4d'; // Rosso finché non finisce, Verde quando finisce
+        ctx.fillStyle = remaining > 0 ? '#ff4d4d' : '#4dff4d'; 
         ctx.fillRect(x, y, progressWidth, h);
 
         // Testo
@@ -410,7 +404,7 @@ const Game = (function() {
             drawCutscene(ctx, cameraX);
         }
         
-        // REINTRODOTTO: Disegna l'HUD del Boss
+        // Disegna l'HUD del Boss
         renderBossHUD();
     }
     
@@ -518,7 +512,7 @@ const Game = (function() {
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                  spriteToUse = window.paloSprite;
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
-                 continue; // Non disegniamo la piattaforma macchina qui, ma nella cutscene.
+                 continue; 
             }
             
             if (spriteToUse) {
