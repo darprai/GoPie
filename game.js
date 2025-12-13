@@ -1,4 +1,4 @@
-// game.js (VERSIONE ULTRA-SNELLA - No HUD, Riavvio Immediato)
+// game.js (VERSIONE ULTRA-SNELLA - Con Boss HUD, Riavvio Immediato)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -134,7 +134,7 @@ const Game = (function() {
         setTimeout(() => {
             currentLevelIndex++;
             if (currentLevelIndex < levels.length) {
-                loadLevel(currentLevelIndex); // Carica il prossimo livello (resetta il player, ma il punteggio è ignorato)
+                loadLevel(currentLevelIndex); // Carica il prossimo livello (resetta il player)
                 isTransitioning = false;
                 if (engine) engine.start(); 
             }
@@ -300,7 +300,7 @@ const Game = (function() {
         const endZone = currentLevel.endZone;
         if (endZone && currentLevelIndex === 2 && window.rectsOverlap(player, endZone)) {
              if (window.BossFinal && !window.BossFinal.active) {
-                Game.onGameWin();
+                 Game.onGameWin();
              }
         }
         
@@ -321,8 +321,9 @@ const Game = (function() {
         
         // LOGICA DI VITTORIA (Boss sconfitto)
         if (window.BossFinal.thrown >= currentLevel.boss.projectiles) {
-             if (!window.BossFinal.active) {
-                Game.onGameWin(); 
+             // Il boss deve essere fermo e non più attivo
+             if (!window.BossFinal.active) { 
+                 Game.onGameWin(); 
              }
              return;
         }
@@ -331,12 +332,13 @@ const Game = (function() {
         let playerHit = false;
 
         if (Array.isArray(window.BossFinal.projectiles)) {
+            // Filtra i proiettili, eliminando quelli che colpiscono il player
             window.BossFinal.projectiles = window.BossFinal.projectiles.filter(p => {
                 if (window.rectsOverlap(player, p)) {
                     playerHit = true;
-                    return false; 
+                    return false; // Rimuovi il proiettile
                 }
-                return true;
+                return true; // Mantieni il proiettile
             });
         }
         
@@ -345,6 +347,38 @@ const Game = (function() {
         }
     }
 
+    // ************************************************************
+    // FUNZIONI RENDER HUD (REINTRODOTTE)
+    // ************************************************************
+    function renderBossHUD() {
+        if (!ctx || currentLevelIndex !== 2 || !window.BossFinal || !window.BossFinal.active) return;
+
+        const total = currentLevel.boss.projectiles; // Proiettili totali da lanciare
+        const thrown = window.BossFinal.thrown; // Proiettili lanciati
+        const remaining = total - thrown;
+
+        const w = 300;
+        const h = 30;
+        const x = (canvas.width / 2) - (w / 2);
+        const y = 10;
+
+        // Sfondo della barra
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(x, y, w, h);
+
+        // Barra di progresso (Proiettili rimanenti)
+        // La barra si riempie man mano che i proiettili (il "danno" al boss) vengono lanciati.
+        const progressWidth = (remaining / total) * w;
+        ctx.fillStyle = remaining > 0 ? '#ff4d4d' : '#4dff4d'; // Rosso finché non finisce, Verde quando finisce
+        ctx.fillRect(x, y, progressWidth, h);
+
+        // Testo
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'white';
+        ctx.fillText(`BOSS: ${remaining}/${total} rimanenti`, x + w / 2, y + 20);
+    }
+    
     // ************************************************************
     // FUNZIONE DRAW
     // ************************************************************
@@ -376,7 +410,8 @@ const Game = (function() {
             drawCutscene(ctx, cameraX);
         }
         
-        // RIMOSSE: renderHUD() e renderBossHUD()
+        // REINTRODOTTO: Disegna l'HUD del Boss
+        renderBossHUD();
     }
     
     function drawCutscene(ctx, camX) {
@@ -483,7 +518,7 @@ const Game = (function() {
             } else if (type === PLATFORM_TYPE.PALO && window.paloSprite && window.paloSprite.complete) {
                  spriteToUse = window.paloSprite;
             } else if (type === PLATFORM_TYPE.MACCHINA && window.macchinaSprite && window.macchinaSprite.complete) {
-                continue; // Non disegniamo la piattaforma macchina qui, ma nella cutscene.
+                 continue; // Non disegniamo la piattaforma macchina qui, ma nella cutscene.
             }
             
             if (spriteToUse) {
