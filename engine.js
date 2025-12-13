@@ -1,12 +1,11 @@
-// engine.js (AGGIORNATO: Logica di Input Unificata)
+// engine.js (VERSIONE DEFINITIVA E ROBUSTA)
 
 const Engine = (function() {
     let lastTime = 0;
     let running = false;
     let input = {}; // Gestisce sia input da tastiera che da touch
     
-    // Rimuoviamo gli ascoltatori generici touchStart/touchEnd qui. 
-    // Verranno gestiti in game.js e nell'HTML direttamente sui DIV/BOTTONI specifici.
+    // Non è necessario un riferimento esplicito a window.Game qui.
     
     function loop(time) {
         if (!running) return;
@@ -14,6 +13,7 @@ const Engine = (function() {
         const dt = Math.min(0.05, (time - lastTime) / 1000); 
         lastTime = time;
 
+        // Esegui update e draw del Game, controllando se è caricato.
         if (window.Game && window.Game.update) {
             window.Game.update(dt, input);
         }
@@ -54,18 +54,26 @@ const Engine = (function() {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     
-    // Inizializza l'Engine nel contesto globale
-    window.Game.setEngine({ start, stop }); 
+    // --- IL CODICE QUI SOTTO È STATO RILOCALIZZATO/MODIFICATO ---
     
-    return {
+    // API pubbliche dell'Engine
+    const EngineAPI = {
         start: start,
         stop: stop,
         getInput: () => input,
-        // *** NUOVO: Funzione per iniettare l'input da Touch (chiamata dall'HTML) ***
         setInputState: (key, isPressed) => {
              input[key] = isPressed;
         }
     };
-})();
+    
+    // Aggiungi il collegamento a Game solo DOPO che Game è definito globalmente
+    // Per un'integrazione pulita, dobbiamo assicurarci che Engine venga esposto globalmente
+    // e che Game si colleghi ad esso quando Game viene eseguito (alla fine di game.js).
+    
+    // Espone l'Engine globalmente, ma senza auto-collegamento per evitare timing issues
+    window.Engine = EngineAPI;
 
-// L'Engine viene avviato solo quando l'utente preme "Nuova Partita"
+    // Ritorna l'API (non è strettamente necessario se usiamo window.Engine, ma è una buona pratica)
+    return EngineAPI;
+
+})();
