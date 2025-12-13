@@ -1,4 +1,4 @@
-// boss_final.js (AGGIORNATO: Boss 3x più grande, Proiettili più lenti e traccianti)
+// boss_final.js (AGGIORNATO: con logica di disattivazione)
 
 // La dipendenza rectsOverlap è definita in rects.js
 // La dipendenza Projectile è definita in projectile.js
@@ -6,7 +6,7 @@
 const BossFinal = (() => {
   let active = false;
   // Dimensioni predefinite triplicate: 60->180, 80->240
-  let x = 0, y = 0, w = 180, h = 240; 
+  let x = 0, y = 0, w = 180, h = 240; 
   let projectiles = [];
   let thrown = 0;
   let maxProjectiles = 50;
@@ -30,7 +30,7 @@ const BossFinal = (() => {
     h = config.h || 240;
     maxProjectiles = config.projectiles || 50;
     projectileSpeed = config.projectileSpeed || 10;
-    cooldown = config.cooldown || 1500; 
+    cooldown = config.cooldown || 1500; 
     thrown = 0; 
   }
 
@@ -50,14 +50,14 @@ const BossFinal = (() => {
     const finalAngle = angle + randomAngleOffset;
 
     // Calcolo della velocità finale: LENTA (10 * 5 = 50 unità)
-    const speedMultiplier = 5; 
-    const finalSpeed = projectileSpeed * speedMultiplier; 
+    const speedMultiplier = 5; 
+    const finalSpeed = projectileSpeed * speedMultiplier; 
 
     const vx = Math.cos(finalAngle) * finalSpeed; 
     const vy = Math.sin(finalAngle) * finalSpeed;
 
     // Crea il proiettile. Sottraiamo 30 (metà della nuova larghezza/altezza 60) per centrarlo
-    projectiles.push(new Projectile(bossCenterX - 30, bossCenterY - 30, vx, vy)); 
+    projectiles.push(new window.Projectile(bossCenterX - 30, bossCenterY - 30, vx, vy)); 
     thrown++;
     lastShot = performance.now();
   }
@@ -74,6 +74,11 @@ const BossFinal = (() => {
     
     // Filtra i proiettili fuori dallo schermo
     projectiles = projectiles.filter(p => p.x > camX - 100 && p.x < camX + 1060 && p.y < 600);
+    
+    // NUOVO: Disattiva il boss solo quando ha lanciato tutto E lo schermo è libero da proiettili
+    if (thrown >= maxProjectiles && projectiles.length === 0) {
+        active = false;
+    }
   }
 
   function render(ctx, camX) {
