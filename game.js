@@ -1,10 +1,13 @@
-// game.js (VERSIONE COMPLETA AGGIORNATA: Include gestione Input Touch e Logiche)
+// game.js (VERSIONE AGGIORNATA)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
     const ctx = canvas ? canvas.getContext('2d') : null;
     const menuDiv = document.getElementById('menu');
-    const gameContainer = document.getElementById('game-container');
+    const endingScreen = document.getElementById('ending-screen');
+    const endingTitle = document.getElementById('ending-title');
+    const endingScore = document.getElementById('ending-score');
+    const winImage = document.getElementById('win-image');
     
     // VARIABILI AUDIO
     const musicNormal = document.getElementById('music_normal');
@@ -20,6 +23,7 @@ const Game = (function() {
     window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
     window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
     window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png';
+    window.winSprite = new Image(); window.winSprite.src = 'assets/sprites/win.png'; // NUOVA SPRITE
     
     // Piattaforme/Trigger
     window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
@@ -45,7 +49,7 @@ const Game = (function() {
     let cutsceneTime = 0;
     const CUTSCENE_DURATION = 5.0;
     let cutsceneTriggerPosition = { x: 0, y: 0, w: 0, h: 0 };
-    let cutsceneGroundY = 540; 
+    let cutsceneGroundY = 540;  
     
     const PLATFORM_TYPE = {
         DISCO: "disco", DJDISC: "djdisc", PALO: "palo", MACCHINA: "macchina"
@@ -112,10 +116,85 @@ const Game = (function() {
             window.BossFinal.reset();
             const config = currentLevel.boss;
             window.BossFinal.start(config.x, config.y, config);
+             if (musicNormal) musicNormal.pause();
+             if (musicFinal) musicFinal.play();
+        } else {
+             if (musicFinal) musicFinal.pause();
+             if (musicNormal) musicNormal.play();
         }
         
         return !!player;
     }
+    
+    function nextLevel() {
+        // Se siamo al Level 3 (index 2), abbiamo vinto!
+        if (currentLevelIndex === 2) {
+            onGameWin();
+            return;
+        }
+
+        isTransitioning = true;
+        
+        // Simula la transizione (es. fade out/in, qui usiamo un semplice ritardo)
+        setTimeout(() => {
+            currentLevelIndex++;
+            if (currentLevelIndex < levels.length) {
+                loadLevel(currentLevelIndex, true); // Mantieni il punteggio
+                isTransitioning = false;
+                window.Engine.start();
+            }
+        }, 1000); // 1 secondo di transizione
+    }
+
+
+    // ************************************************************
+    // GESTIONE FINE GIOCO / VITTORIA
+    // ************************************************************
+    
+    function onGameWin() {
+        window.Engine.stop();
+        if (musicNormal) musicNormal.pause();
+        if (musicFinal) musicFinal.pause();
+
+        menuDiv.style.display = 'none';
+        endingScreen.style.display = 'flex';
+        
+        // Se abbiamo finito il Level 3
+        if (currentLevelIndex === 2) {
+             endingTitle.textContent = "Pie diventa King!";
+             winImage.style.display = 'block'; // Mostra l'immagine di vittoria
+        } else {
+             // Se chiami endGameWin in altri livelli, torna al menu base
+             endingTitle.textContent = "Partita Terminata";
+             winImage.style.display = 'none';
+        }
+        
+        endingScore.textContent = `Punti: ${player ? player.score : 0}`;
+    }
+
+    function onPlayerDied() {
+        if (player.lives > 0) {
+            player.lives--;
+            // Ricarica il livello corrente mantenendo il punteggio e le vite
+            loadLevel(currentLevelIndex, true); 
+        } else {
+             // Se muore e non ha vite, finisce la partita
+             onGameOver(); 
+        }
+    }
+    
+    function onGameOver() {
+        window.Engine.stop();
+        if (musicNormal) musicNormal.pause();
+        if (musicFinal) musicFinal.pause();
+        
+        menuDiv.style.display = 'none';
+        endingScreen.style.display = 'flex';
+        endingTitle.textContent = "Game Over";
+        endingScore.textContent = `Punti totali: ${player ? player.score : 0}`;
+        winImage.style.display = 'none';
+    }
+
 
     // ************************************************************
     // GESTIONE CUTSCENE (INIZIO E AGGIORNAMENTO)
@@ -143,7 +222,7 @@ const Game = (function() {
         if (groundPlatform) {
             cutsceneGroundY = groundPlatform[1]; // Y=540
         } else {
-            cutsceneGroundY = 540; 
+            cutsceneGroundY = 540;  
         }
         
         // Posiziona Pie vicino al palo (posizione iniziale)
@@ -197,7 +276,7 @@ const Game = (function() {
         
         let triggerPlatform = null;
         
-        if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
+        if (currentLevelIndex === 0 || currentLevelIndex === 1) {  
             triggerPlatform = currentLevel.platforms.find(p => p[4] === PLATFORM_TYPE.PALO);
         }
 
@@ -253,7 +332,13 @@ const Game = (function() {
         // Controllo EndZone (Solo Level 3 Boss)
         const endZone = currentLevel.endZone;
         if (endZone && currentLevelIndex === 2 && window.rectsOverlap(player, endZone)) {
-            Game.endGameWin();
+            // Qui abbiamo bisogno della logica di vittoria del Boss, NON di endgamewin diretto
+            // Il boss ha già la sua logica di vittoria interna
+        }
+        
+        // Verifica se il player esce dalla mappa (Game Over)
+        if (player.y > canvas.height + 50) {
+             Game.onPlayerDied();
         }
     }
     
@@ -268,7 +353,7 @@ const Game = (function() {
         
         // LOGICA DI VITTORIA (Se il boss ha finito di sparare)
         if (window.BossFinal.thrown >= currentLevel.boss.projectiles) {
-              Game.endGameWin();
+              Game.onGameWin(); // Chiamiamo onGameWin per la vittoria finale
               return;
         }
         
@@ -294,7 +379,7 @@ const Game = (function() {
     }
 
     // ************************************************************
-    // FUNZIONE DRAW E DISEGNO CUTSCENE
+    // FUNZIONE DRAW
     // ************************************************************
 
     function draw() {
@@ -408,12 +493,12 @@ const Game = (function() {
         ctx.drawImage(window.macchinaSprite, Math.round(macchinaWorldX - camX), macchinaY, macchinaW, macchinaH);
         
         // 2. Disegna Ragazza (solo se visibile)
-        if (ragazzaWorldX < canvas.width + camX) { 
+        if (ragazzaWorldX < canvas.width + camX) {  
             ctx.drawImage(window.ragazzaSprite, Math.round(ragazzaWorldX - camX), ragazzaY, ragazzaW, ragazzaH);
         }
         
         // 3. Disegna Pie (solo se visibile)
-        if (pieWorldX < canvas.width + camX) { 
+        if (pieWorldX < canvas.width + camX) {  
             // Aggiorna la posizione di Pie e disegnalo usando la sua draw()
             player.x = pieWorldX;
             player.y = groundY - player.h;
@@ -532,194 +617,48 @@ const Game = (function() {
         window.Engine.setInputState(keyToMap, isPressed);
     }
     
-    function toggleFullScreen() {
-        const doc = window.document;
-        const docEl = doc.documentElement;
-
-        const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-
-        if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-            requestFullScreen.call(docEl).catch(err => {
-                console.warn("Impossibile attivare il fullscreen (richiede interazione utente):", err);
-            });
-        }
-    }
-    
+    // Inizializza il gioco caricando i livelli e mostra il menu
     function init() {
-        const newBtn = document.getElementById('newBtn');
-        const loadingMessage = document.getElementById('loading-message');
-        const hintText = document.getElementById('hint-text');
-
-        loadingMessage.style.display = 'none';
-        
-        // Mostra suggerimenti solo su PC. Su mobile i controlli sono visibili
-        if (window.innerWidth >= 960 && window.innerHeight >= 540) {
-            hintText.style.display = 'block';
-        } else {
-            hintText.style.display = 'none';
-        }
-
-        newBtn.disabled = true;
-        newBtn.textContent = "Caricamento risorse in corso...";
-        
-        // Elenco completo delle sprite globali definite sopra
-        const spritesToLoad = [
-            window.playerSprite, window.runSprite, window.heartSprite,
-            window.drinkEnemySprite, window.discoBallSprite, window.djDiscSprite,
-            window.paloSprite, window.macchinaSprite, window.bossSprite,
-            window.backgroundSprite, window.ragazzaSprite
-        ];
-        
-        const spritePromises = spritesToLoad.map(sprite => {
-            return new Promise((resolve, reject) => {
-                if (sprite.complete) {
-                    resolve();
-                } else {
-                    sprite.onload = resolve;
-                    sprite.onerror = () => {
-                        console.warn(`Attenzione: Impossibile caricare la sprite: ${sprite.src}. Continuo...`);
-                        resolve();
-                    };
-                }
-            });
-        });
-
-        Promise.all(spritePromises)
-            .then(() => loadLevels())
-            .then(success => {
-                if (success) {
-                    newBtn.textContent = "Nuova Partita";
-                    newBtn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error("Errore critico durante il caricamento delle risorse (Livelli):", error);
-                loadingMessage.textContent = `Errore critico di caricamento. Verifica i file di livello: ${error}`;
-                loadingMessage.style.display = 'block';
-                newBtn.disabled = true;
-            });
+         menuDiv.style.display = 'flex';
+         loadLevels().then(success => {
+             const newBtn = document.getElementById('newBtn');
+             if (success) {
+                 newBtn.textContent = 'Inizia Partita';
+                 newBtn.disabled = false;
+             } else {
+                 newBtn.textContent = 'ERRORE CARICAMENTO';
+                 newBtn.disabled = true;
+             }
+         });
     }
 
-    function startNew(e) {
-        if(e) e.preventDefault();
-        
-        if (!levels.length || !window.Engine) {
-            return;
-        }
-        
-        // La funzione di avvio in index.html gestisce già il fullscreen
-        
-        const playerLoaded = loadLevel(0, false);
-        
-        if (!playerLoaded) {
-            return;
-        }
-
-        menuDiv.style.display = 'none';
-        gameContainer.style.display = 'block';
-
-        if (musicNormal) {
-            musicNormal.loop = true;
-            musicNormal.play().catch(e => console.log("Audio BGM bloccato:", e));
-        }
-        
-        window.Engine.start();
-    }
-    
-    function nextLevel() {
-        if (isTransitioning) return;
-        isTransitioning = true;
-        
-        currentLevelIndex++;
-        
-        if (currentLevelIndex < levels.length) {
-            if (currentLevelIndex === 2) {
-                if (musicNormal) musicNormal.pause();
-                if (musicFinal) {
-                    musicFinal.loop = true;
-                    musicFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
-                }
-            } else {
-                if (musicFinal) musicFinal.pause();
-                if (musicNormal) musicNormal.play().catch(e => console.log("Errore riproduzione BGM Normale:", e));
-            }
-            
-            loadLevel(currentLevelIndex, true);
-            isTransitioning = false;
-            
-            if (window.Engine) window.Engine.start();
-            
-        } else {
-            window.Engine.stop();
-            if (musicNormal) musicNormal.pause();
-            if (musicFinal) musicFinal.pause();
-            window.Ending.showLossScreen("Fine dei livelli (hai finito il contenuto).");
-            isTransitioning = false;
-        }
-    }
-    
-    function endGameWin() {
-        if (window.Engine) window.Engine.stop();
-        if (musicNormal) musicNormal.pause();
-        if (musicFinal) musicFinal.pause();
-        if (player) window.Ending.showWinScreen("Pie diventa King!", player.score);
+    // Avvia una nuova partita
+    function startNew() {
+         if (levels.length > 0) {
+              menuDiv.style.display = 'none';
+              endingScreen.style.display = 'none';
+              loadLevel(0, false); // Ricarica il livello 0 e resetta TUTTO
+              window.Engine.start();
+         } else {
+              console.error("Livelli non caricati. Impossibile iniziare.");
+         }
     }
 
-    function onPlayerDied() {
-        if (isTransitioning) return;
-        isTransitioning = true;
-        
-        // Pausa del ciclo di gioco per mostrare il momento della morte
-        if (window.Engine) window.Engine.stop();
-        
-        // Piccolo timeout prima del riavvio
-        setTimeout(() => {
-            
-            // Reimposta i nemici (gli ostacoli, non i proiettili)
-            if (currentLevel.originalEnemies) {
-                 currentLevel.enemies = JSON.parse(JSON.stringify(currentLevel.originalEnemies));
-            }
-            
-            // Ricarica il livello corrente mantenendo il punteggio
-            loadLevel(currentLevelIndex, true);
-            
-            // Gestione musica
-            if (currentLevelIndex === 2) {
-                if (musicNormal) musicNormal.pause();
-                if (musicFinal) musicFinal.play().catch(e => console.log("Errore riproduzione BGM Finale:", e));
-            } else {
-                if (musicFinal) musicFinal.pause();
-                if (musicNormal) musicNormal.play().catch(e => console.log("Errore riproduzione BGM:", e));
-            }
-            
-            menuDiv.style.display = 'none';
-            gameContainer.style.display = 'block';
-
-            if (window.Engine) window.Engine.start();
-            isTransitioning = false;
-        }, 500);
-    }
-    
-    function setEngine(engine) {
-        window.Engine = engine; // Rende l'Engine accessibile globalmente come 'window.Engine'
-    }
-    
+    // API pubbliche
     return {
-        startNew: startNew,
-        nextLevel: nextLevel,
-        endGameWin: endGameWin,
-        onPlayerDied: onPlayerDied,
         init: init,
+        startNew: startNew,
         update: update,
         draw: draw,
-        setEngine: setEngine,
-        getCurLevelIndex: () => currentLevelIndex,
+        nextLevel: nextLevel,
+        onPlayerDied: onPlayerDied,
+        onGameWin: onGameWin,
         removeEnemy: removeEnemy,
-        player: () => player,
-        isCutsceneActive: () => isCutsceneActive,
-        // *** NUOVA FUNZIONE ESPORTATA PER L'INPUT TOUCH ***
-        handleTouchInput: handleTouchInput
+        handleTouchInput: handleTouchInput,
+        getCurrentLevelIndex: () => currentLevelIndex,
+        isCutsceneActive: () => isCutsceneActive
     };
 })();
 
+// Espone l'oggetto Game globalmente per l'HTML
 window.Game = Game;
