@@ -65,7 +65,11 @@
             z-index: 100;
         }
         
-        /* ... (gli stili per menu e pulsanti li lasciamo invariati) ... */
+        /* TUTTI I TESTI DEL MENU IN ROSSO (Richiesto) */
+        #menu h1, #menu p, #ending-screen h1, #ending-screen p {
+            color: #ff3333; /* Rosso acceso */
+        }
+
         .menu-button, #restartBtn {
              padding: 15px 30px;
              font-size: 24px;
@@ -79,36 +83,31 @@
              transition: background-color 0.2s;
         }
 
-        /* CONTROLLI MOBILE (NUOVI) */
+        /* CONTROLLI MOBILE */
         
-        /* Area Touch Destra e Sinistra (Invisibili) */
-        .touch-area {
+        /* Area Touch per Movimento Sinistra/Destra (copre metà schermo escluso il pulsante salto) */
+        #touch-move {
             position: absolute;
             bottom: 0;
+            right: 0; 
             height: 100%; 
-            width: 50%;
+            width: calc(100% - 120px); /* Lascia spazio a sinistra per il pulsante salto (120px) */
             z-index: 101; 
             display: none; 
-            /* background-color: rgba(0, 255, 0, 0.1); */ /* DEBUG */
+            /* background-color: rgba(0, 0, 255, 0.1); */ /* DEBUG */
         }
-        #touch-left {
-            left: 0;
-        }
-        #touch-right {
-            right: 0;
-        }
-
-        /* Bottone Salto (Visibile) */
+        
+        /* Bottone Salto (Visibile, SINISTRA, Senza Testo) */
         #jumpBtn {
             position: absolute;
             bottom: 20px;
-            right: 20px;
+            left: 20px; /* POSIZIONE A SINISTRA */
             width: 80px;
             height: 80px;
             border-radius: 50%;
             background-color: #ff3333; 
-            color: white;
-            font-size: 18px;
+            font-size: 0; /* Nessun testo */
+            color: transparent;
             font-weight: bold;
             border: 3px solid #cc0000;
             cursor: pointer;
@@ -123,10 +122,9 @@
         }
         
         /* MEDIA QUERY per attivare i controlli touch solo su schermi piccoli */
-        /* Nota: Il gioco verrà scalato su schermi più piccoli di 960x540 */
         @media screen and (max-width: 960px) {
-            .touch-area, #jumpBtn {
-                display: block; /* Mostra i controlli touch su schermi piccoli */
+            #touch-move, #jumpBtn {
+                display: block; 
             }
         }
     </style>
@@ -136,24 +134,23 @@
 <div id="game-container">
     <canvas id="game" width="960" height="540"></canvas>
 
-    <div id="touch-left" class="touch-area"></div>
-    <div id="touch-right" class="touch-area"></div>
+    <div id="touch-move"></div> 
 
     <div id="menu">
         <h1>Go Pie Go</h1>
         <p>Vesti i panni di Pie, prendi i cuori delle Hoes e diventa King!</p>
-        <button id="newBtn" class="menu-button">Caricamento...</button> 
-        <p id="loading-message" style="display:none; color: red;"></p>
+        <button id="newBtn" class="menu-button">Inizia Partita</button> 
+        <p id="loading-message" style="display:none;"></p>
         <p id="hint-text" style="display:none;">Usa ⬅️ ➡️ per muoverti e ⬆️ / Spazio per saltare.</p>
     </div>
 
     <div id="ending-screen">
         <h1 id="ending-title"></h1>
         <p id="ending-score"></p>
-        <button id="restartBtn" class="menu-button">Torna al Menu</button>
+        <button id="restartBtn" class="menu-button">Inizia Partita</button>
     </div>
     
-    <button id="jumpBtn">SALTO</button>
+    <button id="jumpBtn"></button>
 </div>
 
 <audio id="music_normal" loop>
@@ -176,7 +173,6 @@
     window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
     window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
     window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
-    // Sfondo iniziale richiesto
     window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
 </script>
 
@@ -192,13 +188,12 @@
      * GESTIONE DOM, SCREEN MODE, E INPUT TOUCH
      * ------------------------------------------- */
 
-    // Funzione per richiedere lo schermo intero
     function enterFullscreen(element) {
         if (element.requestFullscreen) {
             element.requestFullscreen();
-        } else if (element.webkitRequestFullscreen) { /* Safari */
+        } else if (element.webkitRequestFullscreen) { 
             element.webkitRequestFullscreen();
-        } else if (element.msRequestFullscreen) { /* IE11 */
+        } else if (element.msRequestFullscreen) { 
             element.msRequestFullscreen();
         }
     }
@@ -208,65 +203,101 @@
         const newBtn = document.getElementById('newBtn');
         const restartBtn = document.getElementById('restartBtn');
         const jumpBtn = document.getElementById('jumpBtn');
-        const touchLeft = document.getElementById('touch-left');
-        const touchRight = document.getElementById('touch-right');
+        const touchMove = document.getElementById('touch-move'); // Area per movimento
 
-        // FUNZIONE UNIFICATA PER L'AVVIO
-        const startGameAndFullscreen = (e) => {
+        // FUNZIONE: Avvia il gioco (livello 0) e gestisce il Fullscreen
+        const startGame = (e) => {
             if (e) e.preventDefault();
             
-            // 1. Schermo Intero (richiede interazione utente)
-            enterFullscreen(gameContainer); 
+            if (document.fullscreenElement === null) {
+                enterFullscreen(gameContainer); 
+            }
             
-            // 2. Avvio del Gioco (chiama la tua funzione Game.startNew)
             if (window.Game && window.Game.startNew) {
-                // Chiama startNew, ma senza l'evento e. (lo gestisce internamente)
+                // Avvia il gioco dal livello 0 (nuova partita)
                 window.Game.startNew(); 
             } else {
                 console.error('Game object non pronto o startNew non definito.');
             }
         };
 
-        // EVENTI MENU START (gestione click/touch unificata)
-        newBtn.addEventListener('click', startGameAndFullscreen);
-        newBtn.addEventListener('touchstart', startGameAndFullscreen);
+        // Pulsante di AVVIO (Menu Iniziale)
+        newBtn.addEventListener('click', startGame);
+        newBtn.addEventListener('touchstart', startGame);
         
-        // EVENTI RESTART MENU
+        // Pulsante di RIAVVIO (Schermata Finale) -> Esegue lo stesso "Inizia Partita"
         const handleRestart = (e) => {
              if (e) e.preventDefault();
              document.getElementById('ending-screen').style.display = 'none';
-             document.getElementById('menu').style.display = 'flex';
+             startGame();
         };
         restartBtn.addEventListener('click', handleRestart);
         restartBtn.addEventListener('touchstart', handleRestart);
 
-        // INIZIALIZZAZIONE
+        // INIZIALIZZAZIONE (Carica i livelli e abilita newBtn)
         if (window.Game && window.Game.init) {
             window.Game.init();
         }
 
-        // --- GESTIONE INPUT TOUCH sui controlli (Funzione handleTouchInput da game.js) ---
+        // --- GESTIONE INPUT TOUCH per Movimento (TouchMove) ---
         
-        const handleTouch = (element, action) => {
-            // Touch Start: Inizia la pressione (muovi/salta)
-            element.addEventListener('touchstart', (e) => {
-                e.preventDefault(); 
-                if (window.Game && window.Game.handleTouchInput) {
-                    window.Game.handleTouchInput(action, true);
+        const handleMovementTouch = (e) => {
+            e.preventDefault(); 
+            if (!window.Game || !window.Game.handleTouchInput) return;
+
+            // Se ci sono tocchi attivi
+            if (e.changedTouches.length > 0) {
+                const touch = e.changedTouches[0];
+                const area = touchMove.getBoundingClientRect();
+                
+                // Calcola la posizione Y relativa all'area touch
+                const relativeY = touch.clientY - area.top;
+                const relativeX = touch.clientX - area.left;
+
+                // Toccato in basso? (Ultimo 50% dell'altezza)
+                const isBottomHalf = relativeY > area.height * 0.5; 
+
+                // Toccato a sinistra o a destra?
+                const isLeftOfArea = relativeX < area.width / 2;
+                
+                // 1. Tocco di Inizio (touchstart)
+                if (e.type === 'touchstart' && isBottomHalf) {
+                    if (isLeftOfArea) {
+                        window.Game.handleTouchInput('left', true);
+                    } else {
+                        window.Game.handleTouchInput('right', true);
+                    }
                 }
-            });
-            // Touch End: Termina la pressione (ferma)
-            element.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                if (window.Game && window.Game.handleTouchInput) {
-                    window.Game.handleTouchInput(action, false);
+                
+                // 2. Tocco di Fine (touchend)
+                if (e.type === 'touchend') {
+                    // Ferma sempre entrambi i movimenti al rilascio del dito
+                    window.Game.handleTouchInput('left', false);
+                    window.Game.handleTouchInput('right', false);
                 }
-            });
+            }
         };
         
-        handleTouch(jumpBtn, 'jump');
-        handleTouch(touchLeft, 'left');
-        handleTouch(touchRight, 'right');
+        // Assegna gli eventi all'area di movimento
+        touchMove.addEventListener('touchstart', handleMovementTouch);
+        touchMove.addEventListener('touchend', handleMovementTouch);
+        touchMove.addEventListener('touchcancel', handleMovementTouch); // Per sicurezza
+        
+        // --- GESTIONE INPUT TOUCH per Salto (jumpBtn) ---
+        
+        // Il pulsante salto mantiene la sua logica semplice di on/off
+        jumpBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            if (window.Game && window.Game.handleTouchInput) {
+                window.Game.handleTouchInput('jump', true);
+            }
+        });
+        jumpBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (window.Game && window.Game.handleTouchInput) {
+                window.Game.handleTouchInput('jump', false);
+            }
+        });
     });
 </script>
 </body>
