@@ -270,7 +270,7 @@
 
 <script>
     /* -------------------------------------------
-     * GESTIONE DOM, SCREEN MODE, E INPUT TOUCH (AGGIORNATA)
+     * GESTIONE DOM, SCREEN MODE, E INPUT TOUCH
      * ------------------------------------------- */
 
     function enterFullscreen(element) {
@@ -283,35 +283,46 @@
         }
     }
 
-    // Funzione centralizzata per gestire la riproduzione audio (Come da richiesta)
+    // Funzione centralizzata per gestire la riproduzione audio (CORREZIONE AUDIO)
     const playMusic = (elementId) => {
         const audio = document.getElementById(elementId);
         if (audio) {
-            // Ferma tutte le musiche prima di far partire la nuova
-            document.getElementById('music_level1').pause();
-            document.getElementById('music_level2').pause();
-            document.getElementById('music_final').pause();
+            // Forzo l'interruzione e il reset di TUTTE le tracce prima di avviarne una nuova
+            const allAudio = [
+                document.getElementById('music_level1'),
+                document.getElementById('music_level2'),
+                document.getElementById('music_final')
+            ];
 
-            document.getElementById('music_level1').currentTime = 0;
-            document.getElementById('music_level2').currentTime = 0;
-            document.getElementById('music_final').currentTime = 0;
-
+            allAudio.forEach(track => {
+                if (track) {
+                    track.pause();
+                    track.currentTime = 0; 
+                }
+            });
+            
+            // Riproduce il brano richiesto (audio è l'elemento corretto)
             audio.currentTime = 0;
             audio.volume = 0.5;
+            
+            // Assicura il loop
+            audio.onended = function() {
+                audio.play();
+            };
+            
             audio.play().catch(error => {
                 console.warn(`Riproduzione audio ${elementId} bloccata o errore:`, error);
             });
         }
     };
 
-    // Funzione globale per cambiare musica quando il livello cambia (Da implementare in game.js)
+    // Funzione globale per cambiare musica quando il livello cambia (Da chiamare in game.js)
     window.changeMusicForLevel = (level) => {
         switch (level) {
             case 1:
                 playMusic('music_level1');
                 break;
             case 2:
-                // Avvia music_level2
                 playMusic('music_level2');
                 break;
             case 3:
@@ -340,7 +351,7 @@
             
             if (window.Game && window.Game.startNew) {
                 window.Game.startNew(); 
-                window.changeMusicForLevel(1); // Avvia la musica Level 1
+                window.changeMusicForLevel(1); // Avvia la musica Level 1 all'inizio
                 
                 // Mostra i controlli touch SOLO se è mobile
                 if (isMobile) {
@@ -387,9 +398,14 @@
             document.getElementById('jumpBtn').style.display = 'none';
 
             // Ferma TUTTI gli audio
-            document.getElementById('music_level1').pause();
-            document.getElementById('music_level2').pause();
-            document.getElementById('music_final').pause();
+            const allAudio = [
+                document.getElementById('music_level1'),
+                document.getElementById('music_level2'),
+                document.getElementById('music_final')
+            ];
+            allAudio.forEach(track => {
+                if (track) track.pause();
+            });
         };
         restartBtn.addEventListener('click', handleRestart);
         restartBtn.addEventListener('touchstart', handleRestart);
@@ -401,7 +417,7 @@
 
         /* -------------------------------------------
          * GESTIONE INPUT TOUCH per Movimento (Area in basso 20% a DESTRA)
-         * Corretto per supportare il Multitouch e la coerenza Sinistra/Destra.
+         * Gestione Multitouch per Salto + Movimento (funzionalità richiesta)
          * ------------------------------------------- */
         
         const handleMovementTouch = (e) => {
@@ -423,7 +439,7 @@
             let isMovingLeft = false;
             let isMovingRight = false;
             
-            // Itero su tutti i tocchi nell'area touchMove
+            // Itero su tutti i tocchi nell'area touchMove (per il multitouch)
             for (let i = 0; i < touches.length; i++) {
                 const touch = touches[i];
                 const relativeX = touch.clientX - area.left;
@@ -441,11 +457,8 @@
             }
             
             // Applica i comandi di movimento in base ai tocchi rilevati
-            // Questo gestisce il caso in cui due dita tocchino contemporaneamente a SX e DX nell'area.
             window.Game.handleTouchInput('left', isMovingLeft);
             window.Game.handleTouchInput('right', isMovingRight);
-
-            // Importante: Se il tocco è stato sollevato dall'area, la logica di 'touchend' sopra gestirà l'arresto.
         };
         
         // Assegno i listener per l'area di movimento
@@ -458,7 +471,6 @@
         jumpBtn.addEventListener('touchstart', (e) => {
             e.preventDefault(); 
             if (window.Game && window.Game.handleTouchInput) {
-                // Se il Salto è attivo, si invia il comando 'jump' = true
                 window.Game.handleTouchInput('jump', true);
             }
         }, { passive: false });
@@ -466,7 +478,6 @@
         jumpBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
             if (window.Game && window.Game.handleTouchInput) {
-                // Quando si rilascia il tasto, si invia il comando 'jump' = false
                 window.Game.handleTouchInput('jump', false);
             }
         });
