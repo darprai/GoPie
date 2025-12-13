@@ -8,6 +8,12 @@
     <link rel="icon" type="image/x-icon" href="assets/sprites/favicon.ico"> 
 
     <style>
+        /* MODIFICHE NECESSARIE PER SCHERMO INTERO MOBILE E NESSUNO SCORRIMENTO */
+        html, body {
+            height: 100%; /* Forza l'altezza al 100% del viewport/html */
+            overflow: hidden; /* Blocca ogni scorrimento */
+        }
+        
         /* BASE STYLES */
         body {
             background-image: url('assets/sprites/icon-512.png'); 
@@ -18,7 +24,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            /* Utilizzo 100vh, ma con 'height: 100%' su html/body si gestiscono meglio le barre mobile */
+            height: 100vh; 
             margin: 0;
             color: white;
             font-family: Arial, sans-serif;
