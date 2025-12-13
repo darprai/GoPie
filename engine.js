@@ -1,9 +1,12 @@
-// engine.js (AGGIORNATO: Aggiunta gestione Touch Input)
+// engine.js (AGGIORNATO: Logica di Input Unificata)
 
 const Engine = (function() {
     let lastTime = 0;
     let running = false;
-    let input = {}; 
+    let input = {}; // Gestisce sia input da tastiera che da touch
+    
+    // Rimuoviamo gli ascoltatori generici touchStart/touchEnd qui. 
+    // Verranno gestiti in game.js e nell'HTML direttamente sui DIV/BOTTONI specifici.
     
     function loop(time) {
         if (!running) return;
@@ -34,39 +37,22 @@ const Engine = (function() {
     }
     
     function handleKeyDown(e) {
-        input[e.key] = true;
+        // Mappatura Tasti per il gioco
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'Space') {
+             input[e.key] = true;
+        }
     }
 
     function handleKeyUp(e) {
-        input[e.key] = false;
+        // Mappatura Tasti per il gioco
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'Space') {
+            input[e.key] = false;
+        }
     }
 
-    // --- NUOVA LOGICA TOUCH ---
-    function handleTouchStart(e) {
-        // Impedisce lo scrolling
-        e.preventDefault(); 
-        
-        // Simula la pressione di un tasto per l'input (Esempio: Tocco = Spazio/Salto)
-        // Questo dipende molto da come è strutturato il tuo input mobile. 
-        // Se non hai un gamepad virtuale, potresti voler mappare il tocco a "salto".
-        
-        // Per semplicità, qui mappiamo il tocco sullo schermo al tasto 'Space' per il salto.
-        // Se hai dei bottoni sullo schermo, devi mappare il tocco di quei bottoni.
-        input['Space'] = true; 
-    }
-
-    function handleTouchEnd(e) {
-        e.preventDefault();
-        input['Space'] = false;
-    }
-    
-    // Inizializzazione degli ascoltatori
+    // Inizializzazione degli ascoltatori TASTIERA
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    
-    // Aggiunta gestione Touch
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
     
     // Inizializza l'Engine nel contesto globale
     window.Game.setEngine({ start, stop }); 
@@ -74,7 +60,11 @@ const Engine = (function() {
     return {
         start: start,
         stop: stop,
-        getInput: () => input 
+        getInput: () => input,
+        // *** NUOVO: Funzione per iniettare l'input da Touch (chiamata dall'HTML) ***
+        setInputState: (key, isPressed) => {
+             input[key] = isPressed;
+        }
     };
 })();
 
