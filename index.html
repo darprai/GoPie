@@ -1,147 +1,147 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
-    <title>Go Pie Go</title>
-    
-    <link rel="icon" type="image/x-icon" href="assets/sprites/favicon.ico"> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Go Pie Go</title>
+    
+    <link rel="icon" type="image/x-icon" href="assets/sprites/favicon.ico"> 
 
-    <style>
-        /* BASE STYLES */
-        body {
-            background-image: url('assets/sprites/icon-512.png'); 
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            color: white;
-            font-family: Arial, sans-serif;
-            overflow: hidden; 
-            touch-action: manipulation; 
-        }
-        
-        #game-container {
-            display: block; 
-            position: relative;
-            /* Dimensione base del Canvas (rapporto 16:9) */
-            width: 960px;
-            height: 540px;
-            background-color: transparent; 
-            box-sizing: border-box; 
-            
-            /* LOGICA DI SCALABILITÀ ADATTIVA */
-            max-width: 90vw;
-            max-height: 90vh;
-            aspect-ratio: 16 / 9;
-            width: min(90vw, (90vh * 16 / 9));
-            height: min(90vh, (90vw * 9 / 16));
+    <style>
+        /* BASE STYLES */
+        body {
+            background-image: url('assets/sprites/icon-512.png'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden; 
+            touch-action: manipulation; 
+        }
+        
+        #game-container {
+            display: block; 
+            position: relative;
+            /* Dimensione base del Canvas (rapporto 16:9) */
+            width: 960px;
+            height: 540px;
+            background-color: transparent; 
+            box-sizing: border-box; 
+            
+            /* LOGICA DI SCALABILITÀ ADATTIVA */
+            max-width: 90vw;
+            max-height: 90vh;
+            aspect-ratio: 16 / 9;
+            width: min(90vw, (90vh * 16 / 9));
+            height: min(90vh, (90vw * 9 / 16));
 
-            border: none;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        }
+            border: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
 
-        #game {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
+        #game {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
 
-        /* MENU & ENDING STYLES */
-        #menu, #ending-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9); 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            z-index: 100;
-        }
-        
-        /* CORREZIONE 2: Colori specifici */
-        
-        /* Colore ROSSO ACCESO per i titoli (Go Pie Go e Game Over/Vittoria) */
-        #menu h1, #ending-screen h1 {
-            color: #ff3333; /* Rosso acceso */
-        }
-        
-        /* Colore GIALLO ACCESO per il sottotitolo del Menu e i punteggi/suggerimenti */
-        #menu p, #ending-screen p {
-            color: #ffff00; /* Giallo acceso */
-        }
-        
-        /* STILE IMMAGINE DI VITTORIA */
-        #win-image {
-            max-width: 80%;
-            max-height: 50%;
-            margin: 20px 0;
-            display: none; 
-            object-fit: contain;
-        }
+        /* MENU & ENDING STYLES */
+        #menu, #ending-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        /* CORREZIONE 2: Colori specifici */
+        
+        /* Colore ROSSO ACCESO per i titoli (Go Pie Go e Game Over/Vittoria) */
+        #menu h1, #ending-screen h1 {
+            color: #ff3333; /* Rosso acceso */
+        }
+        
+        /* Colore GIALLO ACCESO per il sottotitolo del Menu e i punteggi/suggerimenti */
+        #menu p, #ending-screen p {
+            color: #ffff00; /* Giallo acceso */
+        }
+        
+        /* STILE IMMAGINE DI VITTORIA */
+        #win-image {
+            max-width: 80%;
+            max-height: 50%;
+            margin: 20px 0;
+            display: none; 
+            object-fit: contain;
+        }
 
-        .menu-button, #restartBtn {
-            padding: 15px 30px;
-            font-size: 24px;
-            margin-top: 20px;
-            cursor: pointer;
-            background-color: #00ffcc;
-            border: none;
-            border-radius: 5px;
-            color: black;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
+        .menu-button, #restartBtn {
+            padding: 15px 30px;
+            font-size: 24px;
+            margin-top: 20px;
+            cursor: pointer;
+            background-color: #00ffcc;
+            border: none;
+            border-radius: 5px;
+            color: black;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
 
-        /* CONTROLLI MOBILE */
-        #touch-move {
-            position: absolute;
-            bottom: 0;
-            right: 0; 
-            height: 100%; 
-            width: calc(100% - 120px); 
-            z-index: 101; 
-            display: none; 
-        }
-        
-        #jumpBtn {
-            position: absolute;
-            bottom: 20px;
-            left: 20px; 
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background-color: #ff3333; 
-            font-size: 0; 
-            color: transparent;
-            font-weight: bold;
-            border: 3px solid #cc0000;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
-            user-select: none;
-            z-index: 102; 
-            display: none; 
-        }
-        #jumpBtn:active {
-            background-color: #cc0000;
-            box-shadow: 0 0 5px rgba(255, 51, 51, 0.8) inset;
-        }
-        
-        @media screen and (max-width: 960px) {
-            #touch-move, #jumpBtn {
-                 display: block; 
-            }
-        }
-    </style>
+        /* CONTROLLI MOBILE */
+        #touch-move {
+            position: absolute;
+            bottom: 0;
+            right: 0; 
+            height: 100%; 
+            width: calc(100% - 120px); 
+            z-index: 101; 
+            display: none; 
+        }
+        
+        #jumpBtn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px; 
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #ff3333; 
+            font-size: 0; 
+            color: transparent;
+            font-weight: bold;
+            border: 3px solid #cc0000;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+            user-select: none;
+            z-index: 102; 
+            display: none; 
+        }
+        #jumpBtn:active {
+            background-color: #cc0000;
+            box-shadow: 0 0 5px rgba(255, 51, 51, 0.8) inset;
+        }
+        
+        @media screen and (max-width: 960px) {
+            #touch-move, #jumpBtn {
+                 display: block; 
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -149,171 +149,197 @@
 <audio id="music_final" src="assets/music/music_final.mp3" loop></audio>
 
 <div id="game-container">
-    <canvas id="game" width="960" height="540"></canvas>
+    <canvas id="game" width="960" height="540"></canvas>
 
-    <div id="touch-move"></div> 
-    <button id="jumpBtn"></button>
+    <div id="touch-move"></div> 
+    <button id="jumpBtn"></button>
 
-    <div id="menu">
-        <h1>Go Pie Go</h1>
-        <p>Vesti i panni di Pie, prendi i cuori delle Hoes e diventa King!</p>
-        <button id="newBtn" class="menu-button">Inizia Partita</button> 
-        <p id="loading-message" style="display:none;"></p>
-        <p id="hint-text" style="display:none;">Usa ⬅️ ➡️ per muoverti e ⬆️ / Spazio per saltare.</p>
-    </div>
+    <div id="menu">
+        <h1>Go Pie Go</h1>
+        <p>Vesti i panni di Pie, prendi i cuori delle Hoes e diventa King!</p>
+        <button id="newBtn" class="menu-button">Inizia Partita</button> 
+        <p id="loading-message" style="display:none;"></p>
+        <p id="hint-text" style="display:none;">Usa ⬅️ ➡️ per muoverti e ⬆️ / Spazio per saltare.</p>
+    </div>
 
-    <div id="ending-screen" style="display:none;">
-        <h1 id="ending-title"></h1>
-        <img id="win-image" src="assets/sprites/win.png" alt="Pie King">
-        <p id="ending-score"></p>
-        <button id="restartBtn" class="menu-button">Ricomincia</button>
-    </div>
+    <div id="ending-screen" style="display:none;">
+        <h1 id="ending-title"></h1>
+        <img id="win-image" src="assets/sprites/win.png" alt="Pie King">
+        <p id="ending-score"></p>
+        <button id="restartBtn" class="menu-button">Ricomincia</button>
+    </div>
 </div>
 
 <script>
-    // **************************************************
-    // Caricamento Sprite (INCLUSO ragazzaSprite)
-    // **************************************************
-    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png'; 
-    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
-    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
-    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
-    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
-    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
-    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
-    
-    // RIGA AGGIUNTA PER IL FUNZIONAMENTO DELLA CUTSCENE
-    window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png'; 
-    
-    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
-    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
-    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
-    window.winSprite = new Image(); window.winSprite.src = 'assets/sprites/win.png';
+    // **************************************************
+    // Caricamento Sprite (INCLUSO ragazzaSprite)
+    // **************************************************
+    window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png'; 
+    window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
+    window.heartSprite = new Image(); window.heartSprite.src = 'assets/sprites/heart.png';
+    window.drinkEnemySprite = new Image(); window.drinkEnemySprite.src = 'assets/sprites/drink.png';
+    window.discoBallSprite = new Image(); window.discoBallSprite.src = 'assets/sprites/disco.png';
+    window.djDiscSprite = new Image(); window.djDiscSprite.src = 'assets/sprites/djdisc.png';
+    window.paloSprite = new Image(); window.paloSprite.src = 'assets/sprites/palo.png';
+    
+    // RIGA AGGIUNTA PER IL FUNZIONAMENTO DELLA CUTSCENE
+    window.ragazzaSprite = new Image(); window.ragazzaSprite.src = 'assets/sprites/ragazza.png'; 
+    
+    window.macchinaSprite = new Image(); window.macchinaSprite.src = 'assets/sprites/macchina.png';
+    window.bossSprite = new Image(); window.bossSprite.src = 'assets/sprites/golruk.png';
+    window.backgroundSprite = new Image(); window.backgroundSprite.src = 'assets/sprites/icon-512.png'; 
+    window.winSprite = new Image(); window.winSprite.src = 'assets/sprites/win.png';
 </script>
 
 <script src="rects.js"></script>
 <script src="player.js"></script>
 <script src="projectile.js"></script>
 <script src="boss_final.js"></script>
-<script src="game.js"></script> 
-<script src="engine.js"></script> 
+<script src="game.js"></script> 
+<script src="engine.js"></script> 
 
 
 <script>
-    /* -------------------------------------------
-     * GESTIONE DOM, SCREEN MODE, E INPUT TOUCH
-     * ------------------------------------------- */
-
-    function enterFullscreen(element) {
-        if (element.requestFullscreen) {
-            element.requestFullscreen();
-        } else if (element.webkitRequestFullscreen) { 
-            element.webkitRequestFullscreen();
-        } else if (element.msRequestFullscreen) { 
-            element.msRequestFullscreen();
-        }
+    /* -------------------------------------------
+     * UTILITY GLOBALI PER STATO SCHERMO/DISPOSITIVO
+     * ------------------------------------------- */
+    // Funzione per verificare se siamo in modalità Fullscreen
+    function isFullscreen() {
+        return document.fullscreenElement || 
+               document.webkitFullscreenElement || 
+               document.mozFullScreenElement || 
+               document.msFullscreenElement;
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const gameContainer = document.getElementById('game-container');
-        const newBtn = document.getElementById('newBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const jumpBtn = document.getElementById('jumpBtn');
-        const touchMove = document.getElementById('touch-move'); 
-        
-        // Aggiungo .style.display = 'none' all'ending screen per nasconderla di default
-        document.getElementById('ending-screen').style.display = 'none'; 
+    // Variabile per rilevare se siamo su un dispositivo touch
+    const IS_TOUCH_DEVICE = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
 
-        // FUNZIONE: Avvia il gioco (livello 0) e gestisce il Fullscreen
-        const startGame = (e) => {
-            if (e) e.preventDefault();
-            
-            // Richiede Fullscreen (su mobile è cruciale per l'interazione)
-            // Usa window.innerWidth < 960 per indicare che siamo probabilmente su un dispositivo più piccolo
-            if (document.fullscreenElement === null && window.innerWidth < 960) {
-                 enterFullscreen(gameContainer); 
+    /* -------------------------------------------
+     * GESTIONE DOM, SCREEN MODE, E INPUT TOUCH
+     * ------------------------------------------- */
+
+    function enterFullscreen(element) {
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) { 
+            element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) { 
+            element.msRequestFullscreen();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const gameContainer = document.getElementById('game-container');
+        const newBtn = document.getElementById('newBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const jumpBtn = document.getElementById('jumpBtn');
+        const touchMove = document.getElementById('touch-move'); 
+        
+        // Aggiungo .style.display = 'none' all'ending screen per nasconderla di default
+        document.getElementById('ending-screen').style.display = 'none'; 
+
+
+        // FUNZIONE: Avvia il gioco (livello 0) e gestisce il Fullscreen
+        const startGame = (e) => {
+            if (e) e.preventDefault();
+            
+            // Richiede Fullscreen (su mobile è cruciale per l'interazione)
+            // Usa window.innerWidth < 960 per indicare che siamo probabilmente su un dispositivo più piccolo
+            if (document.fullscreenElement === null && window.innerWidth < 960) {
+                 enterFullscreen(gameContainer); 
+            }
+            
+            if (window.Game && window.Game.startNew) {
+                window.Game.startNew(); 
+            } else {
+                console.error('Game object non pronto o startNew non definito.');
+            }
+
+            // *** Punto di Inserimento per Funzioni Mobile/Fullscreen ***
+            if (IS_TOUCH_DEVICE && isFullscreen()) {
+                console.log("Gioco avviato in modalità Fullscreen su Touch Device.");
+                // Esegui qui qualsiasi altra funzione mobile specifica, se necessario
             }
-            
-            if (window.Game && window.Game.startNew) {
-                window.Game.startNew(); 
-            } else {
-                console.error('Game object non pronto o startNew non definito.');
-            }
-        };
+        };
 
-        // Pulsante di AVVIO (Menu Iniziale)
-        newBtn.addEventListener('click', startGame);
-        newBtn.addEventListener('touchstart', startGame);
+        // Pulsante di AVVIO (Menu Iniziale)
+        newBtn.addEventListener('click', startGame);
         
-        // Pulsante di RIAVVIO (Schermata Finale)
-        const handleRestart = (e) => {
-             if (e) e.preventDefault();
-             document.getElementById('ending-screen').style.display = 'none';
-             // Ri-mostra il menu per ricominciare
-             document.getElementById('menu').style.display = 'flex';
-             // L'utente dovrà cliccare di nuovo 'Inizia Partita'
-        };
-        restartBtn.addEventListener('click', handleRestart);
-        restartBtn.addEventListener('touchstart', handleRestart);
+        // *****************************************************************
+        // CORREZIONE TOUCHSTART per il pulsante "Inizia Partita"
+        // Usa { passive: false } per garantire l'esecuzione di preventDefault()
+        // *****************************************************************
+        newBtn.addEventListener('touchstart', startGame, { passive: false });
+        
+        // Pulsante di RIAVVIO (Schermata Finale)
+        const handleRestart = (e) => {
+             if (e) e.preventDefault();
+             document.getElementById('ending-screen').style.display = 'none';
+             // Ri-mostra il menu per ricominciare
+             document.getElementById('menu').style.display = 'flex';
+             // L'utente dovrà cliccare di nuovo 'Inizia Partita'
+        };
+        restartBtn.addEventListener('click', handleRestart);
+        restartBtn.addEventListener('touchstart', handleRestart);
 
-        // INIZIALIZZAZIONE (Chiama l'init del Game appena il DOM è pronto)
-        if (window.Game && window.Game.init) {
-            window.Game.init();
-        }
+        // INIZIALIZZAZIONE (Chiama l'init del Game appena il DOM è pronto)
+        if (window.Game && window.Game.init) {
+            window.Game.init();
+        }
 
-        // --- GESTIONE INPUT TOUCH per Movimento (TouchMove) ---
-        
-        const handleMovementTouch = (e) => {
-             e.preventDefault(); 
-             if (!window.Game || !window.Game.handleTouchInput) return;
+        // --- GESTIONE INPUT TOUCH per Movimento (TouchMove) ---
+        
+        const handleMovementTouch = (e) => {
+             e.preventDefault(); 
+             if (!window.Game || !window.Game.handleTouchInput) return;
 
-             // Verifica se il tocco è finito o cancellato
-             const isEnd = (e.type === 'touchend' || e.type === 'touchcancel');
-             if (isEnd) {
-                 window.Game.handleTouchInput('left', false);
-                 window.Game.handleTouchInput('right', false);
-                 return;
-             }
+             // Verifica se il tocco è finito o cancellato
+             const isEnd = (e.type === 'touchend' || e.type === 'touchcancel');
+             if (isEnd) {
+                 window.Game.handleTouchInput('left', false);
+                 window.Game.handleTouchInput('right', false);
+                 return;
+             }
 
-             // Al tocco (touchstart), determina la direzione
-             const touch = e.touches[0]; // Prendo il primo tocco
-             if (!touch) return;
-             
-             const area = touchMove.getBoundingClientRect();
-             const relativeX = touch.clientX - area.left;
+             // Al tocco (touchstart), determina la direzione
+             const touch = e.touches[0]; // Prendo il primo tocco
+             if (!touch) return;
+             
+             const area = touchMove.getBoundingClientRect();
+             const relativeX = touch.clientX - area.left;
 
-             // Assicura che solo un movimento sia attivo alla volta
-             if (relativeX < area.width / 2) {
-                 // Sinistra
-                 window.Game.handleTouchInput('left', true);
-                 window.Game.handleTouchInput('right', false);
-             } else {
-                 // Destra
-                 window.Game.handleTouchInput('right', true);
-                 window.Game.handleTouchInput('left', false);
-             }
-        };
-        
-        // Assegna gli eventi all'area di movimento (touchstart/touchend sono sufficienti)
-        touchMove.addEventListener('touchstart', handleMovementTouch);
-        touchMove.addEventListener('touchend', handleMovementTouch);
-        touchMove.addEventListener('touchcancel', handleMovementTouch); 
-        
-        // --- GESTIONE INPUT TOUCH per Salto (jumpBtn) ---
-        jumpBtn.addEventListener('touchstart', (e) => {
-             e.preventDefault(); 
-             if (window.Game && window.Game.handleTouchInput) {
-                 window.Game.handleTouchInput('jump', true);
-             }
-        });
-        jumpBtn.addEventListener('touchend', (e) => {
-             e.preventDefault();
-             if (window.Game && window.Game.handleTouchInput) {
-                 window.Game.handleTouchInput('jump', false);
-             }
-        });
-    });
+             // Assicura che solo un movimento sia attivo alla volta
+             if (relativeX < area.width / 2) {
+                 // Sinistra
+                 window.Game.handleTouchInput('left', true);
+                 window.Game.handleTouchInput('right', false);
+             } else {
+                 // Destra
+                 window.Game.handleTouchInput('right', true);
+                 window.Game.handleTouchInput('left', false);
+             }
+        };
+        
+        // Assegna gli eventi all'area di movimento (touchstart/touchend sono sufficienti)
+        touchMove.addEventListener('touchstart', handleMovementTouch, { passive: false });
+        touchMove.addEventListener('touchend', handleMovementTouch);
+        touchMove.addEventListener('touchcancel', handleMovementTouch); 
+        
+        // --- GESTIONE INPUT TOUCH per Salto (jumpBtn) ---
+        jumpBtn.addEventListener('touchstart', (e) => {
+             e.preventDefault(); 
+             if (window.Game && window.Game.handleTouchInput) {
+                 window.Game.handleTouchInput('jump', true);
+             }
+        }, { passive: false });
+        jumpBtn.addEventListener('touchend', (e) => {
+             e.preventDefault();
+             if (window.Game && window.Game.handleTouchInput) {
+                 window.Game.handleTouchInput('jump', false);
+             }
+        });
+    });
 </script>
 </body>
 </html>
