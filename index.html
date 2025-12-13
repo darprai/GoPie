@@ -88,23 +88,24 @@
             height: 100%;
         }
 
-        /* --- CONTROLLI MOBILE --- */
+        /* --- CONTROLLI MOBILE (DESIGN ORIGINALE) --- */
+        
+        /* Area di Movimento (Bassa, a DESTRA del tasto Salto) */
         #touch-move {
             position: absolute;
             bottom: 0;
             right: 0; 
-            /* MODIFICA APPORTATA: Occupiamo solo il 20% inferiore per il movimento */
-            height: 20%; 
-            /* Lascia spazio al pulsante di salto (100px) */
-            width: calc(100% - 100px); 
+            height: 20%; /* Mantenuta 20% inferiore */
+            width: calc(100% - 100px); /* Tutta l'area tranne lo spazio per JumpBtn (100px) */
             z-index: 101; 
             display: none; 
             /* background-color: rgba(255, 255, 0, 0.1); /* DEBUG */
+            user-select: none;
         }
         
+        /* Pulsante Salto (Bassa, a SINISTRA) */
         #jumpBtn {
             position: absolute;
-            /* Ho leggermente alzato la posizione top per evitare conflitti con la zona touch di movimento ridotta */
             top: 60%; 
             left: 10px; 
             transform: translateY(-50%); 
@@ -132,7 +133,7 @@
             opacity: 1;
         }
 
-        /* --- STILE ROTAZIONE (Nuovo) --- */
+        /* --- STILE ROTAZIONE (Mantenuto) --- */
         #orientation-warning {
             display: none; 
             position: fixed;
@@ -207,7 +208,8 @@
 </head>
 <body>
 
-<audio id="music_normal" src="assets/music/music_normal.mp3" loop></audio>
+<audio id="music_level1" src="assets/music/music_normal.mp3" loop></audio>
+<audio id="music_level2" src="assets/music/music_level2.mp3" loop></audio>
 <audio id="music_final" src="assets/music/music_final.mp3" loop></audio>
 
 <div id="orientation-warning">
@@ -240,7 +242,7 @@
 
 <script>
     // **************************************************
-    // Caricamento Sprite (come da codice originale)
+    // Caricamento Sprite (Mantenuto)
     // **************************************************
     window.playerSprite = new Image(); window.playerSprite.src = 'assets/sprites/pie.png'; 
     window.runSprite = new Image(); window.runSprite.src = 'assets/sprites/run.png';
@@ -281,6 +283,48 @@
         }
     }
 
+    // Funzione centralizzata per gestire la riproduzione audio (Come da richiesta)
+    const playMusic = (elementId) => {
+        const audio = document.getElementById(elementId);
+        if (audio) {
+            // Ferma tutte le musiche prima di far partire la nuova
+            document.getElementById('music_level1').pause();
+            document.getElementById('music_level2').pause();
+            document.getElementById('music_final').pause();
+
+            document.getElementById('music_level1').currentTime = 0;
+            document.getElementById('music_level2').currentTime = 0;
+            document.getElementById('music_final').currentTime = 0;
+
+            audio.currentTime = 0;
+            audio.volume = 0.5;
+            audio.play().catch(error => {
+                console.warn(`Riproduzione audio ${elementId} bloccata o errore:`, error);
+            });
+        }
+    };
+
+    // Funzione globale per cambiare musica quando il livello cambia (Da implementare in game.js)
+    window.changeMusicForLevel = (level) => {
+        switch (level) {
+            case 1:
+                playMusic('music_level1');
+                break;
+            case 2:
+                // Avvia music_level2
+                playMusic('music_level2');
+                break;
+            case 3:
+                // Avvia music_final (Boss)
+                playMusic('music_final');
+                break;
+            default:
+                playMusic('music_level1');
+                break;
+        }
+    };
+
+
     document.addEventListener('DOMContentLoaded', function() {
         const gameContainer = document.getElementById('game-container');
         const newBtn = document.getElementById('newBtn');
@@ -292,11 +336,11 @@
 
         // Funzione per completare l'avvio dopo i controlli di Audio/Fullscreen
         const finalizeStart = (isMobile) => {
-            // Nasconde il menu e avvia il gioco
             document.getElementById('menu').style.display = 'none'; 
             
             if (window.Game && window.Game.startNew) {
                 window.Game.startNew(); 
+                window.changeMusicForLevel(1); // Avvia la musica Level 1
                 
                 // Mostra i controlli touch SOLO se è mobile
                 if (isMobile) {
@@ -308,39 +352,23 @@
             }
         };
 
-        // FUNZIONE: Avvia il gioco e gestisce l'interazione utente richiesta
+        // FUNZIONE: Avvia il gioco
         const startGame = (e) => {
             if (e) e.preventDefault();
             
-            // Determina se il dispositivo è mobile in base al breakpoint
             const isMobile = window.innerWidth < 960; 
 
-            // Controllo e blocco se l'orientamento è verticale (portrait) su mobile
             if (isMobile && window.innerHeight > window.innerWidth) {
-                // Non avviamo il gioco se lo schermo è in verticale
                 console.log("Orientamento verticale. Richiesto orientamento orizzontale.");
                 return; 
             }
 
-            // Avvia l'audio tramite Promessa (cruciale su mobile e PC con restrizioni)
-            const musicNormal = document.getElementById('music_normal');
-            if (musicNormal) {
-                musicNormal.currentTime = 0;
-                musicNormal.play().then(() => {
-                    console.log("Audio avviato con successo.");
-                }).catch(error => {
-                    console.warn("Riproduzione audio bloccata o errore:", error);
-                });
-            }
-
             if (isMobile) {
-                // Richiede Fullscreen (solo se non è già attivo)
                 if (document.fullscreenElement === null) {
                     enterFullscreen(gameContainer); 
                 }
                 finalizeStart(true); 
             } else {
-                // Avvio standard per PC
                 finalizeStart(false); 
             }
         };
@@ -358,12 +386,10 @@
             document.getElementById('touch-move').style.display = 'none';
             document.getElementById('jumpBtn').style.display = 'none';
 
-            // Ferma l'audio
-            const musicNormal = document.getElementById('music_normal');
-            if (musicNormal) {
-                musicNormal.pause();
-                musicNormal.currentTime = 0;
-            }
+            // Ferma TUTTI gli audio
+            document.getElementById('music_level1').pause();
+            document.getElementById('music_level2').pause();
+            document.getElementById('music_final').pause();
         };
         restartBtn.addEventListener('click', handleRestart);
         restartBtn.addEventListener('touchstart', handleRestart);
@@ -373,45 +399,58 @@
             window.Game.init();
         }
 
-        // --- GESTIONE INPUT TOUCH per Movimento (TouchMove - Area in basso 20%) ---
+        /* -------------------------------------------
+         * GESTIONE INPUT TOUCH per Movimento (Area in basso 20% a DESTRA)
+         * Corretto per supportare il Multitouch e la coerenza Sinistra/Destra.
+         * ------------------------------------------- */
         
         const handleMovementTouch = (e) => {
             e.preventDefault(); 
             if (!window.Game || !window.Game.handleTouchInput) return;
 
-            const isEnd = (e.type === 'touchend' || e.type === 'touchcancel');
+            const touches = e.touches;
             
-            // La logica di rilascio ferma entrambi i movimenti.
-            if (isEnd) {
+            // 1. Logica di RILASCIO/FINE (Fermo entrambi i movimenti)
+            if (e.type === 'touchend' || e.type === 'touchcancel' || touches.length === 0) {
+                // Se non ci sono più tocchi nell'area di movimento, ferma tutto
                 window.Game.handleTouchInput('left', false);
                 window.Game.handleTouchInput('right', false);
                 return;
             }
 
-            // In caso di touchstart/touchmove:
-            const touch = e.touches[0];
-            if (!touch) return;
-            
+            // 2. Logica di MOVIMENTO (touchstart/touchmove)
             const area = touchMove.getBoundingClientRect();
-            const relativeX = touch.clientX - area.left;
+            let isMovingLeft = false;
+            let isMovingRight = false;
+            
+            // Itero su tutti i tocchi nell'area touchMove
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                const relativeX = touch.clientX - area.left;
 
-            // Logica per determinare Sinistra o Destra: < metà = Sinistra, > metà = Destra
-            if (relativeX < area.width / 2) {
-                // Sinistra
-                window.Game.handleTouchInput('left', true);
-                window.Game.handleTouchInput('right', false);
-            } else {
-                // Destra: Questa è la zona che si attiva quando si preme a destra nell'area di movimento.
-                // Se si tocca qui, il movimento DEVE essere a destra (e non a sinistra). 
-                // La logica attuale lo garantisce.
-                window.Game.handleTouchInput('right', true);
-                window.Game.handleTouchInput('left', false);
+                // Verifico che il tocco sia all'interno dell'area Y (anche se i margini Y sono stretti)
+                if (touch.clientY >= area.top && touch.clientY <= area.bottom) {
+                    
+                    // Logica: < metà = Sinistra, > metà = Destra
+                    if (relativeX < area.width / 2) {
+                        isMovingLeft = true;
+                    } else {
+                        isMovingRight = true;
+                    }
+                }
             }
+            
+            // Applica i comandi di movimento in base ai tocchi rilevati
+            // Questo gestisce il caso in cui due dita tocchino contemporaneamente a SX e DX nell'area.
+            window.Game.handleTouchInput('left', isMovingLeft);
+            window.Game.handleTouchInput('right', isMovingRight);
+
+            // Importante: Se il tocco è stato sollevato dall'area, la logica di 'touchend' sopra gestirà l'arresto.
         };
         
+        // Assegno i listener per l'area di movimento
         touchMove.addEventListener('touchstart', handleMovementTouch, { passive: false });
         touchMove.addEventListener('touchmove', handleMovementTouch, { passive: false });
-        // Utilizziamo touchend/touchcancel solo per fermare il movimento
         touchMove.addEventListener('touchend', handleMovementTouch);
         touchMove.addEventListener('touchcancel', handleMovementTouch); 
         
@@ -428,6 +467,13 @@
             e.preventDefault();
             if (window.Game && window.Game.handleTouchInput) {
                 // Quando si rilascia il tasto, si invia il comando 'jump' = false
+                window.Game.handleTouchInput('jump', false);
+            }
+        });
+        // Aggiungo un listener per 'touchcancel' anche al tasto Salto per maggiore robustezza
+        jumpBtn.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            if (window.Game && window.Game.handleTouchInput) {
                 window.Game.handleTouchInput('jump', false);
             }
         });
