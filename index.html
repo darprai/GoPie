@@ -28,9 +28,6 @@
             background-position: center;
             background-repeat: no-repeat;
             
-            /* ❌ RIMOSSO: filter: blur(5px); */
-            /* ❌ RIMOSSO: -webkit-filter: blur(5px); */
-            
             display: flex;
             justify-content: center;
             align-items: center;
@@ -42,7 +39,7 @@
             touch-action: manipulation; 
         }
 
-        /* 🎨 MODIFICA RICHIESTA: Rimuove l'immagine di sfondo su dispositivi piccoli */
+        /* 🎨 MODIFICA 1: Rimuove l'immagine di sfondo su dispositivi piccoli */
         @media (max-width: 959px) {
             body {
                 background-image: none !important; /* Forza la rimozione dell'immagine */
@@ -50,14 +47,13 @@
         }
         
         #game-container {
-            /* NON PIÙ NECESSARIO ANNULLARE LA SFOCATURA, MA MANTENIAMO PER SICUREZZA */
             filter: none;
             -webkit-filter: none;
             
             display: block; 
             position: relative;
             
-            /* LOGICA DI SCALABILITÀ ADATTIVA */
+            /* LOGICA DI SCALABILITÀ ADATTIVA (Per Desktop) */
             max-width: 90vw;
             max-height: 90vh;
             aspect-ratio: 16 / 9;
@@ -68,6 +64,16 @@
             box-sizing: border-box;
             border: none;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 🚀 MODIFICA 2: Forza il contenitore a schermo intero su mobile */
+        @media (max-width: 959px) {
+            #game-container {
+                max-width: 100vw;
+                max-height: 100vh;
+                width: 100vw;
+                height: 100vh;
+            }
         }
 
         #game {
@@ -127,24 +133,26 @@
             bottom: 0;
             right: 0; 
             height: 100%; 
-            /* L'area di movimento occupa tutta l'altezza, ma esclude il jumpBtn a sinistra */
-            width: calc(100% - 120px); 
+            /* MODIFICA: Rilascia più spazio per il jumpBtn (ora a 10px da sx) */
+            width: calc(100% - 100px); 
             z-index: 101; 
             display: none; /* Inizialmente nascosto */
         }
         
         #jumpBtn {
             position: absolute;
-            /* 🚀 Nuovo Posizionamento: 75% in verticale (metà tra centro e fondo) */
-            top: 75%; 
-            left: 20px; 
-            /* Centra il cerchio sul 75% */
+            /* 🚀 MODIFICA: Tasto più in alto (70%) e più a sinistra (10px) */
+            top: 70%; 
+            left: 10px; 
             transform: translateY(-50%); 
             
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background-color: #ff3333; 
+            /* MODIFICA: Trasparenza */
+            background-color: rgba(255, 51, 51, 0.5); /* Sfondo semi-trasparente */
+            opacity: 0.8; /* Aggiunge opacità generale */
+            
             font-size: 0; 
             color: transparent;
             font-weight: bold;
@@ -154,13 +162,13 @@
             user-select: none;
             z-index: 102; 
             display: none; /* Inizialmente nascosto */
+            transition: opacity 0.1s;
         }
         #jumpBtn:active {
             background-color: #cc0000;
             box-shadow: 0 0 5px rgba(255, 51, 51, 0.8) inset;
+            opacity: 1;
         }
-        
-        /* ❌ La media query che mostrava i pulsanti viene RIMOSSA, ora li gestisce JS */
     </style>
 </head>
 <body>
@@ -264,7 +272,8 @@
         const startGame = (e) => {
             if (e) e.preventDefault();
             
-            const isMobile = window.innerWidth < 960;
+            // Determina se il dispositivo è mobile in base al breakpoint
+            const isMobile = window.innerWidth < 960; 
 
             // Avvia l'audio tramite Promessa (cruciale su mobile e PC con restrizioni)
             const musicNormal = document.getElementById('music_normal');
@@ -341,7 +350,7 @@
             const area = touchMove.getBoundingClientRect();
             const relativeX = touch.clientX - area.left;
 
-            // Logica per determinare Sinistra o Destra
+            // Logica per determinare Sinistra o Destra (Corretta: < metà = Sinistra, > metà = Destra)
             if (relativeX < area.width / 2) {
                 // Sinistra
                 window.Game.handleTouchInput('left', true);
