@@ -1,10 +1,10 @@
-// Projectile (AGGIORNATO: Proiettile 3x più grande)
+// Projectile (AGGIORNATO: Proiettile 3x più grande - ORA ESPORTATO)
 
 const Projectile = function(x, y, vx, vy) {
     this.x = x;
     this.y = y;
     // Dimensioni del proiettile aumentate per visibilità
-    this.w = 20; 
+    this.w = 20; 
     this.h = 20;
     this.vx = vx;
     this.vy = vy;
@@ -30,3 +30,8 @@ const Projectile = function(x, y, vx, vy) {
         }
     };
 };
+
+// ************************************************************
+// RIGA AGGIUNTA PER RENDERE LA CLASSE ACCESSIBILE AD ALTRI FILE
+// ************************************************************
+window.Projectile = Projectile;
