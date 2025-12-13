@@ -1,4 +1,4 @@
-// game.js (VERSIONE AGGIORNATA)
+// game.js (VERSIONE COMPLETA E CORRETTA)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -43,6 +43,7 @@ const Game = (function() {
     let cameraX = 0;
     
     let isTransitioning = false;
+    let engine = null; // Riferimento all'Engine
     
     // VARIABILI CUTSCENE
     let isCutsceneActive = false;
@@ -141,7 +142,7 @@ const Game = (function() {
             if (currentLevelIndex < levels.length) {
                 loadLevel(currentLevelIndex, true); // Mantieni il punteggio
                 isTransitioning = false;
-                window.Engine.start();
+                if (engine) engine.start(); // Usa il riferimento Engine locale
             }
         }, 1000); // 1 secondo di transizione
     }
@@ -152,7 +153,7 @@ const Game = (function() {
     // ************************************************************
     
     function onGameWin() {
-        window.Engine.stop();
+        if (engine) engine.stop();
         if (musicNormal) musicNormal.pause();
         if (musicFinal) musicFinal.pause();
 
@@ -184,7 +185,7 @@ const Game = (function() {
     }
     
     function onGameOver() {
-        window.Engine.stop();
+        if (engine) engine.stop();
         if (musicNormal) musicNormal.pause();
         if (musicFinal) musicFinal.pause();
         
@@ -205,7 +206,7 @@ const Game = (function() {
         
         isCutsceneActive = true;
         cutsceneTime = 0;
-        window.Engine.stop();
+        if (engine) engine.stop();
         
         if (musicNormal) musicNormal.pause();
         
@@ -236,7 +237,7 @@ const Game = (function() {
         player.facingRight = true;
         player.canMove = false;
         
-        window.Engine.start(); // Il loop deve continuare per animare la cutscene
+        if (engine) engine.start(); // Il loop deve continuare per animare la cutscene
     }
     
     function updateCutscene(dt) {
@@ -253,7 +254,7 @@ const Game = (function() {
             isCutsceneActive = false;
             player.canMove = true;
             // Interrompi e riavvia il motore di gioco per ripristinare il dt e la logica normale
-            window.Engine.stop();
+            if (engine) engine.stop();
             Game.nextLevel(); // Transizione al livello successivo
         }
     }
@@ -263,7 +264,7 @@ const Game = (function() {
     // ************************************************************
 
     function update(dt, input) {
-        if (!currentLevel || !player || !window.Engine || isTransitioning) return;
+        if (!currentLevel || !player || !engine || isTransitioning) return;
 
         if (isCutsceneActive) {
             updateCutscene(dt);
@@ -418,7 +419,7 @@ const Game = (function() {
     
     function drawCutscene(ctx, camX) {
         if (!window.ragazzaSprite.complete || !window.macchinaSprite.complete) {
-              return; 
+             return; 
         }
         
         const t = cutsceneTime / CUTSCENE_DURATION;
@@ -594,7 +595,7 @@ const Game = (function() {
     // GESTIONE INPUT TOUCH (Esposta globalmente)
     // ************************************************************
     function handleTouchInput(action, isPressed) {
-        if (!window.Engine || !window.Engine.setInputState) return;
+        if (!engine || !engine.setInputState) return; // Controlla il riferimento locale 'engine'
         
         // Mappa l'azione touch a un "tasto" gestito dal Player
         let keyToMap;
@@ -614,7 +615,7 @@ const Game = (function() {
         }
         
         // Inietta lo stato nel sistema di input dell'Engine
-        window.Engine.setInputState(keyToMap, isPressed);
+        engine.setInputState(keyToMap, isPressed);
     }
     
     // Inizializza il gioco caricando i livelli e mostra il menu
@@ -634,14 +635,20 @@ const Game = (function() {
 
     // Avvia una nuova partita
     function startNew() {
-         if (levels.length > 0) {
-              menuDiv.style.display = 'none';
-              endingScreen.style.display = 'none';
-              loadLevel(0, false); // Ricarica il livello 0 e resetta TUTTO
-              window.Engine.start();
+         if (levels.length > 0 && engine) { // Aggiunto controllo 'engine'
+             menuDiv.style.display = 'none';
+             endingScreen.style.display = 'none';
+             loadLevel(0, false); // Ricarica il livello 0 e resetta TUTTO
+             engine.start(); // Usa il riferimento Engine locale
          } else {
-              console.error("Livelli non caricati. Impossibile iniziare.");
+             console.error("Livelli non caricati o Engine non inizializzato. Impossibile iniziare.");
          }
+    }
+    
+    // *** NUOVA FUNZIONE: Viene chiamata da engine.js per stabilire la comunicazione ***
+    function setEngine(engineAPI) {
+        engine = engineAPI;
+        console.log("Engine API collegato a Game.");
     }
 
     // API pubbliche
@@ -656,9 +663,13 @@ const Game = (function() {
         removeEnemy: removeEnemy,
         handleTouchInput: handleTouchInput,
         getCurrentLevelIndex: () => currentLevelIndex,
-        isCutsceneActive: () => isCutsceneActive
+        isCutsceneActive: () => isCutsceneActive,
+        setEngine: setEngine // ESPORRE LA FUNZIONE QUI
     };
 })();
+
+// Espone l'oggetto Game globalmente per l'HTML
+window.Game = Game;
 
 // Espone l'oggetto Game globalmente per l'HTML
 window.Game = Game;
