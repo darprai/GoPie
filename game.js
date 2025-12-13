@@ -1,4 +1,4 @@
-// game.js (VERSIONE CORRETTA PER AUDIO CENTRALIZZATO)
+// game.js (VERSIONE COMPLETA E CORRETTA PER AUDIO CENTRALIZZATO)
 
 const Game = (function() {
     const canvas = document.getElementById('game');
@@ -11,7 +11,7 @@ const Game = (function() {
     const endingScore = document.getElementById('ending-score');
     const winImage = document.getElementById('win-image');
     
-    // VARIABILI AUDIO - Rimosse, useremo window.changeMusicForLevel()
+    // VARIABILI AUDIO - Rimosse, usiamo window.changeMusicForLevel()
     
     // ************************************************************
     // DEFINIZIONE GLOBALE DI TUTTE LE SPRITE
@@ -105,22 +105,22 @@ const Game = (function() {
         // ********************************************************
         // LOGICA AUDIO CENTRALIZZATA: Level 1 e 2 usano music_normal, Level 3 music_final
         // ********************************************************
-        if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
-            // Level 1 e 2: musica_normal.mp3 (music_level1)
-            if (window.changeMusicForLevel) {
-                 window.changeMusicForLevel(1); // Questo fermerà music_final e avvierà music_level1
+        if (window.changeMusicForLevel) {
+            if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
+                // Level 1 e 2: musica_normal (music_level1)
+                window.changeMusicForLevel(1); 
+            } else if (currentLevelIndex === 2) {
+                // Level 3 (Boss): musica_final
+                window.changeMusicForLevel(3); 
             }
-            if (currentLevelIndex === 2 && window.BossFinal) {
-                window.BossFinal.reset();
-                const config = currentLevel.boss;
-                window.BossFinal.start(config.x, config.y, config);
-                
-                // Level 3 (Boss): musica_final.mp3
-                if (window.changeMusicForLevel) {
-                    window.changeMusicForLevel(3); // Avvia music_final e ferma music_level1/music_level2
-                }
-            }
+        }
 
+        if (currentLevelIndex === 2 && window.BossFinal) {
+            window.BossFinal.reset();
+            const config = currentLevel.boss;
+            window.BossFinal.start(config.x, config.y, config);
+        }
+        
         return !!player;
     }
     
@@ -153,12 +153,8 @@ const Game = (function() {
         
         // Ferma tutta la musica
         if (window.changeMusicForLevel) {
-            window.changeMusicForLevel(0); // Chiama il caso default/stop nell'HTML se vuoi solo silenzio, altrimenti usa il metodo brutale sotto:
+            window.changeMusicForLevel(0);
         }
-        
-        // Metodo brutale di stop (già presente nell'HTML/restart)
-        const allAudio = [document.getElementById('music_level1'), document.getElementById('music_level2'), document.getElementById('music_final')];
-        allAudio.forEach(track => { if (track) track.pause(); });
         
         menuDiv.style.display = 'none';
         endingScreen.style.display = 'flex';
@@ -197,10 +193,9 @@ const Game = (function() {
         cutsceneTime = 0;
         if (engine) engine.stop();  
         
-        // FERMA LA MUSICA durante la cutscene (anche se music_normal/level1 è la stessa)
+        // FERMA LA MUSICA durante la cutscene
         if (window.changeMusicForLevel) {
-             const allAudio = [document.getElementById('music_level1'), document.getElementById('music_level2'), document.getElementById('music_final')];
-             allAudio.forEach(track => { if (track) track.pause(); });
+             window.changeMusicForLevel(0);
         }
         
         cutsceneTriggerPosition = {
@@ -588,6 +583,8 @@ const Game = (function() {
         if (levels.length > 0 && engine) { 
             menuDiv.style.display = 'none';
             endingScreen.style.display = 'none'; 
+            
+            // LA MUSICA VIENE AVVIATA IN loadLevel(0)
             loadLevel(0); 
             
             engine.stop(); 
