@@ -11,8 +11,6 @@ const Game = (function() {
     const endingScore = document.getElementById('ending-score');
     const winImage = document.getElementById('win-image');
     
-    // VARIABILI AUDIO - Rimosse, usiamo window.changeMusicForLevel()
-    
     // ************************************************************
     // DEFINIZIONE GLOBALE DI TUTTE LE SPRITE
     // ************************************************************
@@ -103,14 +101,17 @@ const Game = (function() {
         cameraX = 0;
         
         // ********************************************************
-        // LOGICA AUDIO CENTRALIZZATA: Level 1 e 2 usano music_normal, Level 3 music_final
+        // LOGICA AUDIO CENTRALIZZATA CORRETTA
+        // L'indice 0 chiama changeMusicForLevel(1)
+        // L'indice 1 chiama changeMusicForLevel(1)
+        // L'indice 2 chiama changeMusicForLevel(3)
         // ********************************************************
         if (window.changeMusicForLevel) {
             if (currentLevelIndex === 0 || currentLevelIndex === 1) { 
-                // Level 1 e 2: musica_normal (music_level1)
+                // Level 1 e 2: musica_normal (che nell'index.html è gestito da case 1/2 che chiama music_level1)
                 window.changeMusicForLevel(1); 
             } else if (currentLevelIndex === 2) {
-                // Level 3 (Boss): musica_final
+                // Level 3 (Boss): musica_final (che nell'index.html è gestito da case 3)
                 window.changeMusicForLevel(3); 
             }
         }
@@ -133,10 +134,15 @@ const Game = (function() {
         isTransitioning = true;
         if (engine) engine.stop();  
         
+        // FERMA LA MUSICA subito per la transizione (soprattutto dopo la cutscene)
+        if (window.changeMusicForLevel) {
+             window.changeMusicForLevel(0);
+        }
+        
         setTimeout(() => {
             currentLevelIndex++;
             if (currentLevelIndex < levels.length) {
-                loadLevel(currentLevelIndex); 
+                loadLevel(currentLevelIndex); // Carica il nuovo livello e riavvia la musica
                 isTransitioning = false;
                 if (engine) engine.start();  
             }
@@ -161,7 +167,7 @@ const Game = (function() {
         
         endingTitle.textContent = "Pie diventa King!";
         winImage.style.display = 'block'; 
-        endingScore.textContent = `Partita completata. Clicca per ricominciare.`; 
+        endingScore.textContent = `Partita completata. Clicca per ricomincia.`; 
     }
 
     function onPlayerDied() {
