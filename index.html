@@ -209,7 +209,6 @@
 <body>
 
 <audio id="music_level1" src="assets/music/music_normal.mp3" loop></audio>
-<audio id="music_level2" src="assets/music/music_level2.mp3" loop></audio>
 <audio id="music_final" src="assets/music/music_final.mp3" loop></audio>
 
 <div id="orientation-warning">
@@ -290,8 +289,7 @@
         // Forzo l'interruzione e il reset di TUTTE le tracce prima di avviarne una nuova
         const allAudio = [
             document.getElementById('music_level1'),
-            document.getElementById('music_level2'),
-            document.getElementById('music_final')
+            document.getElementById('music_final') // music_level2 rimosso
         ];
 
         allAudio.forEach(track => {
@@ -302,6 +300,11 @@
         });
         
         if (audio) {
+            // *** CORREZIONE PER BUG AUDIO LEVEL 3 ***
+            // Forza il ricaricamento del media element per assicurare che lo stato sia pronto.
+            audio.load();
+            // ***************************************
+            
             // Riproduce il brano richiesto (audio è l'elemento corretto)
             audio.currentTime = 0;
             audio.volume = 0.5;
